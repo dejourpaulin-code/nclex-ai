@@ -2,7 +2,7 @@
 
 import Navbar from "../../components/Navbar";
 import { supabase } from "../../lib/supabase";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type QuestionType =
@@ -153,7 +153,7 @@ function isAnswerCorrect(question: QuestionData, selected: AnswerValue) {
   return !!question.correctAnswer && selected === question.correctAnswer;
 }
 
-export default function QuizPage() {
+function QuizPageInner() {
   const searchParams = useSearchParams();
 
   const [sessionId, setSessionId] = useState<string>(() => newSessionId());
@@ -565,7 +565,8 @@ export default function QuizPage() {
         correctAnswer: questionIsSata ? null : question.correctAnswer || null,
         correctAnswers: questionIsSata ? question.correctAnswers || [] : null,
         selectedAnswer: questionIsSata ? null : selected,
-        selectedAnswers: questionIsSata && Array.isArray(selected) ? selected : null,
+        selectedAnswers:
+          questionIsSata && Array.isArray(selected) ? selected : null,
         rationale: question.rationale,
       }),
     });
@@ -1660,5 +1661,34 @@ export default function QuizPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+function QuizPageFallback() {
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
+      <Navbar />
+      <section className="mx-auto max-w-7xl px-6 py-10">
+        <div className="rounded-3xl border border-blue-100 bg-white p-12 shadow-2xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-2xl">
+              📝
+            </div>
+            <h2 className="text-2xl font-bold">Loading quiz...</h2>
+            <p className="mt-3 text-slate-600">
+              Preparing your quiz page.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+export default function QuizPage() {
+  return (
+    <Suspense fallback={<QuizPageFallback />}>
+      <QuizPageInner />
+    </Suspense>
   );
 }
