@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { FEATURE_MATRIX } from "@/lib/access";
+import { FEATURE_MATRIX } from "../../../../lib/access";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
