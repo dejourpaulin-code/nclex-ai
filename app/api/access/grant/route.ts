@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getAccessConfig } from "../../../../lib/access";
+import { getAccessConfig } from "@/lib/access";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,9 +37,7 @@ export async function POST(req: Request) {
         status: "active",
         updated_at: new Date().toISOString(),
       },
-      {
-        onConflict: "user_id",
-      }
+      { onConflict: "user_id" }
     );
 
     if (error) {
@@ -57,7 +55,6 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("access grant route error:", error);
-
     return NextResponse.json(
       { error: "Failed to grant access." },
       { status: 500 }
