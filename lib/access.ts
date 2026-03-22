@@ -92,6 +92,8 @@ export type AccessLevel =
   | "three-semester"
   | "full-program";
 
+export type AccessFeatures = (typeof FEATURE_MATRIX)[AccessLevel];
+
 const ACCESS_RANK: Record<AccessLevel, number> = {
   free: 0,
   starter: 1,
@@ -101,18 +103,79 @@ const ACCESS_RANK: Record<AccessLevel, number> = {
   "full-program": 5,
 };
 
+export function normalizeAccessLevel(
+  value: string | null | undefined
+): AccessLevel {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  if (
+    normalized === "starter" ||
+    normalized === "starter-monthly" ||
+    normalized === "starter_monthly" ||
+    normalized === "starter-yearly" ||
+    normalized === "starter_yearly"
+  ) {
+    return "starter";
+  }
+
+  if (
+    normalized === "core" ||
+    normalized === "core-monthly" ||
+    normalized === "core_monthly" ||
+    normalized === "core-yearly" ||
+    normalized === "core_yearly"
+  ) {
+    return "core";
+  }
+
+  if (normalized === "semester") {
+    return "semester";
+  }
+
+  if (
+    normalized === "three-semester" ||
+    normalized === "three_semester" ||
+    normalized === "three semester"
+  ) {
+    return "three-semester";
+  }
+
+  if (
+    normalized === "full-program" ||
+    normalized === "full_program" ||
+    normalized === "full program"
+  ) {
+    return "full-program";
+  }
+
+  return "free";
+}
+
+export function getFeatureSet(
+  accessLevel: string | null | undefined
+): AccessFeatures {
+  return FEATURE_MATRIX[normalizeAccessLevel(accessLevel)];
+}
+
 export function hasRequiredAccess(
   userAccessLevel: string | null | undefined,
   requiredAccessLevel: AccessLevel
 ) {
-  const normalizedUserLevel: AccessLevel =
-    userAccessLevel === "starter" ||
-    userAccessLevel === "core" ||
-    userAccessLevel === "semester" ||
-    userAccessLevel === "three-semester" ||
-    userAccessLevel === "full-program"
-      ? userAccessLevel
-      : "free";
-
+  const normalizedUserLevel = normalizeAccessLevel(userAccessLevel);
   return ACCESS_RANK[normalizedUserLevel] >= ACCESS_RANK[requiredAccessLevel];
+}
+
+export function getAccessConfig(grantType: string) {
+  const accessLevel = normalizeAccessLevel(grantType);
+
+  if (accessLevel === "free") {
+    return null;
+  }
+
+  return {
+    access_level: accessLevel,
+    features: FEATURE_MATRIX[accessLevel],
+  };
 }
