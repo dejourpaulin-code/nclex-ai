@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getAccessConfig } from "../../../lib/access";
+import { getAccessConfig } from "../../../../lib/access";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,50 +12,38 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     const userId = String(body?.userId || "").trim();
-    const plan = String(body?.plan || "").trim();
-    const sessionId = String(body?.sessionId || "").trim();
-    const stripeCustomerId =
-      typeof body?.stripeCustomerId === "string" && body.stripeCustomerId.trim()
-        ? body.stripeCustomerId.trim()
-        : null;
+    const grantType = String(body?.grantType || "").trim();
 
-    if (!userId || !plan || !sessionId) {
+    if (!userId || !grantType) {
       return NextResponse.json(
-        { error: "userId, plan, and sessionId are required." },
+        { error: "Missing userId or grantType." },
         { status: 400 }
       );
     }
 
-    const { accessLevel, endsAt } = getAccessConfig(plan);
+    const accessConfig = getAccessConfig(grantType);
 
-    if (accessLevel === "guest") {
+    if (!accessConfig) {
       return NextResponse.json(
-        { error: "Invalid plan." },
+        { error: "Invalid grantType." },
         { status: 400 }
       );
     }
-
-    const nowIso = new Date().toISOString();
 
     const { error } = await supabase.from("user_access").upsert(
       {
         user_id: userId,
-        plan,
+        access_level: accessConfig.accessLevel,
         status: "active",
-        access_level: accessLevel,
-        starts_at: nowIso,
-        ends_at: endsAt,
-        stripe_customer_id: stripeCustomerId,
-        stripe_session_id: sessionId,
-        updated_at: nowIso,
+        updated_at: new Date().toISOString(),
       },
       {
-        onConflict: "stripe_session_id",
+        onConflict: "user_id",
       }
     );
 
     if (error) {
-      console.error("ACCESS GRANT ERROR:", error);
+      console.error("Grant access error:", error);
       return NextResponse.json(
         { error: "Failed to grant access." },
         { status: 500 }
@@ -64,13 +52,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      accessLevel,
-      endsAt,
+      accessLevel: accessConfig.accessLevel,
     });
   } catch (error) {
-    console.error("ACCESS GRANT ROUTE ERROR:", error);
+    console.error("Grant route error:", error);
     return NextResponse.json(
-      { error: "Something went wrong." },
+      { error: "Failed to grant access." },
       { status: 500 }
     );
   }
