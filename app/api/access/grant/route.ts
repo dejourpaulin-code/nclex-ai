@@ -1,11 +1,32 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getAccessConfig } from "../../../../lib/access";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+function getAccessConfig(grantType: string) {
+  const normalized = grantType.trim().toLowerCase();
+
+  if (normalized === "starter") {
+    return { accessLevel: "starter" };
+  }
+
+  if (normalized === "core") {
+    return { accessLevel: "core" };
+  }
+
+  if (normalized === "premium") {
+    return { accessLevel: "premium" };
+  }
+
+  if (normalized === "admin") {
+    return { accessLevel: "admin" };
+  }
+
+  return null;
+}
 
 export async function POST(req: Request) {
   try {
