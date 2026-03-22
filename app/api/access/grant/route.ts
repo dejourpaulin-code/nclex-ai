@@ -7,28 +7,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-function getAccessConfig(grantType: string) {
-  const normalized = grantType.trim().toLowerCase();
-
-  if (normalized === "starter") {
-    return { accessLevel: "starter" };
-  }
-
-  if (normalized === "core") {
-    return { accessLevel: "core" };
-  }
-
-  if (normalized === "premium") {
-    return { accessLevel: "premium" };
-  }
-
-  if (normalized === "admin") {
-    return { accessLevel: "admin" };
-  }
-
-  return null;
-}
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -55,7 +33,7 @@ export async function POST(req: Request) {
     const { error } = await supabase.from("user_access").upsert(
       {
         user_id: userId,
-        access_level: accessConfig.accessLevel,
+        access_level: accessConfig.access_level,
         status: "active",
         updated_at: new Date().toISOString(),
       },
@@ -65,7 +43,7 @@ export async function POST(req: Request) {
     );
 
     if (error) {
-      console.error("Grant access error:", error);
+      console.error("access grant error:", error);
       return NextResponse.json(
         { error: "Failed to grant access." },
         { status: 500 }
@@ -74,10 +52,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      accessLevel: accessConfig.accessLevel,
+      accessLevel: accessConfig.access_level,
+      features: accessConfig.features,
     });
   } catch (error) {
-    console.error("Grant route error:", error);
+    console.error("access grant route error:", error);
+
     return NextResponse.json(
       { error: "Failed to grant access." },
       { status: 500 }
