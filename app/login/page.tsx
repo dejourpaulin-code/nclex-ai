@@ -1,11 +1,11 @@
 "use client";
 
+import { Suspense, useState } from "react";
 import Navbar from "../../components/Navbar";
 import { supabase } from "../../lib/supabase";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const returnTo = searchParams.get("returnTo") || "/dashboard";
@@ -105,13 +105,14 @@ export default function LoginPage() {
             </h1>
 
             <p className="mt-2 text-slate-600">
-              Save your quiz history, track weak areas, and keep your NCLEX progress in one place.
+              Save your quiz history, track weak areas, and keep your NCLEX
+              progress in one place.
             </p>
 
             {sessionId && (
               <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-                Your purchase was detected. Log in or create your account with the same email to
-                attach your access.
+                Your purchase was detected. Log in or create your account with
+                the same email to attach your access.
               </div>
             )}
           </div>
@@ -177,5 +178,26 @@ export default function LoginPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
+      <Navbar />
+      <section className="mx-auto max-w-xl px-6 py-20">
+        <div className="rounded-3xl border border-blue-100 bg-white p-10 shadow-2xl">
+          <h1 className="text-3xl font-black">Loading...</h1>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
