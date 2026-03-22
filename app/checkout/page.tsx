@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const searchParams = useSearchParams();
 
   const plan = searchParams.get("plan") || "starter-monthly";
@@ -240,5 +240,24 @@ export default function CheckoutPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function CheckoutFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-6">
+      <div className="max-w-md w-full rounded-3xl bg-white p-8 shadow-xl border border-slate-200 text-center">
+        <h1 className="text-3xl font-black text-slate-900">Loading checkout...</h1>
+        <p className="mt-3 text-slate-600">Preparing your secure checkout page.</p>
+      </div>
+    </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<CheckoutFallback />}>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }
