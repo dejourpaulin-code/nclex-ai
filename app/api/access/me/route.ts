@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { FEATURE_MATRIX } from "../../../../lib/access";
+import { FEATURE_MATRIX } from "@/lib/access";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -14,7 +14,7 @@ const supabase = createClient(supabaseUrl, serviceRoleKey);
 type AccessLevel = keyof typeof FEATURE_MATRIX;
 
 function normalizeAccessLevel(value: unknown): AccessLevel {
-  if (typeof value !== "string") return "guest";
+  if (typeof value !== "string") return "free";
 
   const normalized = value
     .trim()
@@ -26,7 +26,7 @@ function normalizeAccessLevel(value: unknown): AccessLevel {
     return normalized as AccessLevel;
   }
 
-  return "guest";
+  return "free";
 }
 
 function isStillActive(endsAt: unknown): boolean {
@@ -50,11 +50,11 @@ export async function POST(req: Request) {
     if (!userId) {
       return NextResponse.json({
         loggedIn: false,
-        accessLevel: "guest",
+        accessLevel: "free",
         plan: null,
         status: "inactive",
         endsAt: null,
-        features: FEATURE_MATRIX.guest,
+        features: FEATURE_MATRIX.free,
       });
     }
 
@@ -80,11 +80,11 @@ export async function POST(req: Request) {
     if (!activeRecord) {
       return NextResponse.json({
         loggedIn: true,
-        accessLevel: "guest",
+        accessLevel: "free",
         plan: null,
         status: "inactive",
         endsAt: null,
-        features: FEATURE_MATRIX.guest,
+        features: FEATURE_MATRIX.free,
       });
     }
 
