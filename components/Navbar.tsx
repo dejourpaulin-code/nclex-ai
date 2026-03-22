@@ -1,0 +1,331 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { supabase } from "../lib/supabase";
+import { useEffect, useMemo, useState } from "react";
+
+type AccessResponse = {
+  loggedIn: boolean;
+  accessLevel: string;
+  plan: string | null;
+  status: string;
+  endsAt?: string | null;
+  features: {
+    quiz: boolean;
+    lexi: boolean;
+    history: boolean;
+    study: boolean;
+    dashboard: boolean;
+    dashboardAdvanced?: boolean;
+    weakAreas: boolean;
+    weakAreasAdvanced?: boolean;
+    lecture: boolean;
+    liveFull: boolean;
+    catExam: boolean;
+  };
+};
+
+type NavItem = {
+  href: string;
+  label: string;
+  requires?: keyof AccessResponse["features"];
+};
+
+const allNavItems: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", requires: "dashboard" },
+  { href: "/quiz", label: "Quiz", requires: "quiz" },
+  { href: "/chat", label: "Lexi", requires: "lexi" },
+  { href: "/study", label: "Study with Lexi", requires: "study" },
+  { href: "/history", label: "History", requires: "history" },
+  { href: "/closet", label: "Locker", requires: "dashboard" },
+  { href: "/cat", label: "CAT Exam", requires: "catExam" },
+  { href: "/lecture", label: "Lecture Mode", requires: "lecture" },
+  { href: "/lecture/live-full", label: "Live Full", requires: "liveFull" },
+  { href: "/lecture/stream", label: "Stream v2", requires: "lecture" },
+];
+
+const guestFeatures: AccessResponse["features"] = {
+  quiz: true,
+  lexi: true,
+  history: false,
+  study: false,
+  dashboard: false,
+  dashboardAdvanced: false,
+  weakAreas: false,
+  weakAreasAdvanced: false,
+  lecture: false,
+  liveFull: false,
+  catExam: false,
+};
+
+export default function Navbar() {
+  const pathname = usePathname();
+
+  const [email, setEmail] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [access, setAccess] = useState<AccessResponse | null>(null);
+  const [accessLoading, setAccessLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadUserAndAccess() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        setEmail(user?.email || "");
+
+        const res = await fetch("/api/access/me", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user?.id || null,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          setAccess(null);
+          setAccessLoading(false);
+          return;
+        }
+
+        setAccess(data);
+      } catch {
+        setAccess(null);
+      }
+
+      setAccessLoading(false);
+    }
+
+    void loadUserAndAccess();
+  }, []);
+
+  function isActive(href: string) {
+    return pathname === href;
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  }
+
+  const initials = useMemo(() => {
+    return email ? email.slice(0, 1).toUpperCase() : "U";
+  }, [email]);
+
+  const isLoggedIn = !!email;
+  const features = access?.features || guestFeatures;
+
+  function isUnlocked(item: NavItem) {
+    if (!item.requires) return true;
+    return !!features[item.requires];
+  }
+
+  const planLabel = useMemo(() => {
+    if (!access?.loggedIn) return "Guest access";
+
+    switch (access.accessLevel) {
+      case "starter":
+        return "Starter";
+      case "core":
+        return "Core";
+      case "semester":
+        return "Semester";
+      case "three-semester":
+        return "3-Semester";
+      case "full-program":
+        return "Full Program";
+      default:
+        return "Free";
+    }
+  }, [access]);
+
+  const shouldShowUpgrade =
+    !accessLoading &&
+    (!access?.loggedIn ||
+      (access.accessLevel !== "core" &&
+        access.accessLevel !== "semester" &&
+        access.accessLevel !== "three-semester" &&
+        access.accessLevel !== "full-program"));
+
+  return (
+    <header className="sticky top-0 z-50 overflow-visible border-b border-slate-200/80 bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_rgba(15,23,42,0.08)]">
+      <div className="mx-auto max-w-[1500px] px-6 xl:px-10">
+        <div className="flex min-h-[84px] items-center justify-between py-4">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-900 to-orange-500 text-lg font-bold text-white shadow-md">
+              N
+            </div>
+
+            <div className="leading-tight">
+              <p className="text-lg font-bold text-slate-900">NCLEXAI</p>
+              <p className="text-xs text-slate-500">Built for nursing students</p>
+            </div>
+          </Link>
+
+          <nav className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-2 shadow-sm md:flex">
+            {allNavItems.map((item) => {
+              const active = isActive(item.href);
+              const unlocked = isUnlocked(item);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                    active
+                      ? "bg-blue-900 text-white shadow-md"
+                      : unlocked
+                      ? "text-slate-600 hover:bg-blue-50 hover:text-blue-900"
+                      : "text-slate-500 hover:bg-orange-50 hover:text-orange-700"
+                  }`}
+                  title={unlocked ? item.label : "Preview available — upgrade to use this feature"}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    {item.label}
+                    {!unlocked && <span className="text-xs">🔒</span>}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="hidden items-center gap-3 sm:flex">
+            {!isLoggedIn ? (
+              <>
+                <Link
+                  href="/login"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Log in
+                </Link>
+
+                <Link
+                  href="/checkout?plan=starter-monthly&source=navbar-guest"
+                  className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+                >
+                  Get Access
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/quiz"
+                  className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+                >
+                  Start Quiz
+                </Link>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setMenuOpen((prev) => !prev)}
+                    className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-md transition hover:bg-slate-50"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
+                      {initials}
+                    </div>
+
+                    <div className="text-left">
+                      <p className="max-w-[170px] truncate text-sm font-semibold text-slate-900">
+                        {email}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {accessLoading ? "Loading access..." : `${planLabel} account`}
+                      </p>
+                    </div>
+                  </button>
+
+                  {menuOpen && (
+                    <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-slate-200 bg-white p-2 text-slate-900 shadow-2xl">
+                      <div className="mb-2 rounded-xl bg-slate-50 px-4 py-3">
+                        <p className="truncate text-sm font-semibold text-slate-900">{email}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {accessLoading ? "Loading access..." : `Access level: ${planLabel}`}
+                        </p>
+                      </div>
+
+                      {allNavItems.map((item) => {
+                        const unlocked = isUnlocked(item);
+
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`block rounded-xl px-4 py-3 text-sm font-medium transition ${
+                              unlocked
+                                ? "hover:bg-slate-100"
+                                : "text-orange-700 hover:bg-orange-50"
+                            }`}
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            <span className="inline-flex items-center gap-2">
+                              {item.label}
+                              {!unlocked && <span className="text-xs">🔒</span>}
+                            </span>
+                          </Link>
+                        );
+                      })}
+
+                      {shouldShowUpgrade && (
+                        <>
+                          <div className="my-2 h-px bg-slate-200" />
+                          <Link
+                            href={`/checkout?plan=core-monthly&source=navbar-upgrade&returnTo=${encodeURIComponent(pathname)}`}
+                            className="block rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            Upgrade
+                          </Link>
+                        </>
+                      )}
+
+                      <div className="my-2 h-px bg-slate-200" />
+
+                      <button
+                        onClick={logout}
+                        className="block w-full rounded-xl px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+                      >
+                        Log out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-4 md:hidden">
+          {allNavItems.map((item) => {
+            const active = isActive(item.href);
+            const unlocked = isUnlocked(item);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition ${
+                  active
+                    ? "bg-blue-900 text-white shadow-sm"
+                    : unlocked
+                    ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    : "border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
+                }`}
+              >
+                <span className="inline-flex items-center gap-2">
+                  {item.label}
+                  {!unlocked && <span className="text-xs">🔒</span>}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </header>
+  );
+}
