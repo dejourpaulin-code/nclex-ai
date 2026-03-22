@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
@@ -12,7 +12,7 @@ function normalizeInternalPath(value: string | null) {
   return value;
 }
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -179,5 +179,31 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function CheckoutSuccessPageFallback() {
+  return (
+    <main className="min-h-screen bg-slate-50 px-6 py-20">
+      <div className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-xl">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
+          Payment successful
+        </p>
+
+        <h1 className="mt-4 text-4xl font-black text-slate-900">Loading...</h1>
+
+        <p className="mt-4 text-lg leading-8 text-slate-600">
+          Preparing your success page.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<CheckoutSuccessPageFallback />}>
+      <CheckoutSuccessPageInner />
+    </Suspense>
   );
 }
