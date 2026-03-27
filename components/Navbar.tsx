@@ -43,6 +43,7 @@ const allNavItems: NavItem[] = [
   { href: "/lecture", label: "Lecture Mode", requires: "lecture" },
   { href: "/lecture/live-full", label: "Live Full", requires: "liveFull" },
   { href: "/lecture/stream", label: "Stream v2", requires: "lecture" },
+  { href: "/account", label: "Account" },
 ];
 
 const guestFeatures: AccessResponse["features"] = {
@@ -204,6 +205,14 @@ export default function Navbar() {
                 >
                   Log in
                 </Link>
+
+                <Link
+  href="/account"
+  className="block rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-slate-100"
+  onClick={() => setMenuOpen(false)}
+>
+  Account
+</Link>
 
                 <Link
                   href="/checkout?plan=starter-monthly&source=navbar-guest"
