@@ -34,11 +34,6 @@ function CheckoutSuccessPageInner() {
           data: { user },
         } = await supabase.auth.getUser();
 
-        if (!user) {
-          router.replace(`/signup?session_id=${encodeURIComponent(sessionId)}`);
-          return;
-        }
-
         const sessionRes = await fetch("/api/checkout/session-details", {
           method: "POST",
           headers: {
@@ -96,6 +91,19 @@ function CheckoutSuccessPageInner() {
         }).catch(() => {
           //
         });
+
+        if (!user) {
+          setTrackingStatus(
+            "Payment confirmed. Your access has been recorded. Log in or create an account with the same email you used at checkout."
+          );
+          setRedirectReady(true);
+
+          window.setTimeout(() => {
+            router.replace("/login");
+          }, 1800);
+
+          return;
+        }
 
         setTrackingStatus("Access granted successfully. Redirecting you now...");
         setRedirectReady(true);
@@ -167,7 +175,7 @@ function CheckoutSuccessPageInner() {
             href={returnTo}
             className="rounded-2xl bg-orange-500 px-6 py-4 font-semibold text-white transition hover:bg-orange-600"
           >
-            {redirectReady ? "Open Unlocked Feature" : "Continue"}
+            {redirectReady ? "Continue" : "Open App"}
           </a>
 
           <a

@@ -54,6 +54,14 @@ export async function POST(req: Request) {
       currency: session.currency || "usd",
       customerId:
         typeof session.customer === "string" ? session.customer : null,
+      customerEmail:
+        typeof session.customer_details?.email === "string"
+          ? session.customer_details.email
+          : typeof session.metadata?.guestEmail === "string" && session.metadata.guestEmail.trim()
+          ? session.metadata.guestEmail.trim()
+          : typeof session.metadata?.email === "string" && session.metadata.email.trim()
+          ? session.metadata.email.trim()
+          : null,
     });
   } catch (error: any) {
     console.error("SESSION DETAILS ROUTE ERROR:", {

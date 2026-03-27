@@ -160,10 +160,11 @@ export async function POST(req: Request) {
       ],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      customer_email: !userId ? email || undefined : undefined,
+      customer_email: email || undefined,
       metadata: {
         userId: userId || "",
         email: email || "",
+        guestEmail: email || "",
         plan: rawPlan,
         source,
         accessLevel: selectedPlan.accessLevel,

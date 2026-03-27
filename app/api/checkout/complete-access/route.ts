@@ -166,6 +166,8 @@ export async function POST(req: Request) {
     const guestEmail =
       typeof session.metadata?.guestEmail === "string" && session.metadata.guestEmail.trim()
         ? session.metadata.guestEmail.trim().toLowerCase()
+        : typeof session.metadata?.email === "string" && session.metadata.email.trim()
+        ? session.metadata.email.trim().toLowerCase()
         : typeof session.customer_details?.email === "string" && session.customer_details.email.trim()
         ? session.customer_details.email.trim().toLowerCase()
         : null;
