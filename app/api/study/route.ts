@@ -3,6 +3,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
+
+// Allow up to 15 MB for file uploads
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -124,11 +129,11 @@ async function blobToBase64(blob: Blob) {
 }
 
 async function extractPdfTextFromBlob(blob: Blob) {
-  const buffer = await blobToBuffer(blob);
-
   try {
     const { PDFParse } = await import("pdf-parse");
-    const parser = new PDFParse({ data: buffer });
+    const arrayBuffer = await blob.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuffer);
+    const parser = new PDFParse({ data: uint8 });
     const result = await parser.getText();
     await parser.destroy();
 
@@ -309,11 +314,12 @@ export async function POST(req: Request) {
 
       try {
         extractedPdfText = (await extractPdfTextFromBlob(fileBlob)).slice(0, 45000);
-      } catch {
+      } catch (pdfErr: any) {
+        console.error("PDF PARSE FAILED:", pdfErr);
         return NextResponse.json(
           {
             error:
-              "The PDF could not be read. Make sure the PDF is text-based and not just an image scan.",
+              "The PDF could not be read. Make sure it is a text-based PDF and not a scanned image.",
           },
           { status: 500 }
         );
