@@ -14,8 +14,6 @@ const QUICK_PROMPTS = [
   "Lexi, tell me what I absolutely need to memorize here.",
 ];
 
-const STUDY_BUCKET = "study-uploads";
-
 type AccessResponse = {
   loggedIn: boolean;
   accessLevel: string;
@@ -193,31 +191,37 @@ export default function StudyPage() {
     setImage(null);
   }
 
-  function sanitizeFileName(name: string) {
-    return name.replace(/[^a-zA-Z0-9._-]/g, "-");
-  }
-
   async function uploadToStudyBucket(uploadFile: File, folder: "pdfs" | "images") {
     if (!userId) {
       throw new Error("You must be logged in to upload files.");
     }
 
-    const safeName = sanitizeFileName(uploadFile.name);
-    const path = `${userId}/${folder}/${Date.now()}-${safeName}`;
+    // Get a signed upload URL from the server (uses service role key, bypasses RLS)
+    const signRes = await fetch("/api/study/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, fileName: uploadFile.name, folder }),
+    });
 
-    const { data, error } = await supabase.storage
-      .from(STUDY_BUCKET)
-      .upload(path, uploadFile, {
-        cacheControl: "3600",
-        upsert: false,
-        contentType: uploadFile.type || undefined,
-      });
-
-    if (error || !data?.path) {
-      throw new Error(error?.message || "Upload failed.");
+    if (!signRes.ok) {
+      const err = await signRes.json();
+      throw new Error(err.error || "Failed to get upload URL.");
     }
 
-    return data.path;
+    const { signedUrl, path } = await signRes.json();
+
+    // Upload directly to Supabase storage (file never goes through Vercel)
+    const uploadRes = await fetch(signedUrl, {
+      method: "PUT",
+      headers: { "Content-Type": uploadFile.type || "application/octet-stream" },
+      body: uploadFile,
+    });
+
+    if (!uploadRes.ok) {
+      throw new Error("Upload to storage failed.");
+    }
+
+    return path as string;
   }
 
   const lexiMood = useMemo(() => {
@@ -320,7 +324,8 @@ export default function StudyPage() {
           return;
         }
 
-        formData.append("file", file, file.name);
+        const uploadedPdfPath = await uploadToStudyBucket(file, "pdfs");
+        formData.append("filePath", uploadedPdfPath);
         formData.append("fileName", file.name);
         formData.append("fileType", file.type || "application/pdf");
       }
@@ -332,7 +337,8 @@ export default function StudyPage() {
           return;
         }
 
-        formData.append("image", image, image.name);
+        const uploadedImagePath = await uploadToStudyBucket(image, "images");
+        formData.append("imagePath", uploadedImagePath);
         formData.append("imageName", image.name);
         formData.append("imageType", image.type || "image/png");
       }

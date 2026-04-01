@@ -236,15 +236,15 @@ export async function POST(req: Request) {
     const incomingConversationId =
       String(formData.get("conversationId") || "").trim() || null;
 
-    const fileBlob = formData.get("file") as File | null;
+    const filePath = String(formData.get("filePath") || "").trim() || null;
     const fileName = String(formData.get("fileName") || "").trim() || null;
     const fileType = String(formData.get("fileType") || "").trim() || "application/pdf";
 
-    const imageBlob = formData.get("image") as File | null;
+    const imagePath = String(formData.get("imagePath") || "").trim() || null;
     const imageName = String(formData.get("imageName") || "").trim() || null;
     const imageType = String(formData.get("imageType") || "").trim() || "image/png";
 
-    if (!fileBlob && !imageBlob && !question) {
+    if (!filePath && !imagePath && !question) {
       return NextResponse.json({ error: "No input provided." }, { status: 400 });
     }
 
@@ -276,7 +276,8 @@ export async function POST(req: Request) {
       await saveMessage(conversationId, "user", userMessageSummary);
     }
 
-    if (imageBlob) {
+    if (imagePath) {
+      const imageBlob = await downloadStoredAsset(imagePath);
       const base64 = await blobToBase64(imageBlob);
 
       const completion = await client.chat.completions.create({
@@ -318,7 +319,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ reply, conversationId });
     }
 
-    if (fileBlob) {
+    if (filePath) {
       if (!fileType.toLowerCase().includes("pdf") && !String(fileName || "").toLowerCase().endsWith(".pdf")) {
         return NextResponse.json(
           { error: "Only PDF files are supported in the PDF upload box." },
@@ -329,7 +330,8 @@ export async function POST(req: Request) {
       let extractedPdfText = "";
 
       try {
-        extractedPdfText = (await extractPdfTextFromBlob(fileBlob)).slice(0, 45000);
+        const pdfBlob = await downloadStoredAsset(filePath);
+        extractedPdfText = (await extractPdfTextFromBlob(pdfBlob)).slice(0, 45000);
       } catch (pdfErr: any) {
         console.error("PDF PARSE FAILED:", pdfErr);
         return NextResponse.json(
