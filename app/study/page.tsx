@@ -263,6 +263,11 @@ export default function StudyPage() {
       return;
     }
 
+if (file && image) {
+  setResponse("Please upload either one PDF or one image, not both at the same time.");
+  return;
+}
+
     setLoading(true);
     setResponse("");
 
@@ -677,7 +682,13 @@ export default function StudyPage() {
                   <input
                     type="file"
                     accept=".pdf,application/pdf"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+  const selected = e.target.files?.[0] || null;
+  setFile(selected);
+  if (selected) {
+    setImage(null);
+  }
+}}
                     className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-slate-900"
                   />
 
@@ -711,7 +722,13 @@ export default function StudyPage() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setImage(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+  const selected = e.target.files?.[0] || null;
+  setImage(selected);
+  if (selected) {
+    setFile(null);
+  }
+}}
                     className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-slate-900"
                   />
 

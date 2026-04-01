@@ -1,27 +1,17 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import pdfParse from "pdf-parse";
 
 export const runtime = "nodejs";
 
-const openAiKey = process.env.OPENAI_API_KEY;
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!openAiKey) {
-  throw new Error("Missing OPENAI_API_KEY.");
-}
-
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  throw new Error("Missing Supabase environment variables.");
-}
-
 const client = new OpenAI({
-  apiKey: openAiKey,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 type ChatRole = "user" | "assistant";
 
@@ -34,7 +24,7 @@ function buildStudyTitle(
   question: string,
   file?: File | null,
   image?: File | null
-) {
+): string {
   if (question.trim()) return question.slice(0, 80);
   if (file) return `Study: ${file.name}`.slice(0, 80);
   if (image) return `Image Study: ${image.name}`.slice(0, 80);
@@ -82,7 +72,7 @@ Memory help
 Quick review checklist
 
 Keep it readable, organized, and detailed.
-`.trim();
+    `.trim();
   }
 
   if (mode === "image") {
@@ -95,7 +85,7 @@ Rules:
 - No hashtags.
 - No asterisks.
 - Be clear, practical, and easy to study from.
-`.trim();
+    `.trim();
   }
 
   return `
@@ -107,29 +97,45 @@ Rules:
 - No hashtags.
 - No asterisks.
 - Be clear, practical, and useful.
-`.trim();
+  `.trim();
 }
 
 async function extractPdfText(file: File) {
   const bytes = Buffer.from(await file.arrayBuffer());
 
   try {
-    const result = await pdfParse(bytes);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    require("pdf-parse/worker");
 
-    const text = String(result?.text || "")
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const workerModule = require("pdf-parse/worker");
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const pdfParseModule = require("pdf-parse");
+
+    const CanvasFactory = workerModule?.CanvasFactory;
+    const PDFParse = pdfParseModule?.PDFParse;
+
+    if (typeof PDFParse !== "function") {
+      console.error("BAD PDF MODULE:", pdfParseModule);
+      throw new Error("pdf-parse did not expose PDFParse.");
+    }
+
+    const parser =
+      typeof CanvasFactory === "function"
+        ? new PDFParse({ data: bytes, CanvasFactory })
+        : new PDFParse({ data: bytes });
+
+    const result = await parser.getText();
+
+    if (typeof parser.destroy === "function") {
+      await parser.destroy().catch(() => {});
+    }
+
+    return String(result?.text || "")
       .replace(/\r/g, "\n")
-      .replace(/[ \t]+\n/g, "\n")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
-
-    console.log("PDF parsed successfully:", {
-      name: file.name,
-      size: file.size,
-      textLength: text.length,
-      preview: text.slice(0, 300),
-    });
-
-    return text;
   } catch (error) {
     console.error("PDF EXTRACT ERROR:", error);
     throw error;
@@ -173,7 +179,6 @@ async function ensureConversation({
     .single();
 
   if (error || !data?.id) {
-    console.error("CONVERSATION CREATE ERROR:", error);
     throw new Error("Failed to create conversation.");
   }
 
@@ -187,15 +192,11 @@ async function saveMessage(
 ) {
   if (!content.trim()) return;
 
-  const { error } = await supabase.from("lexi_messages").insert({
+  await supabase.from("lexi_messages").insert({
     conversation_id: conversationId,
     role,
     content,
   });
-
-  if (error) {
-    console.error("SAVE MESSAGE ERROR:", error);
-  }
 }
 
 function historyToChatMessages(history: { role: ChatRole; content: string }[]) {
@@ -220,21 +221,11 @@ export async function POST(req: Request) {
     const incomingConversationId =
       String(formData.get("conversationId") || "").trim() || null;
 
-    console.log("STUDY ROUTE HIT:", {
-      hasFile: !!file,
-      hasImage: !!image,
-      hasQuestion: !!question,
-      fileName: file?.name || null,
-      imageName: image?.name || null,
-      userId,
-      incomingConversationId,
-    });
-
     if (!file && !image && !question) {
       return NextResponse.json({ error: "No input provided." }, { status: 400 });
     }
 
-    const title = buildStudyTitle(question, file, image);
+    const title: string = buildStudyTitle(question, file, image);
 
     let conversationId: string | null = incomingConversationId;
 
@@ -272,7 +263,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "The PDF could not be read in production. Try a normal text-based PDF, or paste the text directly into Lexi.",
+              "The PDF could not be read. Make sure pdf-parse and @napi-rs/canvas are installed, and that the file is a readable text-based PDF.",
           },
           { status: 500 }
         );
@@ -282,7 +273,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "This PDF did not return readable text. It may be scanned, image-only, or empty. Try uploading a text-based PDF or use an image upload flow with OCR/vision support.",
+              "This PDF did not return readable text. It may be image-only or empty.",
           },
           { status: 400 }
         );
@@ -328,7 +319,7 @@ export async function POST(req: Request) {
                 },
               },
             ],
-          },
+          } as any,
         ],
       });
 
@@ -364,7 +355,7 @@ ${effectiveQuestion}
 
 PDF content:
 ${extractedPdfText}
-`.trim(),
+            `.trim(),
           },
         ],
       });
@@ -410,7 +401,6 @@ ${extractedPdfText}
     return NextResponse.json({ error: "No input provided." }, { status: 400 });
   } catch (err) {
     console.error("STUDY ROUTE ERROR:", err);
-
     return NextResponse.json(
       { error: "Failed to process request." },
       { status: 500 }
