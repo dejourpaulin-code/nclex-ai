@@ -130,30 +130,12 @@ async function blobToBase64(blob: Blob) {
 
 async function extractPdfTextFromBlob(blob: Blob) {
   try {
-    const arrayBuffer = await blob.arrayBuffer();
-    const data = new Uint8Array(arrayBuffer);
+    const buffer = Buffer.from(await blob.arrayBuffer());
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pdfParse = require("pdf-parse");
+    const result = await pdfParse(buffer);
 
-    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs") as any;
-    pdfjs.GlobalWorkerOptions.workerSrc = "";
-
-    const loadingTask = pdfjs.getDocument({ data, verbosity: 0 });
-    const doc = await loadingTask.promise;
-
-    const pages: string[] = [];
-    for (let i = 1; i <= doc.numPages; i++) {
-      const page = await doc.getPage(i);
-      const content = await page.getTextContent();
-      const pageText = (content.items as any[])
-        .filter((item) => "str" in item)
-        .map((item) => item.str)
-        .join(" ");
-      if (pageText.trim()) pages.push(pageText);
-    }
-
-    await doc.destroy();
-
-    return pages
-      .join("\n\n")
+    return String(result?.text || "")
       .replace(/\r/g, "\n")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
