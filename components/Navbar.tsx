@@ -156,7 +156,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 overflow-visible border-b border-slate-200/80 bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_rgba(15,23,42,0.08)]">
-      <div className="mx-auto max-w-[1500px] px-6 xl:px-10">
+      <div className="mx-auto max-w-7xl px-6 xl:px-10">
         <div className="flex min-h-[84px] items-center justify-between py-4">
           <Link href="/" className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-900 to-orange-500 text-lg font-bold text-white shadow-md">

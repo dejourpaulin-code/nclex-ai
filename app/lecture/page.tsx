@@ -290,7 +290,7 @@ export default function LectureHubPage() {
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
       <Navbar />
 
-      <section className="mx-auto max-w-[1500px] px-6 py-12 xl:px-10">
+      <section className="mx-auto max-w-7xl px-6 py-12 xl:px-10">
         <div className="grid gap-10 xl:grid-cols-[1.05fr_0.95fr] xl:items-center">
           <Reveal>
             <div>
@@ -455,7 +455,7 @@ export default function LectureHubPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1500px] px-6 pb-20 xl:px-10">
+      <section className="mx-auto max-w-7xl px-6 pb-20 xl:px-10">
         <Reveal>
           <div className="mb-10 max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700">
@@ -513,7 +513,7 @@ export default function LectureHubPage() {
       </section>
 
       <section className="border-y border-slate-200 bg-white">
-        <div className="mx-auto max-w-[1500px] px-6 py-16 xl:px-10">
+        <div className="mx-auto max-w-7xl px-6 py-16 xl:px-10">
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <Reveal>
               <div>
@@ -543,7 +543,7 @@ export default function LectureHubPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1500px] px-6 py-20 xl:px-10">
+      <section className="mx-auto max-w-7xl px-6 py-20 xl:px-10">
         <Reveal>
           <div className="rounded-[36px] border border-blue-100 bg-white p-8 shadow-2xl md:p-10 transition duration-500 hover:shadow-[0_30px_80px_rgba(15,23,42,0.12)]">
             <div className="mb-10 max-w-3xl">
@@ -576,7 +576,7 @@ export default function LectureHubPage() {
         </Reveal>
       </section>
 
-      <section className="mx-auto max-w-[1500px] px-6 pb-24 xl:px-10">
+      <section className="mx-auto max-w-7xl px-6 pb-24 xl:px-10">
         <Reveal>
           <div className="overflow-hidden rounded-[40px] bg-gradient-to-r from-blue-950 via-blue-900 to-orange-600 p-10 text-white shadow-2xl transition duration-500 hover:shadow-[0_30px_90px_rgba(15,23,42,0.25)] md:p-14">
             <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-center">

@@ -451,7 +451,7 @@ export default function HistoryPage() {
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
       <Navbar />
 
-      <section className="mx-auto max-w-[1500px] px-6 py-10 xl:px-10">
+      <section className="mx-auto max-w-7xl px-6 py-10 xl:px-10">
         <div className="mb-10 grid gap-8 xl:grid-cols-[1.1fr_0.9fr] xl:items-end">
           <div>
             <div className="mb-4 inline-flex items-center rounded-full border border-blue-200 bg-blue-100 px-4 py-1 text-sm font-medium text-blue-800">

@@ -674,7 +674,7 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
       <Navbar />
 
-      <section className="mx-auto max-w-[1600px] px-6 py-8 xl:px-10">
+      <section className="mx-auto max-w-7xl px-6 py-8 xl:px-10">
         <div className="mb-8 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="mb-4 inline-flex items-center rounded-full border border-blue-200 bg-blue-100 px-4 py-1 text-sm font-medium text-blue-800">
@@ -748,7 +748,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
               </div>
-            </div><div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(380px,0.95fr)]">
+            </div><div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)]">
               <div className="grid gap-6">
                 <div className="rounded-3xl border border-blue-100 bg-white p-6 shadow-xl">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
