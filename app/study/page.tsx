@@ -320,8 +320,7 @@ export default function StudyPage() {
           return;
         }
 
-        const uploadedPdfPath = await uploadToStudyBucket(file, "pdfs");
-        formData.append("filePath", uploadedPdfPath);
+        formData.append("file", file, file.name);
         formData.append("fileName", file.name);
         formData.append("fileType", file.type || "application/pdf");
       }
@@ -333,8 +332,7 @@ export default function StudyPage() {
           return;
         }
 
-        const uploadedImagePath = await uploadToStudyBucket(image, "images");
-        formData.append("imagePath", uploadedImagePath);
+        formData.append("image", image, image.name);
         formData.append("imageName", image.name);
         formData.append("imageType", image.type || "image/png");
       }

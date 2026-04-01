@@ -215,15 +215,15 @@ export async function POST(req: Request) {
     const incomingConversationId =
       String(formData.get("conversationId") || "").trim() || null;
 
-    const filePath = String(formData.get("filePath") || "").trim() || null;
+    const fileBlob = formData.get("file") as File | null;
     const fileName = String(formData.get("fileName") || "").trim() || null;
     const fileType = String(formData.get("fileType") || "").trim() || "application/pdf";
 
-    const imagePath = String(formData.get("imagePath") || "").trim() || null;
+    const imageBlob = formData.get("image") as File | null;
     const imageName = String(formData.get("imageName") || "").trim() || null;
     const imageType = String(formData.get("imageType") || "").trim() || "image/png";
 
-    if (!filePath && !imagePath && !question) {
+    if (!fileBlob && !imageBlob && !question) {
       return NextResponse.json({ error: "No input provided." }, { status: 400 });
     }
 
@@ -255,8 +255,7 @@ export async function POST(req: Request) {
       await saveMessage(conversationId, "user", userMessageSummary);
     }
 
-    if (imagePath) {
-      const imageBlob = await downloadStoredAsset(imagePath);
+    if (imageBlob) {
       const base64 = await blobToBase64(imageBlob);
 
       const completion = await client.chat.completions.create({
@@ -298,7 +297,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ reply, conversationId });
     }
 
-    if (filePath) {
+    if (fileBlob) {
       if (!fileType.toLowerCase().includes("pdf") && !String(fileName || "").toLowerCase().endsWith(".pdf")) {
         return NextResponse.json(
           { error: "Only PDF files are supported in the PDF upload box." },
@@ -309,8 +308,7 @@ export async function POST(req: Request) {
       let extractedPdfText = "";
 
       try {
-        const pdfBlob = await downloadStoredAsset(filePath);
-        extractedPdfText = (await extractPdfTextFromBlob(pdfBlob)).slice(0, 45000);
+        extractedPdfText = (await extractPdfTextFromBlob(fileBlob)).slice(0, 45000);
       } catch {
         return NextResponse.json(
           {
