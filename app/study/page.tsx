@@ -779,7 +779,8 @@ export default function StudyPage() {
       </section>
     </main>
   );
-}    return (
+
+  return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
       <Navbar />
 
@@ -929,7 +930,7 @@ export default function StudyPage() {
                 />
                 <div className="mt-3 rounded-xl border border-blue-100 bg-white px-3 py-2">
                   {file ? (
-                    <p className="truncate text-xs font-medium text-blue-800">{file.name}</p>
+                    <p className="truncate text-xs font-medium text-blue-800">{file?.name}</p>
                   ) : (
                     <p className="text-xs text-slate-400">No PDF selected — add a lecture, note packet, or handout.</p>
                   )}
@@ -954,7 +955,7 @@ export default function StudyPage() {
                 />
                 <div className="mt-3 rounded-xl border border-orange-100 bg-white px-3 py-2">
                   {image ? (
-                    <p className="truncate text-xs font-medium text-orange-800">{image.name}</p>
+                    <p className="truncate text-xs font-medium text-orange-800">{image?.name}</p>
                   ) : (
                     <p className="text-xs text-slate-400">No image selected — add a screenshot, worksheet, or assignment.</p>
                   )}
