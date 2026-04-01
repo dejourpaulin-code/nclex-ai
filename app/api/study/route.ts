@@ -127,9 +127,10 @@ async function extractPdfTextFromBlob(blob: Blob) {
   const buffer = await blobToBuffer(blob);
 
   try {
-    const pdfParseModule: any = await import("pdf-parse");
-    const pdfParse = pdfParseModule?.default || pdfParseModule;
-    const result = await pdfParse(buffer);
+    const { PDFParse } = await import("pdf-parse");
+    const parser = new PDFParse({ data: buffer });
+    const result = await parser.getText();
+    await parser.destroy();
 
     return String(result?.text || "")
       .replace(/\r/g, "\n")
