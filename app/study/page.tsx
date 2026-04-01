@@ -14,6 +14,8 @@ const QUICK_PROMPTS = [
   "Lexi, tell me what I absolutely need to memorize here.",
 ];
 
+const STUDY_BUCKET = "study-uploads";
+
 type AccessResponse = {
   loggedIn: boolean;
   accessLevel: string;
@@ -191,6 +193,33 @@ export default function StudyPage() {
     setImage(null);
   }
 
+  function sanitizeFileName(name: string) {
+    return name.replace(/[^a-zA-Z0-9._-]/g, "-");
+  }
+
+  async function uploadToStudyBucket(uploadFile: File, folder: "pdfs" | "images") {
+    if (!userId) {
+      throw new Error("You must be logged in to upload files.");
+    }
+
+    const safeName = sanitizeFileName(uploadFile.name);
+    const path = `${userId}/${folder}/${Date.now()}-${safeName}`;
+
+    const { data, error } = await supabase.storage
+      .from(STUDY_BUCKET)
+      .upload(path, uploadFile, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: uploadFile.type || undefined,
+      });
+
+    if (error || !data?.path) {
+      throw new Error(error?.message || "Upload failed.");
+    }
+
+    return data.path;
+  }
+
   const lexiMood = useMemo(() => {
     if (loading) {
       return {
@@ -263,10 +292,10 @@ export default function StudyPage() {
       return;
     }
 
-if (file && image) {
-  setResponse("Please upload either one PDF or one image, not both at the same time.");
-  return;
-}
+    if (file && image) {
+      setResponse("Please upload either one PDF or one image, not both at the same time.");
+      return;
+    }
 
     setLoading(true);
     setResponse("");
@@ -274,16 +303,40 @@ if (file && image) {
     try {
       const formData = new FormData();
 
-      if (file) formData.append("file", file);
-      if (image) formData.append("image", image);
-      formData.append("question", question);
-
       if (userId) {
         formData.append("userId", userId);
       }
 
       if (conversationId) {
         formData.append("conversationId", conversationId);
+      }
+
+      formData.append("question", question);
+
+      if (file) {
+        if (file.size > 10 * 1024 * 1024) {
+          setResponse("That PDF is too large right now. Please keep it under 10 MB.");
+          setLoading(false);
+          return;
+        }
+
+        const uploadedPdfPath = await uploadToStudyBucket(file, "pdfs");
+        formData.append("filePath", uploadedPdfPath);
+        formData.append("fileName", file.name);
+        formData.append("fileType", file.type || "application/pdf");
+      }
+
+      if (image) {
+        if (image.size > 10 * 1024 * 1024) {
+          setResponse("That image is too large right now. Please keep it under 10 MB.");
+          setLoading(false);
+          return;
+        }
+
+        const uploadedImagePath = await uploadToStudyBucket(image, "images");
+        formData.append("imagePath", uploadedImagePath);
+        formData.append("imageName", image.name);
+        formData.append("imageType", image.type || "image/png");
       }
 
       const res = await fetch("/api/study", {
@@ -308,8 +361,8 @@ if (file && image) {
       if (userId) {
         await loadStudyHistory(userId);
       }
-    } catch {
-      setResponse("Failed to connect to the server.");
+    } catch (error: any) {
+      setResponse(error?.message || "Failed to connect to the server.");
     }
 
     setLoading(false);
@@ -659,7 +712,7 @@ if (file && image) {
                 <div>
                   <h2 className="text-2xl font-bold">Upload your material</h2>
                   <p className="mt-2 text-sm text-slate-500">
-                    Add a class PDF, a homework screenshot, or both.
+                    Add a class PDF or a homework screenshot.
                   </p>
                 </div>
 
@@ -683,12 +736,12 @@ if (file && image) {
                     type="file"
                     accept=".pdf,application/pdf"
                     onChange={(e) => {
-  const selected = e.target.files?.[0] || null;
-  setFile(selected);
-  if (selected) {
-    setImage(null);
-  }
-}}
+                      const selected = e.target.files?.[0] || null;
+                      setFile(selected);
+                      if (selected) {
+                        setImage(null);
+                      }
+                    }}
                     className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-slate-900"
                   />
 
@@ -723,12 +776,12 @@ if (file && image) {
                     type="file"
                     accept="image/*"
                     onChange={(e) => {
-  const selected = e.target.files?.[0] || null;
-  setImage(selected);
-  if (selected) {
-    setFile(null);
-  }
-}}
+                      const selected = e.target.files?.[0] || null;
+                      setImage(selected);
+                      if (selected) {
+                        setFile(null);
+                      }
+                    }}
                     className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-slate-900"
                   />
 
