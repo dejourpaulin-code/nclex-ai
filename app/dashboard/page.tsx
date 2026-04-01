@@ -696,7 +696,7 @@ export default function DashboardPage() {
               ⚡ 3 Minute Drill
             </a>
             <a
-              href={topWeakTopic ? `/quiz?topic=${encodeURIComponent(topWeakTopic)}` : "/quiz"}
+              href={topWeakTopic ? `/quiz?topic=${encodeURIComponent(topWeakTopic || "")}` : "/quiz"}
               className="rounded-2xl bg-blue-900 px-5 py-3 font-semibold text-white transition hover:bg-blue-800"
             >
               Practice Weakest Area
@@ -839,7 +839,7 @@ export default function DashboardPage() {
                       Start Today’s Drill
                     </a>
                     <a
-                      href={topWeakTopic ? `/quiz?topic=${encodeURIComponent(topWeakTopic)}` : "/quiz"}
+                      href={topWeakTopic ? `/quiz?topic=${encodeURIComponent(topWeakTopic || "")}` : "/quiz"}
                       className="rounded-2xl bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
                     >
                       Open Guided Quiz
@@ -1081,7 +1081,7 @@ export default function DashboardPage() {
                       </div>
                       {topWeakTopic && (
                         <a
-                          href={`/quiz?topic=${encodeURIComponent(topWeakTopic)}`}
+                          href={`/quiz?topic=${encodeURIComponent(topWeakTopic || "")}`}
                           className="rounded-2xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
                         >
                           Train {topWeakTopic}
@@ -1326,7 +1326,7 @@ export default function DashboardPage() {
                   <h2 className="text-2xl font-bold">Quick Actions</h2>
                   <div className="mt-5 flex flex-col gap-3">
                     <a
-                      href={topWeakTopic ? `/quiz?topic=${encodeURIComponent(topWeakTopic)}` : "/quiz"}
+                      href={topWeakTopic ? `/quiz?topic=${encodeURIComponent(topWeakTopic || "")}` : "/quiz"}
                       className="rounded-2xl bg-blue-900 px-5 py-3 text-center font-semibold text-white transition hover:bg-blue-800"
                     >
                       Generate Weak-Area Quiz
@@ -1373,4 +1373,364 @@ export default function DashboardPage() {
       </section>
     </main>
   );
+
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
+      <Navbar />
+
+      <section className="mx-auto max-w-7xl px-4 py-5 xl:px-8">
+
+        {/* Header */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="mb-1 inline-flex items-center rounded-full border border-blue-200 bg-blue-100 px-3 py-0.5 text-xs font-medium text-blue-800">
+              Personal study dashboard
+            </div>
+            <h1 className="text-2xl font-black tracking-tight">Dashboard</h1>
+            <p className="mt-0.5 text-sm text-slate-500">Track progress, see weak areas, and let Lexi coach your next move.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a href="/drill" className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">⚡ 3 Min Drill</a>
+            <a href={topWeakTopic ? `/quiz?topic=${encodeURIComponent(topWeakTopic || "")}` : "/quiz"} className="rounded-xl bg-blue-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800">Practice Weak Area</a>
+            <a href="/chat" className="rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900 transition hover:bg-blue-50">Ask Lexi</a>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">Loading dashboard...</div>
+        ) : (
+          <>
+            {/* Stats row */}
+            <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <div className="rounded-2xl border border-blue-100 bg-white p-3 shadow-sm">
+                <p className="text-xs text-slate-500">Answered</p>
+                <p className="mt-1 text-3xl font-black">{totalAnswered}</p>
+              </div>
+              <div className="rounded-2xl border border-orange-100 bg-white p-3 shadow-sm">
+                <p className="text-xs text-slate-500">Correct</p>
+                <p className="mt-1 text-3xl font-black">{totalCorrect}</p>
+              </div>
+              <div className="rounded-2xl border border-emerald-100 bg-white p-3 shadow-sm">
+                <p className="text-xs text-slate-500">Accuracy</p>
+                <p className="mt-1 text-3xl font-black">{accuracy}%</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                <p className="text-xs text-slate-500">Top Weak Area</p>
+                <p className="mt-1 text-lg font-black leading-tight">{topWeakTopic || "None yet"}</p>
+              </div>
+              <div className="rounded-2xl border border-purple-100 bg-white p-3 shadow-sm">
+                <p className="text-xs text-slate-500">NCLEX Readiness</p>
+                <div className="mt-1 flex items-end gap-2">
+                  <p className="text-3xl font-black">{readinessScore}%</p>
+                  <span className={`mb-0.5 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white ${readinessColor}`}>{readinessLabel}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Main grid */}
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
+
+              {/* Left column */}
+              <div className="space-y-4">
+
+                {/* Lexi Coach */}
+                <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex-1">
+                      <div className="mb-1.5 inline-flex rounded-full border border-orange-200 bg-orange-100 px-2.5 py-0.5 text-xs font-semibold text-orange-700">{lexiCoach.mood}</div>
+                      <h2 className="text-base font-bold">{lexiCoach.title}</h2>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">{lexiCoach.message}</p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <a href={lexiCoach.primaryHref} className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">{lexiCoach.primaryLabel}</a>
+                      <a href={lexiCoach.secondaryHref} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">{lexiCoach.secondaryLabel}</a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Study Plan + Memory Brain side by side */}
+                <div className="grid gap-4 md:grid-cols-2">
+
+                  {/* Study Planner */}
+                  <div className="rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <div>
+                        <div className="mb-1 inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">AI Study Planner</div>
+                        <h2 className="text-sm font-bold">{studyPlanLoading ? "Building plan..." : studyPlan?.headline || "Today's Plan"}</h2>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700">{studyPlan?.studyMode || "Tutor Mode"}</span>
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800">{studyPlan?.estimatedMinutes || 15} min</span>
+                      </div>
+                    </div>
+                    <p className="mb-3 text-xs leading-5 text-slate-500">{studyPlanLoading ? "Lexi is analyzing your data..." : studyPlan?.coachMessage || "Lexi will generate your plan here."}</p>
+                    <div className="space-y-2">
+                      {(studyPlan?.tasks || ["Run a short targeted quiz.", "Review one weak topic with Lexi.", "Finish with a confidence-building mixed set."]).map((task, index) => (
+                        <div key={index} className="flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white">{index + 1}</div>
+                          <p className="text-xs leading-5 text-slate-700">{task}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <a href="/drill" className="rounded-xl bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-600">Start Drill</a>
+                      <a href={topWeakTopic ? `/quiz?topic=${encodeURIComponent(topWeakTopic || "")}` : "/quiz"} className="rounded-xl bg-blue-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800">Guided Quiz</a>
+                      <a href="/study" className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 transition hover:bg-slate-100">Study With Lexi</a>
+                    </div>
+                  </div>
+
+                  {/* Memory Brain */}
+                  <div className="rounded-2xl border border-cyan-100 bg-white p-4 shadow-sm">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <div>
+                        <div className="mb-1 inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-0.5 text-xs font-semibold text-cyan-700">Lexi Memory Brain</div>
+                        <h2 className="text-sm font-bold">{lexiEmotion.emoji} {lexiEmotion.label}</h2>
+                      </div>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">Focus: {memoryBrain?.focusTopic || topWeakTopic || "General"}</span>
+                    </div>
+                    <p className="mb-3 text-xs leading-5 text-slate-500">{lexiEmotion.message}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+                        <p className="mb-1.5 text-xs font-bold text-emerald-700">Improving</p>
+                        <div className="space-y-1">
+                          {(memoryBrain?.wins || ["Still building data."]).map((item, i) => (
+                            <p key={i} className="text-xs leading-5 text-slate-700">{item}</p>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-orange-100 bg-orange-50 p-3">
+                        <p className="mb-1.5 text-xs font-bold text-orange-700">Watching</p>
+                        <div className="space-y-1">
+                          {(memoryBrain?.watchouts || ["No watchouts yet."]).map((item, i) => (
+                            <p key={i} className="text-xs leading-5 text-slate-700">{item}</p>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+                      {memoryBrain?.summary || "Lexi is still learning your study patterns."}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Readiness + Pass Predictor side by side */}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-2xl border border-purple-100 bg-white p-4 shadow-sm">
+                    <div className="mb-2 flex items-center justify-between">
+                      <h2 className="text-sm font-bold">Readiness Engine</h2>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">Live</span>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
+                        <span>NCLEX Readiness</span><span>{readinessScore}%</span>
+                      </div>
+                      <div className="h-3 overflow-hidden rounded-full bg-slate-200">
+                        <div className={`h-full rounded-full ${readinessColor}`} style={{ width: `${readinessScore}%` }} />
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-slate-500">Currently in the <span className="font-semibold text-slate-800">{readinessLabel}</span> zone.</p>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div className="rounded-xl border border-blue-100 bg-blue-50 p-2">
+                        <p className="text-[10px] text-slate-500">Strongest Topic</p>
+                        <p className="mt-0.5 text-xs font-bold text-slate-900">{strongestTopic?.topic || "Still building"}</p>
+                      </div>
+                      <div className="rounded-xl border border-orange-100 bg-orange-50 p-2">
+                        <p className="text-[10px] text-slate-500">Biggest Risk</p>
+                        <p className="mt-0.5 text-xs font-bold text-slate-900">{topWeakTopic || "None yet"}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-fuchsia-100 bg-white p-4 shadow-sm">
+                    <div className="mb-2 flex items-center justify-between">
+                      <h2 className="text-sm font-bold">Pass Predictor</h2>
+                      <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-700">{passPrediction?.label || "Estimating"}</span>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
+                        <span>Pass Probability</span><span>{passPrediction?.probability ?? 0}%</span>
+                      </div>
+                      <div className="h-3 overflow-hidden rounded-full bg-slate-200">
+                        <div className="h-full rounded-full bg-fuchsia-600" style={{ width: `${passPrediction?.probability ?? 0}%` }} />
+                      </div>
+                    </div>
+                    <div className="mt-2 space-y-1.5">
+                      {(passPrediction?.reasons || ["Lexi is gathering data to estimate your pass probability."]).map((reason, i) => (
+                        <div key={i} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">{reason}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recent Performance */}
+                <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+                  <h2 className="mb-2 text-sm font-bold">Recent Performance <span className="font-normal text-slate-400 text-xs">— last 10 answers</span></h2>
+                  {recentTrend.length === 0 ? (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-400">No recent data yet.</div>
+                  ) : (
+                    <div className="flex h-32 items-end gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      {recentTrend.map((item) => (
+                        <div key={item.label} className="flex flex-1 flex-col items-center gap-1">
+                          <div className={`w-full rounded-t-lg ${item.isCorrect ? "bg-emerald-500" : "bg-orange-400"}`} style={{ height: `${item.value}%` }} />
+                          <span className="text-[10px] text-slate-400">{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Weak-Area Heatmap */}
+                <div className="rounded-2xl border border-orange-100 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-sm font-bold">Weak-Area Heatmap</h2>
+                    {topWeakTopic && (
+                      <a href={`/quiz?topic=${encodeURIComponent(topWeakTopic || "")}`} className="rounded-xl bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-600">Train {topWeakTopic}</a>
+                    )}
+                  </div>
+                  {heatmapRows.length === 0 ? (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-400">No weak-area data yet. Practice a few questions first.</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {heatmapRows.map((area) => (
+                        <div key={area.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <div>
+                              <p className="text-xs font-semibold text-slate-900">{area.topic}</p>
+                              <p className="text-[10px] text-slate-500">{area.totalAttempts} attempts · {area.correct} correct · {area.misses} misses</p>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold text-white ${area.heatColor}`}>{area.heatLabel}</span>
+                              <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600">{area.missRate}%</span>
+                            </div>
+                          </div>
+                          <div className="mb-1 grid grid-cols-2 gap-2">
+                            <div>
+                              <div className="mb-1 flex justify-between text-[10px] text-slate-400"><span>Weakness</span><span>{area.missRate}%</span></div>
+                              <div className="h-2 overflow-hidden rounded-full bg-slate-200"><div className={`h-full rounded-full ${area.heatColor}`} style={{ width: `${area.missRate}%` }} /></div>
+                            </div>
+                            <div>
+                              <div className="mb-1 flex justify-between text-[10px] text-slate-400"><span>Mastery</span><span>{area.mastery}%</span></div>
+                              <div className="h-2 overflow-hidden rounded-full bg-blue-100"><div className="h-full rounded-full bg-blue-600" style={{ width: `${area.mastery}%` }} /></div>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex gap-2">
+                            <a href={`/quiz?topic=${encodeURIComponent(area.topic)}`} className="rounded-xl bg-blue-900 px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-blue-800">Practice</a>
+                            <a href="/chat" className="rounded-xl border border-slate-300 bg-white px-3 py-1 text-[10px] font-semibold text-slate-700 transition hover:bg-slate-100">Ask Lexi</a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Unlocked Gear */}
+                <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+                  <h2 className="mb-3 text-sm font-bold">Unlocked Gear</h2>
+                  {unlocks.length === 0 ? (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-400">No unlocks yet. Answer more questions to start collecting gear.</div>
+                  ) : (
+                    <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+                      {unlocks.map((item) => (
+                        <div key={item.id} className={`rounded-xl border p-3 ${item.equipped ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white"}`}>
+                          <div className="flex items-center justify-between">
+                            <div className="text-2xl">{itemVisual(item.item_key, item.item_type)}</div>
+                            {item.equipped ? (
+                              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Equipped</span>
+                            ) : (
+                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Unlocked</span>
+                            )}
+                          </div>
+                          <p className="mt-2 text-xs font-semibold text-slate-800">{item.item_key}</p>
+                          <p className="text-[10px] text-slate-400">{item.item_type}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+
+              {/* Right sticky sidebar */}
+              <div className="space-y-4 xl:self-start xl:sticky xl:top-[72px]">
+
+                {/* Avatar */}
+                <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+                  <h2 className="mb-3 text-sm font-bold">Avatar Progress</h2>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+                    <div className="mx-auto flex justify-center">
+                      <AvatarDisplay avatarId={profile?.avatar_id} scrubs={profile?.equipped_scrubs} hat={profile?.equipped_hat} badge={profile?.equipped_badge} stethoscope={profile?.equipped_stethoscope} size={120} />
+                    </div>
+                    <div className="mt-3 space-y-1 text-xs text-slate-500">
+                      <p>Level: <span className="font-semibold text-slate-800">{profile?.education_level || "Not set"}</span></p>
+                      <p>Semester: <span className="font-semibold text-slate-800">{profile?.semester_label || "Not set"}</span></p>
+                      <p>Style: <span className="font-semibold text-slate-800">{profile?.explanation_style || "Not set"}</span></p>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="rounded-xl border border-orange-100 bg-orange-50 p-2 text-center">
+                      <p className="text-[10px] text-slate-500">Unlocked</p>
+                      <p className="text-xl font-black">{totalUnlocked}</p>
+                    </div>
+                    <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-2 text-center">
+                      <p className="text-[10px] text-slate-500">Equipped</p>
+                      <p className="text-xl font-black">{equippedCount}</p>
+                    </div>
+                  </div>
+                  <a href="/closet" className="mt-3 block rounded-xl bg-orange-500 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-orange-600">Manage Gear</a>
+                </div>
+
+                {/* Daily Missions */}
+                <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+                  <h2 className="mb-3 text-sm font-bold">Daily Missions</h2>
+                  <div className="space-y-2">
+                    {missions.length === 0 ? (
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-400">No daily missions yet.</div>
+                    ) : (
+                      missions.map((m) => (
+                        <div key={m.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-slate-800">{m.mission_label}</span>
+                            <span className="text-[10px] text-slate-500">{m.progress_count}/{m.goal_count}</span>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-slate-200">
+                            <div className={`h-full rounded-full ${m.completed ? "bg-emerald-500" : "bg-orange-500"}`} style={{ width: `${Math.min((m.progress_count / m.goal_count) * 100, 100)}%` }} />
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+                  <h2 className="mb-3 text-sm font-bold">Quick Actions</h2>
+                  <div className="flex flex-col gap-2">
+                    <a href={topWeakTopic ? `/quiz?topic=${encodeURIComponent(topWeakTopic || "")}` : "/quiz"} className="rounded-xl bg-blue-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-800">Weak-Area Quiz</a>
+                    <a href="/drill" className="rounded-xl bg-orange-500 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-orange-600">Quick Drill</a>
+                    <a href="/chat" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100">Talk to Lexi</a>
+                    <a href="/history" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100">Quiz History</a>
+                  </div>
+                </div>
+
+                {/* Next Unlocks */}
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <h2 className="mb-3 text-sm font-bold">Next Unlock Targets</h2>
+                  <div className="space-y-2">
+                    {[
+                      "10 questions → Bronze Badge",
+                      "25 questions → Nurse Cap",
+                      "20 correct → Orange Stethoscope",
+                    ].map((t) => (
+                      <div key={t} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">{t}</div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </>
+        )}
+      </section>
+    </main>
+  );
 }
