@@ -13,21 +13,24 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const STUDY_BUCKET = "study-uploads";
+
 type ChatRole = "user" | "assistant";
 
-async function fileToBase64(file: File) {
-  const bytes = await file.arrayBuffer();
-  return Buffer.from(bytes).toString("base64");
-}
+type StoredAsset = {
+  path: string;
+  name: string;
+  type: string;
+};
 
 function buildStudyTitle(
   question: string,
-  file?: File | null,
-  image?: File | null
-): string {
+  fileName?: string | null,
+  imageName?: string | null
+) {
   if (question.trim()) return question.slice(0, 80);
-  if (file) return `Study: ${file.name}`.slice(0, 80);
-  if (image) return `Image Study: ${image.name}`.slice(0, 80);
+  if (fileName) return `Study: ${fileName}`.slice(0, 80);
+  if (imageName) return `Image Study: ${imageName}`.slice(0, 80);
   return "Lexi Study Session";
 }
 
@@ -72,7 +75,7 @@ Memory help
 Quick review checklist
 
 Keep it readable, organized, and detailed.
-    `.trim();
+`.trim();
   }
 
   if (mode === "image") {
@@ -85,7 +88,7 @@ Rules:
 - No hashtags.
 - No asterisks.
 - Be clear, practical, and easy to study from.
-    `.trim();
+`.trim();
   }
 
   return `
@@ -97,40 +100,36 @@ Rules:
 - No hashtags.
 - No asterisks.
 - Be clear, practical, and useful.
-  `.trim();
+`.trim();
 }
 
-async function extractPdfText(file: File) {
-  const bytes = Buffer.from(await file.arrayBuffer());
+async function downloadStoredAsset(path: string) {
+  const { data, error } = await supabase.storage.from(STUDY_BUCKET).download(path);
+
+  if (error || !data) {
+    throw new Error(error?.message || "Failed to download uploaded file.");
+  }
+
+  return data;
+}
+
+async function blobToBuffer(blob: Blob) {
+  const bytes = await blob.arrayBuffer();
+  return Buffer.from(bytes);
+}
+
+async function blobToBase64(blob: Blob) {
+  const buffer = await blobToBuffer(blob);
+  return buffer.toString("base64");
+}
+
+async function extractPdfTextFromBlob(blob: Blob) {
+  const buffer = await blobToBuffer(blob);
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require("pdf-parse/worker");
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const workerModule = require("pdf-parse/worker");
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const pdfParseModule = require("pdf-parse");
-
-    const CanvasFactory = workerModule?.CanvasFactory;
-    const PDFParse = pdfParseModule?.PDFParse;
-
-    if (typeof PDFParse !== "function") {
-      console.error("BAD PDF MODULE:", pdfParseModule);
-      throw new Error("pdf-parse did not expose PDFParse.");
-    }
-
-    const parser =
-      typeof CanvasFactory === "function"
-        ? new PDFParse({ data: bytes, CanvasFactory })
-        : new PDFParse({ data: bytes });
-
-    const result = await parser.getText();
-
-    if (typeof parser.destroy === "function") {
-      await parser.destroy().catch(() => {});
-    }
+    const pdfParseModule: any = await import("pdf-parse");
+    const pdfParse = pdfParseModule?.default || pdfParseModule;
+    const result = await pdfParse(buffer);
 
     return String(result?.text || "")
       .replace(/\r/g, "\n")
@@ -210,22 +209,24 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
 
-    const rawFile = formData.get("file");
-    const rawImage = formData.get("image");
-
-    const file = rawFile instanceof File ? rawFile : null;
-    const image = rawImage instanceof File ? rawImage : null;
-
     const question = String(formData.get("question") || "").trim();
     const userId = String(formData.get("userId") || "").trim() || null;
     const incomingConversationId =
       String(formData.get("conversationId") || "").trim() || null;
 
-    if (!file && !image && !question) {
+    const filePath = String(formData.get("filePath") || "").trim() || null;
+    const fileName = String(formData.get("fileName") || "").trim() || null;
+    const fileType = String(formData.get("fileType") || "").trim() || "application/pdf";
+
+    const imagePath = String(formData.get("imagePath") || "").trim() || null;
+    const imageName = String(formData.get("imageName") || "").trim() || null;
+    const imageType = String(formData.get("imageType") || "").trim() || "image/png";
+
+    if (!filePath && !imagePath && !question) {
       return NextResponse.json({ error: "No input provided." }, { status: 400 });
     }
 
-    const title: string = buildStudyTitle(question, file, image);
+    const title = buildStudyTitle(question, fileName, imageName);
 
     let conversationId: string | null = incomingConversationId;
 
@@ -243,57 +244,19 @@ export async function POST(req: Request) {
       history = await getConversationMessages(conversationId);
     }
 
-    let extractedPdfText = "";
-    let reply = "";
-
-    if (file) {
-      const mime = (file.type || "").toLowerCase();
-      const name = (file.name || "").toLowerCase();
-
-      if (!mime.includes("pdf") && !name.endsWith(".pdf")) {
-        return NextResponse.json(
-          { error: "Only PDF files are supported in the PDF upload box." },
-          { status: 400 }
-        );
-      }
-
-      try {
-        extractedPdfText = (await extractPdfText(file)).slice(0, 45000);
-      } catch {
-        return NextResponse.json(
-          {
-            error:
-              "The PDF could not be read. Make sure pdf-parse and @napi-rs/canvas are installed, and that the file is a readable text-based PDF.",
-          },
-          { status: 500 }
-        );
-      }
-
-      if (!extractedPdfText.trim()) {
-        return NextResponse.json(
-          {
-            error:
-              "This PDF did not return readable text. It may be image-only or empty.",
-          },
-          { status: 400 }
-        );
-      }
-    }
-
     if (conversationId) {
       const userMessageSummary =
         question ||
-        (file
-          ? `Uploaded PDF: ${file.name}`
-          : image
-          ? `Uploaded image: ${image.name}`
-          : "Study request");
+        (fileName ? `Uploaded PDF: ${fileName}` : null) ||
+        (imageName ? `Uploaded image: ${imageName}` : null) ||
+        "Study request";
 
       await saveMessage(conversationId, "user", userMessageSummary);
     }
 
-    if (image) {
-      const base64 = await fileToBase64(image);
+    if (imagePath) {
+      const imageBlob = await downloadStoredAsset(imagePath);
+      const base64 = await blobToBase64(imageBlob);
 
       const completion = await client.chat.completions.create({
         model: "gpt-4.1-mini",
@@ -315,15 +278,15 @@ export async function POST(req: Request) {
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:${image.type};base64,${base64}`,
+                  url: `data:${imageType};base64,${base64}`,
                 },
               },
             ],
           } as any,
-        ],
+        ] as any,
       });
 
-      reply = cleanLexiText(
+      const reply = cleanLexiText(
         completion.choices[0]?.message?.content || "No response."
       );
 
@@ -334,7 +297,39 @@ export async function POST(req: Request) {
       return NextResponse.json({ reply, conversationId });
     }
 
-    if (extractedPdfText) {
+    if (filePath) {
+      if (!fileType.toLowerCase().includes("pdf") && !String(fileName || "").toLowerCase().endsWith(".pdf")) {
+        return NextResponse.json(
+          { error: "Only PDF files are supported in the PDF upload box." },
+          { status: 400 }
+        );
+      }
+
+      let extractedPdfText = "";
+
+      try {
+        const pdfBlob = await downloadStoredAsset(filePath);
+        extractedPdfText = (await extractPdfTextFromBlob(pdfBlob)).slice(0, 45000);
+      } catch {
+        return NextResponse.json(
+          {
+            error:
+              "The PDF could not be read. Make sure the PDF is text-based and not just an image scan.",
+          },
+          { status: 500 }
+        );
+      }
+
+      if (!extractedPdfText.trim()) {
+        return NextResponse.json(
+          {
+            error:
+              "This PDF did not return readable text. It may be image-only or empty.",
+          },
+          { status: 400 }
+        );
+      }
+
       const effectiveQuestion =
         question ||
         "Create a comprehensive nursing study guide from this PDF. Pull out the main ideas, high-yield facts, testable concepts, detailed explanations, and what I actually need to know.";
@@ -355,12 +350,12 @@ ${effectiveQuestion}
 
 PDF content:
 ${extractedPdfText}
-            `.trim(),
+`.trim(),
           },
         ],
       });
 
-      reply = cleanLexiText(
+      const reply = cleanLexiText(
         completion.choices[0]?.message?.content || "No response."
       );
 
@@ -387,7 +382,7 @@ ${extractedPdfText}
         ],
       });
 
-      reply = cleanLexiText(
+      const reply = cleanLexiText(
         completion.choices[0]?.message?.content || "No response."
       );
 
