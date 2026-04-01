@@ -1,17 +1,27 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import pdfParse from "pdf-parse";
 
 export const runtime = "nodejs";
 
+const openAiKey = process.env.OPENAI_API_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!openAiKey) {
+  throw new Error("Missing OPENAI_API_KEY.");
+}
+
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  throw new Error("Missing Supabase environment variables.");
+}
+
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: openAiKey,
 });
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 type ChatRole = "user" | "assistant";
 
@@ -104,40 +114,22 @@ async function extractPdfText(file: File) {
   const bytes = Buffer.from(await file.arrayBuffer());
 
   try {
-    // CommonJS path recommended by the package docs for Node/Next server usage.
-    // Import worker BEFORE importing pdf-parse.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require("pdf-parse/worker");
+    const result = await pdfParse(bytes);
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const workerModule = require("pdf-parse/worker");
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const pdfParseModule = require("pdf-parse");
-
-    const CanvasFactory = workerModule?.CanvasFactory;
-    const PDFParse = pdfParseModule?.PDFParse;
-
-    if (typeof PDFParse !== "function") {
-      console.error("BAD PDF MODULE:", pdfParseModule);
-      throw new Error("pdf-parse did not expose PDFParse.");
-    }
-
-    const parser =
-      typeof CanvasFactory === "function"
-        ? new PDFParse({ data: bytes, CanvasFactory })
-        : new PDFParse({ data: bytes });
-
-    const result = await parser.getText();
-
-    if (typeof parser.destroy === "function") {
-      await parser.destroy().catch(() => {});
-    }
-
-    return String(result?.text || "")
+    const text = String(result?.text || "")
       .replace(/\r/g, "\n")
+      .replace(/[ \t]+\n/g, "\n")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
+
+    console.log("PDF parsed successfully:", {
+      name: file.name,
+      size: file.size,
+      textLength: text.length,
+      preview: text.slice(0, 300),
+    });
+
+    return text;
   } catch (error) {
     console.error("PDF EXTRACT ERROR:", error);
     throw error;
@@ -181,6 +173,7 @@ async function ensureConversation({
     .single();
 
   if (error || !data?.id) {
+    console.error("CONVERSATION CREATE ERROR:", error);
     throw new Error("Failed to create conversation.");
   }
 
@@ -194,11 +187,15 @@ async function saveMessage(
 ) {
   if (!content.trim()) return;
 
-  await supabase.from("lexi_messages").insert({
+  const { error } = await supabase.from("lexi_messages").insert({
     conversation_id: conversationId,
     role,
     content,
   });
+
+  if (error) {
+    console.error("SAVE MESSAGE ERROR:", error);
+  }
 }
 
 function historyToChatMessages(history: { role: ChatRole; content: string }[]) {
@@ -222,6 +219,16 @@ export async function POST(req: Request) {
     const userId = String(formData.get("userId") || "").trim() || null;
     const incomingConversationId =
       String(formData.get("conversationId") || "").trim() || null;
+
+    console.log("STUDY ROUTE HIT:", {
+      hasFile: !!file,
+      hasImage: !!image,
+      hasQuestion: !!question,
+      fileName: file?.name || null,
+      imageName: image?.name || null,
+      userId,
+      incomingConversationId,
+    });
 
     if (!file && !image && !question) {
       return NextResponse.json({ error: "No input provided." }, { status: 400 });
@@ -265,7 +272,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "The PDF could not be read. Make sure pdf-parse and @napi-rs/canvas are installed, and that the file is a readable text-based PDF.",
+              "The PDF could not be read in production. Try a normal text-based PDF, or paste the text directly into Lexi.",
           },
           { status: 500 }
         );
@@ -275,7 +282,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "This PDF did not return readable text. It may be image-only or empty.",
+              "This PDF did not return readable text. It may be scanned, image-only, or empty. Try uploading a text-based PDF or use an image upload flow with OCR/vision support.",
           },
           { status: 400 }
         );
@@ -403,6 +410,7 @@ ${extractedPdfText}
     return NextResponse.json({ error: "No input provided." }, { status: 400 });
   } catch (err) {
     console.error("STUDY ROUTE ERROR:", err);
+
     return NextResponse.json(
       { error: "Failed to process request." },
       { status: 500 }
