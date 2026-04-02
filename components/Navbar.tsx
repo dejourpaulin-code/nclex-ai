@@ -273,7 +273,7 @@ export default function Navbar() {
         </div>
 
         {/* Nav row — fits all items; scrollable on narrow screens without scrollbar */}
-        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto pb-2">
+        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto pb-1">
           {allNavItems.map((item) => {
             const active = isActive(item.href);
             const unlocked = isUnlocked(item);
