@@ -1058,7 +1058,6 @@ export default function LiveFullLecturePage() {
             <h1 className="text-2xl font-black tracking-tight">Lexi Continuous Lecture Listener</h1>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a href="/lecture/live" className="rounded-xl border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-900 transition hover:bg-blue-50">Clip Mode</a>
             <a href="/lecture/hud" target="_blank" rel="noopener noreferrer" className="rounded-xl border border-purple-200 bg-white px-3 py-1.5 text-xs font-semibold text-purple-900 transition hover:bg-purple-50">Open HUD</a>
             <a href="/lecture" className="rounded-xl bg-blue-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800">Lecture Hub</a>
           </div>
