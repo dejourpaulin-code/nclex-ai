@@ -159,7 +159,7 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 xl:px-8">
 
         {/* Top row: logo + actions */}
-        <div className="flex items-center justify-between gap-4 pt-2 pb-0">
+        <div className="flex items-center justify-between gap-4 py-2">
           <Link href="/" className="flex shrink-0 items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-900 to-orange-500 text-base font-bold text-white shadow-md">
               N
@@ -273,7 +273,7 @@ export default function Navbar() {
         </div>
 
         {/* Nav row — fits all items; scrollable on narrow screens without scrollbar */}
-        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto pb-2 pt-0">
+        <nav className="no-scrollbar -mt-1 flex gap-0.5 overflow-x-auto pb-2">
           {allNavItems.map((item) => {
             const active = isActive(item.href);
             const unlocked = isUnlocked(item);
