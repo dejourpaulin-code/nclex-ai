@@ -1015,579 +1015,367 @@ export default function LiveFullLecturePage() {
     setStartingSession(false);
   }
 
-  return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
-      <Navbar />
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
+      <Navbar />
 
-      {analysis?.bestQuestion && (
-        <div className="sticky top-[76px] z-40 border-b border-fuchsia-200 bg-white/95 backdrop-blur">
-          <div className="mx-auto max-w-7xl px-6 py-4">
-            <div className="rounded-3xl border border-fuchsia-200 bg-fuchsia-50 p-4 shadow-sm">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0">
-                  <div className="mb-2 inline-flex rounded-full border border-fuchsia-200 bg-white px-3 py-1 text-xs font-semibold text-fuchsia-700">
-                    Pinned Teacher Question
-                  </div>
-                  <p className="font-semibold leading-7 text-slate-900">{analysis.bestQuestion}</p>
-                </div>
+      {/* Sticky best question banner */}
+      {analysis?.bestQuestion && (
+        <div className="sticky top-[76px] z-40 border-b border-fuchsia-200 bg-white/95 backdrop-blur">
+          <div className="mx-auto max-w-7xl px-4 py-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-2">
+              <div className="min-w-0 flex-1">
+                <span className="mr-2 rounded-full border border-fuchsia-200 bg-white px-2 py-0.5 text-xs font-semibold text-fuchsia-700">Pinned Q</span>
+                <span className="text-sm font-semibold text-slate-900">{analysis.bestQuestion}</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigator.clipboard.writeText(analysis.bestQuestion).catch(() => {})}
+                  className="rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-600"
+                >
+                  Copy
+                </button>
+                <button
+                  onClick={() => void runAnalysis(true)}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 transition hover:bg-slate-100"
+                >
+                  Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() =>
-                      navigator.clipboard.writeText(analysis.bestQuestion).catch(() => {})
-                    }
-                    className="rounded-2xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
-                  >
-                    Copy Question
-                  </button>
-                  <button
-                    onClick={() => void runAnalysis(true)}
-                    className="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-                  >
-                    Refresh Insight
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <section className="mx-auto max-w-7xl px-4 py-5">
 
-      <section className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="mb-4 inline-flex items-center rounded-full border border-cyan-200 bg-cyan-100 px-4 py-1 text-sm font-medium text-cyan-800">
-              Full Live Lecture Mode v2
-            </div>
-            <h1 className="text-4xl font-black tracking-tight md:text-5xl">
-              Lexi Continuous Lecture Listener
-            </h1>
-            <p className="mt-3 max-w-3xl text-lg text-slate-600">
-              Record live lecture audio, transcribe it in rolling chunks, and let Lexi continuously
-              coach you during class.
-            </p>
-          </div>
+        {/* Compact header */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="mb-1 inline-flex items-center rounded-full border border-cyan-200 bg-cyan-100 px-3 py-0.5 text-xs font-medium text-cyan-800">
+              Full Live Lecture Mode
+            </div>
+            <h1 className="text-2xl font-black tracking-tight">Lexi Continuous Lecture Listener</h1>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a href="/lecture/live" className="rounded-xl border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-900 transition hover:bg-blue-50">Clip Mode</a>
+            <a href="/lecture/hud" target="_blank" rel="noopener noreferrer" className="rounded-xl border border-purple-200 bg-white px-3 py-1.5 text-xs font-semibold text-purple-900 transition hover:bg-purple-50">Open HUD</a>
+            <a href="/lecture" className="rounded-xl bg-blue-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800">Lecture Hub</a>
+          </div>
+        </div>
 
-          <div className="flex flex-wrap gap-3">
-            <a
-              href="/lecture/live"
-              className="rounded-2xl border border-blue-200 bg-white px-5 py-3 font-semibold text-blue-900 transition hover:bg-blue-50"
-            >
-              Back to Clip Mode
-            </a>
-            <a
-              href="/lecture/hud"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-2xl border border-purple-200 bg-white px-5 py-3 font-semibold text-purple-900 transition hover:bg-purple-50"
-            >
-              Open HUD
-            </a>
-            <a
-              href="/lecture"
-              className="rounded-2xl bg-blue-900 px-5 py-3 font-semibold text-white transition hover:bg-blue-800"
-            >
-              Lecture Hub
-            </a>
-          </div>
-        </div>
+        {!canUseLiveFull && !accessLoading && (
+          <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50 p-3 text-sm text-orange-700">
+            Preview mode — starting sessions and real-time analysis require Core.
+          </div>
+        )}
 
-        {!canUseLiveFull && !accessLoading && (
-          <div className="mb-6 rounded-2xl border border-orange-200 bg-orange-50 p-4">
-            <p className="text-sm font-semibold text-orange-700">Preview mode</p>
-            <p className="mt-1 text-sm text-slate-700">
-              You can explore the Live Full interface, but starting sessions and real-time analysis
-              require Core.
-            </p>
-          </div>
-        )}
+        <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
 
-        <div className="grid gap-8 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <aside className="space-y-6">
-            <div className="rounded-3xl border border-blue-100 bg-white p-6 shadow-xl">
-              <h2 className="text-xl font-bold">Session Setup</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Start a full live lecture session before turning on the listener.
-              </p>
+          {/* Sidebar */}
+          <aside className="space-y-4">
+            {/* Session Setup */}
+            <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+              <h2 className="mb-3 text-base font-bold">Session Setup</h2>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Pharmacology Monday Lecture"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                />
+                <button
+                  onClick={() => void startSession()}
+                  disabled={startingSession}
+                  className="w-full rounded-xl bg-blue-900 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:opacity-50"
+                >
+                  {startingSession ? "Starting..." : "Start Full Live Session"}
+                </button>
+                {sessionId && (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                    <p className="font-semibold">Session started.</p>
+                    <a href={`/lecture/history/${sessionId}`} className="mt-1 inline-flex rounded-lg bg-white px-2 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100">
+                      Open this session
+                    </a>
+                  </div>
+                )}
+                {!supported && (
+                  <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-xs text-orange-700">
+                    Live audio recorder not supported in this browser.
+                  </div>
+                )}
+              </div>
+            </div>
 
-              <div className="mt-6 space-y-4">
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Example: Pharmacology Monday Lecture"
-                  className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-slate-900 outline-none transition focus:border-blue-500"
-                />
+            {/* Live Controls */}
+            <div className="rounded-2xl border border-orange-100 bg-white p-4 shadow-sm">
+              <h2 className="mb-3 text-base font-bold">Live Controls</h2>
 
-                <button
-                  onClick={() => void startSession()}
-                  disabled={startingSession}
-                  className="w-full rounded-2xl bg-blue-900 px-6 py-3 font-semibold text-white transition hover:bg-blue-800 disabled:opacity-50"
-                >
-                  {startingSession ? "Starting..." : "Start Full Live Session"}
-                </button>
+              {/* Status row */}
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${listening ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"}`}>
+                  {listening ? "● Listening" : "Mic idle"}
+                </span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${autoAnalyze ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"}`}>
+                  {autoAnalyze ? "Auto on" : "Auto off"}
+                </span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${transcribing ? "bg-cyan-100 text-cyan-700" : "bg-slate-100 text-slate-600"}`}>
+                  {transcribing ? "Transcribing" : "Ready"}
+                </span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${analysisLoading ? "bg-cyan-100 text-cyan-700" : "bg-slate-100 text-slate-600"}`}>
+                  {analysisLoading ? "Thinking..." : "Analyzed"}
+                </span>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
+                  {secondsToClock(secondsLive)}
+                </span>
+              </div>
 
-                {sessionId && (
-                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-                    <p className="font-semibold">Full live session started.</p>
-                    <a
-                      href={`/lecture/history/${sessionId}`}
-                      className="mt-2 inline-flex rounded-xl bg-white px-3 py-2 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100"
-                    >
-                      Open this session
-                    </a>
-                  </div>
-                )}
+              <div className="space-y-2">
+                <button
+                  onClick={() => void startListening()}
+                  disabled={!supported || !sessionId || listening}
+                  className="w-full rounded-xl bg-purple-600 py-2 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
+                >
+                  Start Live Listening
+                </button>
+                <button
+                  onClick={() => void stopListening()}
+                  disabled={!listening}
+                  className="w-full rounded-xl bg-red-500 py-2 text-sm font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
+                >
+                  Stop Listening
+                </button>
+                <button
+                  onClick={() => void runAnalysis(true)}
+                  disabled={!combinedTranscript.trim() || analysisLoading}
+                  className="w-full rounded-xl bg-orange-500 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
+                >
+                  {analysisLoading ? "Analyzing..." : "Analyze Now"}
+                </button>
+                <button
+                  onClick={() => setAutoAnalyze((prev) => !prev)}
+                  className="w-full rounded-xl border border-slate-300 bg-white py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                >
+                  {autoAnalyze ? "Turn Off Auto Analyze" : "Turn On Auto Analyze"}
+                </button>
+                <button
+                  onClick={resetLecture}
+                  className="w-full rounded-xl border border-slate-300 bg-white py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                >
+                  Reset Transcript
+                </button>
+              </div>
+            </div>
+          </aside>
 
-                {!supported && (
-                  <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-700">
-                    This browser does not support a usable live audio recorder here.
-                  </div>
-                )}
-              </div>
-            </div>
+          {/* Main content */}
+          <div className="space-y-4">
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
 
-            <div className="rounded-3xl border border-orange-100 bg-white p-6 shadow-xl">
-              <h2 className="text-xl font-bold">Live Controls</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Start listening and let Lexi keep analyzing the lecture in rolling windows.
-              </p>
+            {/* Topic Shift */}
+            {analysis?.topicShift && (
+              <div className={`rounded-2xl border bg-white p-4 shadow-sm transition ${showShiftPulse ? "border-red-300 ring-2 ring-red-100" : "border-rose-100"}`}>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">Topic Shift</span>
+                    <h2 className="text-base font-bold">
+                      {analysis.topicShift.shiftDetected ? "Possible topic shift detected" : "No major shift right now"}
+                    </h2>
+                  </div>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${shiftBadgeColor(analysis.topicShift.confidence || 0)}`}>
+                    {analysis.topicShift.confidence || 0}% confidence
+                  </span>
+                </div>
+                <p className="mb-3 text-sm text-slate-600">{analysis.topicShift.reason || "Lexi is watching for changes in the teacher's direction."}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs text-slate-500">Previous topic</p>
+                    <p className="mt-1 text-sm font-bold text-slate-900">{analysis.topicShift.previousTopic || "Same section"}</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs text-slate-500">Current topic</p>
+                    <p className="mt-1 text-sm font-bold text-slate-900">{analysis.topicShift.currentTopic || "Still forming"}</p>
+                  </div>
+                </div>
+                {analysis.topicShift.examRelevance && (
+                  <div className="mt-2 rounded-xl border border-orange-100 bg-orange-50 p-3">
+                    <p className="text-xs font-semibold text-orange-700">Exam relevance</p>
+                    <p className="mt-1 text-xs leading-6 text-slate-700">{analysis.topicShift.examRelevance}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
-              <div className="mt-6 space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900">Status</p>
+            {/* Exam Nuggets */}
+            {analysis?.examNuggets && analysis.examNuggets.length > 0 && (
+              <div className="rounded-2xl border border-yellow-100 bg-white p-4 shadow-sm">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="rounded-full border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs font-semibold text-yellow-700">Exam Nuggets</span>
+                  <h2 className="text-base font-bold">This sounds testable</h2>
+                </div>
+                <div className="space-y-3">
+                  {analysis.examNuggets.map((nugget, index) => (
+                    <div key={index} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${nuggetColor(nugget.confidence || 0)}`}>{nugget.label}</span>
+                        <span className="text-xs text-slate-500">{nugget.confidence || 0}% confidence</span>
+                      </div>
+                      <div className="grid gap-2 md:grid-cols-2">
+                        <div className="rounded-lg border border-slate-200 bg-white p-2">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Why Lexi flagged it</p>
+                          <p className="mt-1 text-xs leading-6 text-slate-700">{nugget.whyItMatters}</p>
+                        </div>
+                        <div className="rounded-lg border border-slate-200 bg-white p-2">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">How to use on an exam</p>
+                          <p className="mt-1 text-xs leading-6 text-slate-700">{nugget.studentUse}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                  <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-                    <span
-                      className={`rounded-full px-3 py-1 font-semibold ${
-                        listening ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {listening ? "● Listening live" : "Mic idle"}
-                    </span>
+            {/* Professor Emphasis */}
+            {analysis?.professorEmphasis && analysis.professorEmphasis.detected && (
+              <div className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">Professor Emphasis</span>
+                    <h2 className="text-base font-bold">{analysis.professorEmphasis.headline || "This sounds important"}</h2>
+                  </div>
+                  <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${emphasisColor(analysis.professorEmphasis.confidence || 0)}`}>
+                    {analysis.professorEmphasis.confidence || 0}% confidence
+                  </span>
+                </div>
+                <div className="grid gap-2 md:grid-cols-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Emphasized point</p>
+                    <p className="mt-1 text-xs leading-6 text-slate-700">{analysis.professorEmphasis.emphasizedPoint}</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Why Lexi flagged it</p>
+                    <p className="mt-1 text-xs leading-6 text-slate-700">{analysis.professorEmphasis.whyLexiFlaggedIt}</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">What to do</p>
+                    <p className="mt-1 text-xs leading-6 text-slate-700">{analysis.professorEmphasis.studentAction}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
-                    <span
-                      className={`rounded-full px-3 py-1 font-semibold ${
-                        autoAnalyze ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {autoAnalyze ? "Auto analyze on" : "Auto analyze off"}
-                    </span>
+            {/* Cold Call Shield */}
+            <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">Participation Mode</span>
+                <h2 className="text-base font-bold">Cold Call Shield</h2>
+              </div>
+              <div className="grid gap-2 md:grid-cols-3">
+                <div className="rounded-xl border border-blue-100 bg-blue-50 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-800">Safe answer if called on</p>
+                  <p className="mt-1 text-xs leading-6 text-slate-800">{analysis?.safeAnswer || "Lexi is still building your safe answer."}</p>
+                </div>
+                <div className="rounded-xl border border-orange-100 bg-orange-50 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-orange-800">Smarter follow-up</p>
+                  <p className="mt-1 text-xs leading-6 text-slate-800">{analysis?.sharperFollowUp || "A sharper follow-up will appear here."}</p>
+                </div>
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">Class contribution</p>
+                  <p className="mt-1 text-xs leading-6 text-slate-800">{analysis?.classContribution || "A class contribution line will appear here."}</p>
+                </div>
+              </div>
+            </div>
 
-                    <span
-                      className={`rounded-full px-3 py-1 font-semibold ${
-                        transcribing ? "bg-cyan-100 text-cyan-700" : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {transcribing ? "Transcribing" : "Transcript ready"}
-                    </span>
+            {/* Lexi's Current Read */}
+            <div className="rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">Live Analysis</span>
+                  <h2 className="text-base font-bold">Lexi's Current Read</h2>
+                </div>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
+                  {analysisLoading ? "Updating..." : "Live"}
+                </span>
+              </div>
 
-                    <span
-                      className={`rounded-full px-3 py-1 font-semibold ${
-                        analysisLoading ? "bg-cyan-100 text-cyan-700" : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {analysisLoading ? "Lexi thinking" : "Analysis ready"}
-                    </span>
+              <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs leading-6 text-slate-700">
+                  {analysis?.summary || "No live summary yet. Start listening or analyze manually."}
+                </p>
+              </div>
 
-                    <span className="rounded-full bg-white px-3 py-1 font-semibold text-slate-700">
-                      {secondsToClock(secondsLive)}
-                    </span>
-                  </div>
-                </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <h3 className="mb-2 text-xs font-bold text-slate-900">Key points</h3>
+                  <div className="space-y-1">
+                    {(analysis?.keyPoints || []).map((point, index) => (
+                      <div key={index} className="text-xs leading-6 text-slate-700">• {point}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <h3 className="mb-2 text-xs font-bold text-slate-900">Live side quests</h3>
+                  <div className="space-y-2">
+                    {(analysis?.prompts || []).map((prompt, index) => (
+                      <div key={index} className="rounded-lg border border-slate-200 bg-white p-2">
+                        <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${promptColor(prompt.promptType)}`}>
+                          {promptLabel(prompt.promptType)}
+                        </span>
+                        <p className="mt-1 text-xs font-semibold leading-6 text-slate-900">{prompt.promptText}</p>
+                        <p className="text-xs leading-5 text-slate-600">{prompt.promptContext}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                <button
-                  onClick={() => void startListening()}
-                  disabled={!supported || !sessionId || listening}
-                  className="w-full rounded-2xl bg-purple-600 px-5 py-3 font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
-                >
-                  Start Live Listening
-                </button>
+            {/* Live Transcript */}
+            <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+              <h2 className="mb-2 text-base font-bold">Live Transcript</h2>
+              {liveText && (
+                <div className="mb-2 rounded-xl border border-cyan-200 bg-cyan-50 p-2">
+                  <p className="text-xs font-semibold text-cyan-800">{liveText}</p>
+                </div>
+              )}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="whitespace-pre-wrap text-xs leading-6 text-slate-700">
+                  {combinedTranscript || "No transcript yet."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-                <button
-                  onClick={() => void stopListening()}
-                  disabled={!listening}
-                  className="w-full rounded-2xl bg-red-500 px-5 py-3 font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
-                >
-                  Stop Live Listening
-                </button>
-
-                <button
-                  onClick={() => setAutoAnalyze((prev) => !prev)}
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-                >
-                  {autoAnalyze ? "Turn Off Auto Analyze" : "Turn On Auto Analyze"}
-                </button>
-
-                <button
-                  onClick={() => void runAnalysis(true)}
-                  disabled={!combinedTranscript.trim() || analysisLoading}
-                  className="w-full rounded-2xl bg-orange-500 px-5 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
-                >
-                  {analysisLoading ? "Analyzing..." : "Analyze Now"}
-                </button>
-
-                <button
-                  onClick={resetLecture}
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-                >
-                  Reset Transcript
-                </button>
-              </div>
-            </div>
-          </aside>
-
-          <div className="space-y-6">
-            {error && (
-              <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700 shadow-sm">
-                {error}
-              </div>
-            )}
-
-            {analysis?.topicShift && (
-              <div
-                className={`rounded-3xl border bg-white p-6 shadow-xl transition ${
-                  showShiftPulse ? "border-red-300 ring-4 ring-red-100" : "border-rose-100"
-                }`}
-              >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <div className="mb-3 inline-flex rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
-                      Teacher Shift Detector
-                    </div>
-                    <h2 className="text-2xl font-bold">
-                      {analysis.topicShift.shiftDetected
-                        ? "Possible topic shift detected"
-                        : "No major topic shift right now"}
-                    </h2>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">
-                      {analysis.topicShift.reason ||
-                        "Lexi is watching for changes in the teacher’s direction."}
-                    </p>
-                  </div>
-
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${shiftBadgeColor(
-                      analysis.topicShift.confidence || 0
-                    )}`}
-                  >
-                    Confidence {analysis.topicShift.confidence || 0}%
-                  </span>
-                </div>
-
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-sm text-slate-500">Previous topic</p>
-                    <p className="mt-2 text-lg font-bold text-slate-900">
-                      {analysis.topicShift.previousTopic || "Still the same section"}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-sm text-slate-500">Current topic</p>
-                    <p className="mt-2 text-lg font-bold text-slate-900">
-                      {analysis.topicShift.currentTopic || "Still forming"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 p-4">
-                  <p className="text-sm font-semibold text-orange-700">Why this matters for exams</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-700">
-                    {analysis.topicShift.examRelevance ||
-                      "Lexi will flag exam relevance here when the lecture pivots."}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {analysis?.examNuggets && analysis.examNuggets.length > 0 && (
-              <div className="rounded-3xl border border-yellow-100 bg-white p-6 shadow-xl">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <div className="mb-3 inline-flex rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-700">
-                      Exam Nugget Detector
-                    </div>
-                    <h2 className="text-2xl font-bold">This sounds testable</h2>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">
-                      Lexi is flagging lecture moments that sound like likely NCLEX-style test
-                      material.
-                    </p>
-                  </div>
-
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                    Live exam signals
-                  </span>
-                </div>
-
-                <div className="mt-5 space-y-4">
-                  {analysis.examNuggets.map((nugget, index) => (
-                    <div
-                      key={index}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
-                    >
-                      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                        <span
-                          className={`rounded-full border px-3 py-1 text-xs font-semibold ${nuggetColor(
-                            nugget.confidence || 0
-                          )}`}
-                        >
-                          {nugget.label}
-                        </span>
-
-                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700">
-                          Confidence {nugget.confidence || 0}%
-                        </span>
-                      </div>
-
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            Why Lexi flagged it
-                          </p>
-                          <p className="mt-2 text-sm leading-7 text-slate-700">
-                            {nugget.whyItMatters}
-                          </p>
-                        </div>
-
-                        <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            How to use it on an exam
-                          </p>
-                          <p className="mt-2 text-sm leading-7 text-slate-700">
-                            {nugget.studentUse}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {analysis?.professorEmphasis && analysis.professorEmphasis.detected && (
-              <div className="rounded-3xl border border-rose-100 bg-white p-6 shadow-xl">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <div className="mb-3 inline-flex rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
-                      Professor Emphasis Detector
-                    </div>
-                    <h2 className="text-2xl font-bold">
-                      {analysis.professorEmphasis.headline || "This sounds important"}
-                    </h2>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">
-                      Lexi thinks the professor is emphasizing this point more strongly than the
-                      surrounding content.
-                    </p>
-                  </div>
-
-                  <span
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${emphasisColor(
-                      analysis.professorEmphasis.confidence || 0
-                    )}`}
-                  >
-                    Confidence {analysis.professorEmphasis.confidence || 0}%
-                  </span>
-                </div>
-
-                <div className="mt-5 grid gap-4 xl:grid-cols-3">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Emphasized point
-                    </p>
-                    <p className="mt-2 text-sm leading-7 text-slate-700">
-                      {analysis.professorEmphasis.emphasizedPoint}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Why Lexi flagged it
-                    </p>
-                    <p className="mt-2 text-sm leading-7 text-slate-700">
-                      {analysis.professorEmphasis.whyLexiFlaggedIt}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      What you should do
-                    </p>
-                    <p className="mt-2 text-sm leading-7 text-slate-700">
-                      {analysis.professorEmphasis.studentAction}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-xl">
-              <div className="mb-3 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Participation Mode
-              </div>
-              <h2 className="text-2xl font-bold">Cold Call Shield</h2>
-              <p className="mt-2 text-sm leading-7 text-slate-600">
-                Live support for classroom participation based on the latest recognized lecture
-                content.
-              </p>
-
-              <div className="mt-6 grid gap-4 xl:grid-cols-3">
-                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-800">
-                    Safe answer if called on
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-slate-800">
-                    {analysis?.safeAnswer || "Lexi is still building your live safe answer."}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-orange-800">
-                    Smarter follow-up
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-slate-800">
-                    {analysis?.sharperFollowUp || "A sharper follow-up will appear here."}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
-                    Natural class contribution
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-slate-800">
-                    {analysis?.classContribution ||
-                      "A natural class contribution line will appear here."}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-indigo-100 bg-white p-6 shadow-xl">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <div className="mb-3 inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                    Live Lecture Analysis
-                  </div>
-                  <h2 className="text-2xl font-bold">Lexi’s Current Read</h2>
-                  <p className="mt-2 text-sm leading-7 text-slate-600">
-                    Lexi updates this as more lecture content comes in.
-                  </p>
-                </div>
-
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                  {analysisLoading ? "Updating..." : "Live"}
-                </span>
-              </div>
-
-              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm leading-7 text-slate-700">
-                  {analysis?.summary || "No live summary yet. Start listening or analyze manually."}
-                </p>
-              </div>
-
-              <div className="mt-5 grid gap-4 xl:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <h3 className="text-sm font-bold text-slate-900">Key points</h3>
-                  <div className="mt-3 space-y-2">
-                    {(analysis?.keyPoints || []).map((point, index) => (
-                      <div key={index} className="text-sm leading-7 text-slate-700">
-                        {point}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <h3 className="text-sm font-bold text-slate-900">Live side quests</h3>
-                  <div className="mt-3 space-y-3">
-                    {(analysis?.prompts || []).map((prompt, index) => (
-                      <div key={index} className="rounded-2xl border border-slate-200 bg-white p-4">
-                        <div className="mb-2">
-                          <span
-                            className={`rounded-full border px-3 py-1 text-xs font-semibold ${promptColor(
-                              prompt.promptType
-                            )}`}
-                          >
-                            {promptLabel(prompt.promptType)}
-                          </span>
-                        </div>
-
-                        <p className="font-semibold leading-7 text-slate-900">
-                          {prompt.promptText}
-                        </p>
-                        <p className="mt-2 text-sm leading-7 text-slate-600">
-                          {prompt.promptContext}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-blue-100 bg-white p-6 shadow-xl">
-              <h2 className="text-2xl font-bold">Live Transcript</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Final recognized text plus current live processing status.
-              </p>
-
-              {liveText && (
-                <div className="mt-4 rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
-                  <p className="text-sm font-semibold text-cyan-800">{liveText}</p>
-                </div>
-              )}
-
-              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="whitespace-pre-wrap leading-7 text-slate-700">
-                  {combinedTranscript || "No transcript yet."}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {showUpgradeModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 px-6">
-          <div className="w-full max-w-md rounded-3xl border border-orange-200 bg-white p-8 shadow-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-600">
-              Core Feature
-            </p>
-
-            <h2 className="mt-3 text-3xl font-black text-slate-900">
-              Unlock Live Full Lecture Mode
-            </h2>
-
-            <p className="mt-4 text-slate-600">
-              You can preview this page, but starting sessions, listening live, and real-time
-              analysis require Core access.
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <a
-                href="/checkout?plan=core-monthly&source=live-full-modal&returnTo=/lecture/live-full"
-                className="rounded-2xl bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600"
-              >
-                Upgrade to Core
-              </a>
-
-              <a
-  href="/pricing"
-  className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
->
-  View Pricing
-</a>
-
-              <button
-                onClick={() => setShowUpgradeModal(false)}
-                className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </main>
-  );
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 px-6">
+          <div className="w-full max-w-sm rounded-2xl border border-orange-200 bg-white p-6 shadow-2xl">
+            <p className="text-xs font-semibold uppercase tracking-widest text-orange-600">Core Feature</p>
+            <h2 className="mt-2 text-2xl font-black text-slate-900">Unlock Live Full Lecture Mode</h2>
+            <p className="mt-3 text-sm text-slate-600">
+              Starting sessions, listening live, and real-time analysis require Core access.
+            </p>
+            <div className="mt-5 grid gap-2">
+              <a href="/checkout?plan=core-monthly&source=live-full-modal&returnTo=/lecture/live-full" className="rounded-xl bg-orange-500 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-orange-600">
+                Upgrade to Core
+              </a>
+              <a href="/pricing" className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
+                View Pricing
+              </a>
+              <button onClick={() => setShowUpgradeModal(false)} className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
 }
