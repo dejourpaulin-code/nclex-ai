@@ -155,7 +155,7 @@ export default function Navbar() {
         access.accessLevel !== "full-program"));
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_rgba(15,23,42,0.08)]">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
       <div className="mx-auto max-w-7xl px-4 xl:px-8">
 
         {/* Top row: logo + actions */}
@@ -273,7 +273,7 @@ export default function Navbar() {
         </div>
 
         {/* Nav row — fits all items; scrollable on narrow screens without scrollbar */}
-        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto py-1.5 border-t border-slate-100">
+        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto pb-2 pt-0">
           {allNavItems.map((item) => {
             const active = isActive(item.href);
             const unlocked = isUnlocked(item);
