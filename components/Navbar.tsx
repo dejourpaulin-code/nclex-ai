@@ -180,7 +180,7 @@ export default function Navbar() {
                   Log in
                 </Link>
                 <Link
-                  href="/checkout?plan=starter-monthly&source=navbar-guest"
+                  href="/pricing"
                   className="rounded-xl bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-orange-600"
                 >
                   Get Access
