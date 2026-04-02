@@ -810,885 +810,633 @@ function QuizPageInner() {
       ? 0
       : Math.round((setCorrectCount / setAnsweredCount) * 100);
 
-  return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
-      <Navbar />
-
-      <section className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="mb-4 inline-flex items-center rounded-full border border-blue-200 bg-blue-100 px-4 py-1 text-sm font-medium text-blue-800">
-              Adaptive NCLEX-style practice
-            </div>
-            <h1 className="text-4xl font-black tracking-tight md:text-5xl">
-              Quiz Generator
-            </h1>
-            <p className="mt-3 max-w-2xl text-lg text-slate-600">
-              Cleaner answer choices, brighter visual hierarchy, and a more premium
-              quiz experience.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-2xl border border-blue-100 bg-white px-5 py-4 text-center shadow-lg">
-              <div className="text-sm text-slate-500">Score</div>
-              <div className="mt-1 text-2xl font-bold">{overallScore}</div>
-            </div>
-            <div className="rounded-2xl border border-orange-100 bg-white px-5 py-4 text-center shadow-lg">
-              <div className="text-sm text-slate-500">Answered</div>
-              <div className="mt-1 text-2xl font-bold">{questionsAnswered}</div>
-            </div>
-            <div className="rounded-2xl border border-emerald-100 bg-white px-5 py-4 text-center shadow-lg">
-              <div className="text-sm text-slate-500">Accuracy</div>
-              <div className="mt-1 text-2xl font-bold">{overallPercent}%</div>
-            </div>
-          </div>
-        </div>
-
-        {!canUseQuiz && !accessLoading && (
-          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
-            Preview mode is unlocked. To generate questions and use the quiz, upgrade to Starter.
-          </div>
-        )}
-
-        <div className="grid gap-8 lg:grid-cols-[340px_minmax(0,1fr)]">
-          <aside className="space-y-6">
-            <div className="rounded-3xl border border-blue-100 bg-white p-6 shadow-xl">
-              <h2 className="text-xl font-bold">Practice Settings</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Build the exact study set you want.
-              </p>
-
-              <div className="mt-6 space-y-5">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Topic
-                  </label>
-
-                  <select
-                    value={topic}
-                    onChange={(e) => {
-                      setTopic(e.target.value);
-                    }}
-                    className="w-full rounded-2xl border border-slate-300 bg-blue-50 p-3 text-slate-900 outline-none transition focus:border-blue-500"
-                  >
-                    {TOPIC_OPTIONS.map((option) => (
-                      <option key={option}>{option}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Custom Topic
-                  </label>
-
-                  <input
-                    type="text"
-                    value={customTopic}
-                    onChange={(e) => setCustomTopic(e.target.value)}
-                    placeholder="e.g. Fundamentals - elimination"
-                    className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-slate-900 outline-none transition focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Custom Topic Details
-                  </label>
-
-                  <textarea
-                    value={customTopicDetails}
-                    onChange={(e) => setCustomTopicDetails(e.target.value)}
-                    placeholder="e.g. Focus on urinary elimination, bowel incontinence, ostomy care, catheter complications, retention vs incontinence, and priority nursing interventions."
-                    rows={4}
-                    className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-slate-900 outline-none transition focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Difficulty
-                  </label>
-                  <select
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value)}
-                    className="w-full rounded-2xl border border-slate-300 bg-orange-50 p-3 text-slate-900 outline-none transition focus:border-orange-400"
-                  >
-                    <option>Easy</option>
-                    <option>Medium</option>
-                    <option>Hard</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Question Type
-                  </label>
-                  <select
-                    value={questionType}
-                    onChange={(e) =>
-                      setQuestionType(e.target.value as QuestionType)
-                    }
-                    className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-slate-900 outline-none transition focus:border-blue-500"
-                  >
-                    <option>Multiple Choice</option>
-                    <option>Priority</option>
-                    <option>Delegation</option>
-                    <option>Pharmacology</option>
-                    <option>Select All That Apply</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Quiz Mode
-                  </label>
-                  <select
-                    value={quizMode}
-                    onChange={(e) => setQuizMode(e.target.value as QuizMode)}
-                    className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-slate-900 outline-none transition focus:border-blue-500"
-                  >
-                    <option>Tutor Mode</option>
-                    <option>Exam Mode</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Number of Questions
-                  </label>
-                  <select
-                    value={questionCount}
-                    onChange={(e) => setQuestionCount(Number(e.target.value))}
-                    className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-slate-900 outline-none transition focus:border-blue-500"
-                  >
-                    <option value={1}>1</option>
-                    <option value={3}>3</option>
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={30}>30</option>
-                    <option value={40}>40</option>
-                    <option value={50}>50</option>
-                  </select>
-                </div>
-
-                <button
-                  onClick={() => guardQuizAction(() => generate())}
-                  disabled={loading}
-                  className="w-full rounded-2xl bg-orange-500 px-6 py-3 font-semibold text-white shadow-md transition hover:bg-orange-600 disabled:opacity-50"
-                >
-                  {loading ? "Generating..." : "Generate Questions"}
-                </button>
-
-                <button
-                  onClick={() => guardQuizAction(() => practiceWeakestAreaNow())}
-                  disabled={loading || weakAreas.length === 0}
-                  className="w-full rounded-2xl bg-blue-900 px-6 py-3 font-semibold text-white shadow-md transition hover:bg-blue-800 disabled:opacity-50"
-                >
-                  Practice Weakest Area Now
-                </button>
-
-                <a
-                  href="/chat"
-                  className="block w-full rounded-2xl border border-slate-300 bg-white px-6 py-3 text-center font-semibold text-slate-900 transition hover:bg-slate-100"
-                >
-                  Open Lexi
-                </a>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-orange-100 bg-white p-6 shadow-xl">
-              <h2 className="text-xl font-bold">Weak Areas</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Topics where you’ve missed the most.
-              </p>
-
-              <div className="mt-5 space-y-3">
-                {loadingWeakAreas ? (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                    Loading weak areas...
-                  </div>
-                ) : weakAreas.length === 0 ? (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                    No weak-area data yet. Answer a few questions first.
-                  </div>
-                ) : (
-                  weakAreas.map((area) => (
-                    <div
-                      key={area.id}
-                      className="rounded-2xl border border-slate-200 bg-orange-50 p-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold text-slate-900">
-                          {area.topic}
-                        </p>
-                        <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-orange-700">
-                          {area.misses} miss{area.misses === 1 ? "" : "es"}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm text-slate-600">
-                        Correct: {area.correct}
-                      </p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </aside>
-
-          <div className="relative">
-            <div
-              className={`transition duration-200 ${
-                showUpgradeModal && !canUseQuiz
-                  ? "pointer-events-none select-none blur-[3px]"
-                  : ""
-              }`}
-            >
-              {error && (
-                <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700 shadow-sm">
-                  {error}
-                </div>
-              )}
-
-              {saveError && (
-                <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700 shadow-sm">
-                  {saveError}
-                </div>
-              )}
-
-              {!currentQuestion && !showSummary && !error && (
-                <div className="rounded-3xl border border-blue-100 bg-white p-12 shadow-2xl">
-                  <div className="mx-auto max-w-2xl text-center">
-                    <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-2xl">
-                      📝
-                    </div>
-                    <h2 className="text-2xl font-bold">Ready to practice?</h2>
-                    <p className="mt-3 text-slate-600">
-                      Choose your settings and generate one question or a full set.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {showSummary && (
-                <div className="rounded-3xl border border-emerald-100 bg-white p-8 shadow-2xl">
-                  <div className="text-center">
-                    <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-2xl">
-                      ✅
-                    </div>
-                    <h2 className="text-3xl font-black">Quiz Set Complete</h2>
-                    <p className="mt-3 text-slate-600">
-                      Here’s how you did on this set.
-                    </p>
-                  </div>
-
-                  <div className="mt-8 grid gap-4 md:grid-cols-3">
-                    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6 text-center">
-                      <p className="text-sm text-slate-500">Answered</p>
-                      <p className="mt-2 text-3xl font-bold">{setAnsweredCount}</p>
-                    </div>
-                    <div className="rounded-2xl border border-orange-100 bg-orange-50 p-6 text-center">
-                      <p className="text-sm text-slate-500">Correct</p>
-                      <p className="mt-2 text-3xl font-bold">{setCorrectCount}</p>
-                    </div>
-                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-center">
-                      <p className="text-sm text-slate-500">Set Accuracy</p>
-                      <p className="mt-2 text-3xl font-bold">{setPercent}%</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-6">
-                    <h3 className="text-xl font-bold">Question Review</h3>
-                    <div className="mt-5 space-y-5">
-                      {questions.map((question, index) => {
-                        const userAnswer = answers[index] || "";
-                        const gotItRight = isAnswerCorrect(question, userAnswer);
-                        const chatMessages = lexiChats[index] || [];
-                        const lexiLoading = lexiLoadingMap[index] || false;
-
-                        return (
-                          <div
-                            key={index}
-                            className="rounded-2xl border border-slate-200 bg-white p-5"
-                          >
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
-                                {question.topic || customTopic.trim() || topic}
-                              </span>
-                              <span
-                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                  gotItRight
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : "bg-red-100 text-red-700"
-                                }`}
-                              >
-                                {gotItRight ? "Correct" : "Incorrect"}
-                              </span>
-                            </div>
-
-                            <p className="mt-3 font-semibold text-slate-900">
-                              {index + 1}. {question.question}
-                            </p>
-
-                            <p className="mt-3 text-sm text-slate-700">
-                              Your answer:{" "}
-                              <span className="font-semibold">
-                                {normalizeAnswerForDisplay(userAnswer)}
-                              </span>
-                            </p>
-                            <p className="mt-1 text-sm text-slate-700">
-                              Correct answer:{" "}
-                              <span className="font-semibold">
-                                {getCorrectAnswerLabel(question)}
-                              </span>
-                            </p>
-
-                            <p className="mt-3 text-sm leading-7 text-slate-600">
-                              {question.rationale}
-                            </p>
-
-                            {!gotItRight && (
-                              <div className="mt-5 rounded-2xl border border-purple-200 bg-purple-50 p-4">
-                                <div className="mb-3 inline-flex rounded-full border border-purple-200 bg-white px-3 py-1 text-xs font-semibold text-purple-700">
-                                  Ask Lexi About This Question
-                                </div>
-
-                                <div className="mb-3 flex flex-wrap gap-2">
-                                  <button
-                                    onClick={() =>
-                                      guardQuizAction(() =>
-                                        askLexiAboutQuestion(
-                                          index,
-                                          "Why is my answer wrong?"
-                                        )
-                                      )
-                                    }
-                                    className="rounded-full border border-purple-200 bg-white px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"
-                                  >
-                                    Why is my answer wrong?
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      guardQuizAction(() =>
-                                        askLexiAboutQuestion(
-                                          index,
-                                          "Explain the correct answer simply."
-                                        )
-                                      )
-                                    }
-                                    className="rounded-full border border-purple-200 bg-white px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"
-                                  >
-                                    Explain simply
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      guardQuizAction(() =>
-                                        askLexiAboutQuestion(
-                                          index,
-                                          "How would NCLEX test this again?"
-                                        )
-                                      )
-                                    }
-                                    className="rounded-full border border-purple-200 bg-white px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"
-                                  >
-                                    NCLEX angle
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      guardQuizAction(() =>
-                                        askLexiAboutQuestion(
-                                          index,
-                                          "Give me a memory trick for this."
-                                        )
-                                      )
-                                    }
-                                    className="rounded-full border border-purple-200 bg-white px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"
-                                  >
-                                    Memory trick
-                                  </button>
-                                </div>
-
-                                <div className="space-y-3">
-                                  {chatMessages.map((message, msgIndex) => (
-                                    <div
-                                      key={msgIndex}
-                                      className={`rounded-2xl p-3 text-sm leading-7 ${
-                                        message.role === "user"
-                                          ? "border border-slate-200 bg-white text-slate-800"
-                                          : "border border-purple-200 bg-purple-100 text-slate-800"
-                                      }`}
-                                    >
-                                      <span className="font-semibold">
-                                        {message.role === "user" ? "You: " : "Lexi: "}
-                                      </span>
-                                      {message.text}
-                                    </div>
-                                  ))}
-                                </div>
-
-                                <div className="mt-4 flex gap-3">
-                                  <input
-                                    type="text"
-                                    value={lexiInputs[index] || ""}
-                                    onChange={(e) =>
-                                      setLexiInput(index, e.target.value)
-                                    }
-                                    placeholder="Ask Lexi about this question..."
-                                    className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-purple-400"
-                                  />
-                                  <button
-                                    onClick={() =>
-                                      guardQuizAction(() =>
-                                        askLexiAboutQuestion(index)
-                                      )
-                                    }
-                                    disabled={
-                                      lexiLoading ||
-                                      !(lexiInputs[index] || "").trim()
-                                    }
-                                    className="rounded-2xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
-                                  >
-                                    {lexiLoading ? "Asking..." : "Ask"}
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="mt-8 flex flex-wrap justify-center gap-4">
-                    <button
-                      onClick={() => guardQuizAction(() => generate())}
-                      className="rounded-2xl bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600"
-                    >
-                      Generate Another Set
-                    </button>
-
-                    <button
-                      onClick={() => guardQuizAction(() => retryMissedQuestions())}
-                      disabled={missedQuestions.length === 0}
-                      className="rounded-2xl bg-purple-600 px-6 py-3 font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
-                    >
-                      Retry Missed Questions
-                    </button>
-
-                    <button
-                      onClick={startNewSet}
-                      className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-                    >
-                      Reset
-                    </button>
-
-                    <a
-                      href="/dashboard"
-                      className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-                    >
-                      Go to Dashboard
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {currentQuestion && !showSummary && (
-                <div className="rounded-3xl border border-blue-100 bg-white p-8 shadow-2xl">
-                  <div className="mb-6">
-                    <div className="mb-4 flex flex-wrap gap-3">
-                      <span className="rounded-full bg-blue-100 px-4 py-1 text-sm font-semibold text-blue-800">
-                        {activeTopicLabel}
-                      </span>
-                      <span className="rounded-full bg-orange-100 px-4 py-1 text-sm font-semibold text-orange-700">
-                        {difficulty}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-4 py-1 text-sm font-semibold text-slate-700">
-                        {currentQuestion.questionType || questionType}
-                      </span>
-                      <span className="rounded-full bg-emerald-100 px-4 py-1 text-sm font-semibold text-emerald-700">
-                        {quizMode}
-                      </span>
-                      <span className="rounded-full bg-emerald-100 px-4 py-1 text-sm font-semibold text-emerald-700">
-                        Question {currentIndex + 1} of {questions.length}
-                      </span>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="mb-2 flex items-center justify-between text-sm">
-                        <span className="font-medium text-slate-700">Progress</span>
-                        <span className="text-slate-500">
-                          {Math.round(((currentIndex + 1) / questions.length) * 100)}%
-                        </span>
-                      </div>
-
-                      <div className="h-3 overflow-hidden rounded-full bg-slate-200">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-blue-900 via-blue-700 to-orange-500 transition-all duration-300"
-                          style={{
-                            width: `${((currentIndex + 1) / questions.length) * 100}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mb-6 flex flex-wrap gap-2">
-                    {questions.map((_, index) => {
-                      const isCurrent = index === currentIndex;
-                      const isAnswered = !!savedMap[index];
-
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => goToQuestion(index)}
-                          className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold transition ${
-                            isCurrent
-                              ? "border-blue-900 bg-blue-900 text-white"
-                              : isAnswered
-                              ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
-                          }`}
-                        >
-                          {index + 1}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <h2 className="text-2xl font-bold leading-relaxed text-slate-900">
-                    {currentQuestion.question}
-                  </h2>
-
-                  {currentQuestionIsSata && (
-                    <p className="mt-3 text-sm font-medium text-purple-700">
-                      Select all that apply.
-                    </p>
-                  )}
-
-                  <div className="mt-8 space-y-4">
-                    {(["A", "B", "C", "D"] as const).map((letter) => {
-                      const isSelected = Array.isArray(selectedAnswer)
-                        ? selectedAnswer.includes(letter)
-                        : selectedAnswer === letter;
-
-                      const isCorrect = currentQuestionIsSata
-                        ? (currentQuestion.correctAnswers || []).includes(letter)
-                        : currentQuestion.correctAnswer === letter;
-
-                      let classes =
-                        "w-full rounded-2xl border p-4 text-left transition duration-200 ";
-
-                      if (!revealed || isExamMode) {
-                        classes += isSelected
-                          ? "border-blue-300 bg-blue-50 shadow-md"
-                          : "border-slate-200 bg-white hover:bg-slate-50 hover:shadow-sm";
-                      } else {
-                        if (isCorrect) {
-                          classes += "border-emerald-300 bg-emerald-50";
-                        } else if (isSelected && !isCorrect) {
-                          classes += "border-red-300 bg-red-50";
-                        } else {
-                          classes += "border-slate-200 bg-white";
-                        }
-                      }
-
-                      return (
-                        <button
-                          key={letter}
-                          onClick={() => selectAnswer(letter)}
-                          className={classes}
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700">
-                              {letter}
-                            </div>
-                            <div className="pt-1 text-[15px] leading-7 text-slate-800">
-                              {currentQuestion.choices[letter]}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {!revealed && !isExamMode ? (
-                    <div className="mt-8 flex flex-wrap gap-3">
-                      <button
-                        onClick={() => guardQuizAction(() => revealAnswer())}
-                        disabled={!currentHasSelection}
-                        className="rounded-2xl bg-blue-900 px-6 py-3 font-semibold text-white transition hover:bg-blue-800 disabled:opacity-50"
-                      >
-                        Reveal Answer
-                      </button>
-
-                      <button
-                        onClick={previousQuestion}
-                        disabled={currentIndex === 0}
-                        className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100 disabled:opacity-50"
-                      >
-                        Previous Question
-                      </button>
-
-                      <button
-                        onClick={finishSetNow}
-                        className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-                      >
-                        Finish Set
-                      </button>
-                    </div>
-                  ) : !isExamMode ? (
-                    <div className="mt-8">
-                      <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6">
-                        <p className="text-lg font-bold text-slate-900">
-                          Correct Answer: {getCorrectAnswerLabel(currentQuestion)}
-                        </p>
-                        <p className="mt-4 leading-7 text-slate-700">
-                          {currentQuestion.rationale}
-                        </p>
-                      </div>
-
-                      {!isAnswerCorrect(currentQuestion, selectedAnswer) &&
-                        currentHasSelection && (
-                          <div className="mt-5 rounded-2xl border border-purple-200 bg-purple-50 p-4">
-                            <div className="mb-3 inline-flex rounded-full border border-purple-200 bg-white px-3 py-1 text-xs font-semibold text-purple-700">
-                              Ask Lexi About This Question
-                            </div>
-
-                            <div className="mb-3 flex flex-wrap gap-2">
-                              <button
-                                onClick={() =>
-                                  guardQuizAction(() =>
-                                    askLexiAboutQuestion(
-                                      currentIndex,
-                                      "Why is my answer wrong?"
-                                    )
-                                  )
-                                }
-                                className="rounded-full border border-purple-200 bg-white px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"
-                              >
-                                Why is my answer wrong?
-                              </button>
-
-                              <button
-                                onClick={() =>
-                                  guardQuizAction(() =>
-                                    askLexiAboutQuestion(
-                                      currentIndex,
-                                      "Explain the correct answer simply."
-                                    )
-                                  )
-                                }
-                                className="rounded-full border border-purple-200 bg-white px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"
-                              >
-                                Explain simply
-                              </button>
-
-                              <button
-                                onClick={() =>
-                                  guardQuizAction(() =>
-                                    askLexiAboutQuestion(
-                                      currentIndex,
-                                      "How would NCLEX test this again?"
-                                    )
-                                  )
-                                }
-                                className="rounded-full border border-purple-200 bg-white px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"
-                              >
-                                NCLEX angle
-                              </button>
-
-                              <button
-                                onClick={() =>
-                                  guardQuizAction(() =>
-                                    askLexiAboutQuestion(
-                                      currentIndex,
-                                      "Give me a memory trick for this."
-                                    )
-                                  )
-                                }
-                                className="rounded-full border border-purple-200 bg-white px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"
-                              >
-                                Memory trick
-                              </button>
-                            </div>
-
-                            <div className="space-y-3">
-                              {(lexiChats[currentIndex] || []).map(
-                                (message, msgIndex) => (
-                                  <div
-                                    key={msgIndex}
-                                    className={`rounded-2xl p-3 text-sm leading-7 ${
-                                      message.role === "user"
-                                        ? "border border-slate-200 bg-white text-slate-800"
-                                        : "border border-purple-200 bg-purple-100 text-slate-800"
-                                    }`}
-                                  >
-                                    <span className="font-semibold">
-                                      {message.role === "user" ? "You: " : "Lexi: "}
-                                    </span>
-                                    {message.text}
-                                  </div>
-                                )
-                              )}
-                            </div>
-
-                            <div className="mt-4 flex gap-3">
-                              <input
-                                type="text"
-                                value={lexiInputs[currentIndex] || ""}
-                                onChange={(e) =>
-                                  setLexiInput(currentIndex, e.target.value)
-                                }
-                                placeholder="Ask Lexi about this question..."
-                                className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-purple-400"
-                              />
-                              <button
-                                onClick={() =>
-                                  guardQuizAction(() =>
-                                    askLexiAboutQuestion(currentIndex)
-                                  )
-                                }
-                                disabled={
-                                  lexiLoadingMap[currentIndex] ||
-                                  !(lexiInputs[currentIndex] || "").trim()
-                                }
-                                className="rounded-2xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
-                              >
-                                {lexiLoadingMap[currentIndex] ? "Asking..." : "Ask"}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                      <div className="mt-5 flex flex-wrap gap-3">
-                        <button
-                          onClick={previousQuestion}
-                          disabled={currentIndex === 0}
-                          className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100 disabled:opacity-50"
-                        >
-                          Previous Question
-                        </button>
-
-                        <button
-                          onClick={() => guardQuizAction(() => nextQuestion())}
-                          disabled={loading}
-                          className="rounded-2xl bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
-                        >
-                          {currentIndex < questions.length - 1
-                            ? "Next Question"
-                            : "Finish Set"}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-8 flex flex-wrap gap-3">
-                      <button
-                        onClick={previousQuestion}
-                        disabled={currentIndex === 0}
-                        className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100 disabled:opacity-50"
-                      >
-                        Previous Question
-                      </button>
-
-                      <button
-                        onClick={() => guardQuizAction(() => nextQuestion())}
-                        disabled={!currentHasSelection || loading}
-                        className="rounded-2xl bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
-                      >
-                        {currentIndex < questions.length - 1
-                          ? "Lock In & Next"
-                          : "Finish Exam"}
-                      </button>
-
-                      <button
-                        onClick={finishSetNow}
-                        className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-                      >
-                        End Exam
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {showUpgradeModal && !canUseQuiz && (
-              <div className="absolute inset-0 z-30 flex items-center justify-center p-4">
-                <div className="absolute inset-0 rounded-3xl bg-slate-950/35 backdrop-blur-[2px]" />
-
-                <div className="relative z-10 w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100 text-2xl">
-                    🔒
-                  </div>
-
-                  <h3 className="text-center text-2xl font-black text-slate-900">
-                    Upgrade to use Quiz Generator
-                  </h3>
-
-                  <p className="mt-3 text-center text-slate-600">
-                    You can preview this page for free, but generating questions,
-                    revealing answers, and practicing requires the Starter plan.
-                  </p>
-
-                  <div className="mt-6 grid gap-3">
-                    <a
-                      href="/pricing"
-                      className="rounded-2xl bg-orange-500 px-5 py-3 text-center font-semibold text-white transition hover:bg-orange-600"
-                    >
-                      View Pricing
-                    </a>
-
-                    <a
-                      href="/checkout?plan=starter-monthly&source=quiz-preview"
-                      className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-center font-semibold text-slate-900 transition hover:bg-slate-100"
-                    >
-                      Upgrade Now
-                    </a>
-
-                    <button
-                      onClick={() => setShowUpgradeModal(false)}
-                      className="rounded-2xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
+      <Navbar />
+
+      <section className="mx-auto max-w-7xl px-4 py-6">
+
+        {/* Compact Header */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="mb-1 inline-flex items-center rounded-full border border-blue-200 bg-blue-100 px-3 py-0.5 text-xs font-medium text-blue-800">
+              Adaptive NCLEX-style practice
+            </div>
+            <h1 className="text-2xl font-black tracking-tight">Quiz Generator</h1>
+          </div>
+          <div className="flex gap-2">
+            <div className="rounded-xl border border-blue-100 bg-white px-4 py-2 text-center shadow-sm">
+              <div className="text-xs text-slate-500">Score</div>
+              <div className="text-xl font-bold">{overallScore}</div>
+            </div>
+            <div className="rounded-xl border border-orange-100 bg-white px-4 py-2 text-center shadow-sm">
+              <div className="text-xs text-slate-500">Answered</div>
+              <div className="text-xl font-bold">{questionsAnswered}</div>
+            </div>
+            <div className="rounded-xl border border-emerald-100 bg-white px-4 py-2 text-center shadow-sm">
+              <div className="text-xs text-slate-500">Accuracy</div>
+              <div className="text-xl font-bold">{overallPercent}%</div>
+            </div>
+          </div>
+        </div>
+
+        {!canUseQuiz && !accessLoading && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            Preview mode. Upgrade to Starter to generate questions and use the quiz.
+          </div>
+        )}
+
+        <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+
+          {/* Sidebar */}
+          <aside className="space-y-4">
+            <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+              <h2 className="mb-3 text-base font-bold">Practice Settings</h2>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600">Topic</label>
+                  <select
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-blue-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                  >
+                    {TOPIC_OPTIONS.map((option) => (
+                      <option key={option}>{option}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic</label>
+                  <input
+                    type="text"
+                    value={customTopic}
+                    onChange={(e) => setCustomTopic(e.target.value)}
+                    placeholder="e.g. Fundamentals - elimination"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic Details</label>
+                  <textarea
+                    value={customTopicDetails}
+                    onChange={(e) => setCustomTopicDetails(e.target.value)}
+                    placeholder="e.g. Focus on urinary elimination, bowel incontinence, ostomy care..."
+                    rows={3}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Difficulty</label>
+                    <select
+                      value={difficulty}
+                      onChange={(e) => setDifficulty(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-orange-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-orange-400"
+                    >
+                      <option>Easy</option>
+                      <option>Medium</option>
+                      <option>Hard</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Questions</label>
+                    <select
+                      value={questionCount}
+                      onChange={(e) => setQuestionCount(Number(e.target.value))}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    >
+                      <option value={1}>1</option>
+                      <option value={3}>3</option>
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={30}>30</option>
+                      <option value={40}>40</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Type</label>
+                    <select
+                      value={questionType}
+                      onChange={(e) => setQuestionType(e.target.value as QuestionType)}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    >
+                      <option>Multiple Choice</option>
+                      <option>Priority</option>
+                      <option>Delegation</option>
+                      <option>Pharmacology</option>
+                      <option>Select All That Apply</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Mode</label>
+                    <select
+                      value={quizMode}
+                      onChange={(e) => setQuizMode(e.target.value as QuizMode)}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    >
+                      <option>Tutor Mode</option>
+                      <option>Exam Mode</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => guardQuizAction(() => generate())}
+                  disabled={loading}
+                  className="w-full rounded-xl bg-orange-500 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 disabled:opacity-50"
+                >
+                  {loading ? "Generating..." : "Generate Questions"}
+                </button>
+
+                <button
+                  onClick={() => guardQuizAction(() => practiceWeakestAreaNow())}
+                  disabled={loading || weakAreas.length === 0}
+                  className="w-full rounded-xl bg-blue-900 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 disabled:opacity-50"
+                >
+                  Practice Weakest Area Now
+                </button>
+
+                <a
+                  href="/chat"
+                  className="block w-full rounded-xl border border-slate-300 bg-white py-2 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                >
+                  Open Lexi
+                </a>
+              </div>
+            </div>
+
+            {/* Weak Areas */}
+            <div className="rounded-2xl border border-orange-100 bg-white p-4 shadow-sm">
+              <h2 className="mb-2 text-base font-bold">Weak Areas</h2>
+              <div className="space-y-2">
+                {loadingWeakAreas ? (
+                  <p className="text-xs text-slate-500">Loading...</p>
+                ) : weakAreas.length === 0 ? (
+                  <p className="text-xs text-slate-500">No data yet. Answer a few questions first.</p>
+                ) : (
+                  weakAreas.map((area) => (
+                    <div key={area.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-orange-50 px-3 py-2">
+                      <span className="text-sm font-semibold text-slate-900">{area.topic}</span>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="rounded-full bg-white px-2 py-0.5 font-medium text-orange-700">
+                          {area.misses} miss{area.misses === 1 ? "" : "es"}
+                        </span>
+                        <span>{area.correct} correct</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="relative">
+            <div
+              className={`transition duration-200 ${
+                showUpgradeModal && !canUseQuiz
+                  ? "pointer-events-none select-none blur-[3px]"
+                  : ""
+              }`}
+            >
+              {error && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+              {saveError && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {saveError}
+                </div>
+              )}
+
+              {/* Empty State */}
+              {!currentQuestion && !showSummary && !error && (
+                <div className="rounded-2xl border border-blue-100 bg-white p-10 shadow-sm">
+                  <div className="mx-auto max-w-md text-center">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-100 text-2xl">📝</div>
+                    <h2 className="text-xl font-bold">Ready to practice?</h2>
+                    <p className="mt-2 text-sm text-slate-600">Choose your settings and generate a question set.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Summary View */}
+              {showSummary && (
+                <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-xl">✅</div>
+                    <div>
+                      <h2 className="text-xl font-black">Quiz Set Complete</h2>
+                      <p className="text-sm text-slate-500">Here is how you did on this set.</p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4 grid grid-cols-3 gap-3">
+                    <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-center">
+                      <p className="text-xs text-slate-500">Answered</p>
+                      <p className="text-2xl font-bold">{setAnsweredCount}</p>
+                    </div>
+                    <div className="rounded-xl border border-orange-100 bg-orange-50 p-3 text-center">
+                      <p className="text-xs text-slate-500">Correct</p>
+                      <p className="text-2xl font-bold">{setCorrectCount}</p>
+                    </div>
+                    <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-center">
+                      <p className="text-xs text-slate-500">Accuracy</p>
+                      <p className="text-2xl font-bold">{setPercent}%</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <h3 className="mb-3 text-base font-bold">Question Review</h3>
+                    <div className="space-y-3">
+                      {questions.map((question, index) => {
+                        const userAnswer = answers[index] || "";
+                        const gotItRight = isAnswerCorrect(question, userAnswer);
+                        const chatMessages = lexiChats[index] || [];
+                        const lexiLoading = lexiLoadingMap[index] || false;
+
+                        return (
+                          <div key={index} className="rounded-xl border border-slate-200 bg-white p-4">
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">
+                                {question.topic || customTopic.trim() || topic}
+                              </span>
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${gotItRight ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                                {gotItRight ? "Correct" : "Incorrect"}
+                              </span>
+                            </div>
+                            <p className="text-sm font-semibold text-slate-900">{index + 1}. {question.question}</p>
+                            <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-700">
+                              <span>Your answer: <strong>{normalizeAnswerForDisplay(userAnswer)}</strong></span>
+                              <span>Correct: <strong>{getCorrectAnswerLabel(question)}</strong></span>
+                            </div>
+                            <p className="mt-2 text-xs leading-6 text-slate-600">{question.rationale}</p>
+
+                            {!gotItRight && (
+                              <div className="mt-3 rounded-xl border border-purple-200 bg-purple-50 p-3">
+                                <p className="mb-2 text-xs font-semibold text-purple-700">Ask Lexi About This</p>
+                                <div className="mb-2 flex flex-wrap gap-1.5">
+                                  {[
+                                    ["Why is my answer wrong?", "Why is my answer wrong?"],
+                                    ["Explain simply", "Explain the correct answer simply."],
+                                    ["NCLEX angle", "How would NCLEX test this again?"],
+                                    ["Memory trick", "Give me a memory trick for this."],
+                                  ].map(([label, msg]) => (
+                                    <button
+                                      key={label}
+                                      onClick={() => guardQuizAction(() => askLexiAboutQuestion(index, msg))}
+                                      className="rounded-full border border-purple-200 bg-white px-2.5 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-100"
+                                    >
+                                      {label}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="space-y-2">
+                                  {chatMessages.map((message, msgIndex) => (
+                                    <div key={msgIndex} className={`rounded-xl p-2 text-xs leading-6 ${message.role === "user" ? "border border-slate-200 bg-white text-slate-800" : "border border-purple-200 bg-purple-100 text-slate-800"}`}>
+                                      <span className="font-semibold">{message.role === "user" ? "You: " : "Lexi: "}</span>
+                                      {message.text}
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="mt-2 flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={lexiInputs[index] || ""}
+                                    onChange={(e) => setLexiInput(index, e.target.value)}
+                                    placeholder="Ask Lexi..."
+                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-purple-400"
+                                  />
+                                  <button
+                                    onClick={() => guardQuizAction(() => askLexiAboutQuestion(index))}
+                                    disabled={lexiLoading || !(lexiInputs[index] || "").trim()}
+                                    className="rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
+                                  >
+                                    {lexiLoading ? "..." : "Ask"}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button
+                      onClick={() => guardQuizAction(() => generate())}
+                      className="rounded-xl bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+                    >
+                      Generate Another Set
+                    </button>
+                    <button
+                      onClick={() => guardQuizAction(() => retryMissedQuestions())}
+                      disabled={missedQuestions.length === 0}
+                      className="rounded-xl bg-purple-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      Retry Missed Questions
+                    </button>
+                    <button
+                      onClick={startNewSet}
+                      className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                    >
+                      Reset
+                    </button>
+                    <a
+                      href="/dashboard"
+                      className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                    >
+                      Dashboard
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Active Question */}
+              {currentQuestion && !showSummary && (
+                <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
+                  {/* Tags + progress */}
+                  <div className="mb-4">
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                      <span className="rounded-full bg-blue-100 px-3 py-0.5 text-xs font-semibold text-blue-800">{activeTopicLabel}</span>
+                      <span className="rounded-full bg-orange-100 px-3 py-0.5 text-xs font-semibold text-orange-700">{difficulty}</span>
+                      <span className="rounded-full bg-slate-100 px-3 py-0.5 text-xs font-semibold text-slate-700">{currentQuestion.questionType || questionType}</span>
+                      <span className="rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-semibold text-emerald-700">{quizMode}</span>
+                      <span className="rounded-full bg-blue-900 px-3 py-0.5 text-xs font-semibold text-white">Q{currentIndex + 1}/{questions.length}</span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-blue-900 via-blue-700 to-orange-500 transition-all duration-300"
+                          style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-slate-500">{Math.round(((currentIndex + 1) / questions.length) * 100)}%</span>
+                    </div>
+                  </div>
+
+                  {/* Question number dots */}
+                  <div className="mb-4 flex flex-wrap gap-1.5">
+                    {questions.map((_, index) => {
+                      const isCurrent = index === currentIndex;
+                      const isAnswered = !!savedMap[index];
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => goToQuestion(index)}
+                          className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition ${
+                            isCurrent
+                              ? "border-blue-900 bg-blue-900 text-white"
+                              : isAnswered
+                              ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                          }`}
+                        >
+                          {index + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <h2 className="text-lg font-bold leading-relaxed text-slate-900">{currentQuestion.question}</h2>
+
+                  {currentQuestionIsSata && (
+                    <p className="mt-2 text-xs font-medium text-purple-700">Select all that apply.</p>
+                  )}
+
+                  <div className="mt-4 space-y-2">
+                    {(["A", "B", "C", "D"] as const).map((letter) => {
+                      const isSelected = Array.isArray(selectedAnswer)
+                        ? selectedAnswer.includes(letter)
+                        : selectedAnswer === letter;
+                      const isCorrect = currentQuestionIsSata
+                        ? (currentQuestion.correctAnswers || []).includes(letter)
+                        : currentQuestion.correctAnswer === letter;
+
+                      let classes = "w-full rounded-xl border p-3 text-left transition duration-200 ";
+                      if (!revealed || isExamMode) {
+                        classes += isSelected
+                          ? "border-blue-300 bg-blue-50 shadow-sm"
+                          : "border-slate-200 bg-white hover:bg-slate-50";
+                      } else {
+                        if (isCorrect) {
+                          classes += "border-emerald-300 bg-emerald-50";
+                        } else if (isSelected && !isCorrect) {
+                          classes += "border-red-300 bg-red-50";
+                        } else {
+                          classes += "border-slate-200 bg-white";
+                        }
+                      }
+
+                      return (
+                        <button key={letter} onClick={() => selectAnswer(letter)} className={classes}>
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700">
+                              {letter}
+                            </div>
+                            <div className="pt-0.5 text-sm leading-6 text-slate-800">
+                              {currentQuestion.choices[letter]}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Action buttons: Tutor Mode unrevealed */}
+                  {!revealed && !isExamMode && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => guardQuizAction(() => revealAnswer())}
+                        disabled={!currentHasSelection}
+                        className="rounded-xl bg-blue-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:opacity-50"
+                      >
+                        Reveal Answer
+                      </button>
+                      <button
+                        onClick={previousQuestion}
+                        disabled={currentIndex === 0}
+                        className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={finishSetNow}
+                        className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                      >
+                        Finish Set
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Tutor Mode revealed */}
+                  {revealed && !isExamMode && (
+                    <div className="mt-4">
+                      <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                        <p className="text-sm font-bold text-slate-900">
+                          Correct Answer: {getCorrectAnswerLabel(currentQuestion)}
+                        </p>
+                        <p className="mt-2 text-sm leading-7 text-slate-700">{currentQuestion.rationale}</p>
+                      </div>
+
+                      {!isAnswerCorrect(currentQuestion, selectedAnswer) && currentHasSelection && (
+                        <div className="mt-3 rounded-xl border border-purple-200 bg-purple-50 p-3">
+                          <p className="mb-2 text-xs font-semibold text-purple-700">Ask Lexi About This</p>
+                          <div className="mb-2 flex flex-wrap gap-1.5">
+                            {[
+                              ["Why is my answer wrong?", "Why is my answer wrong?"],
+                              ["Explain simply", "Explain the correct answer simply."],
+                              ["NCLEX angle", "How would NCLEX test this again?"],
+                              ["Memory trick", "Give me a memory trick for this."],
+                            ].map(([label, msg]) => (
+                              <button
+                                key={label}
+                                onClick={() => guardQuizAction(() => askLexiAboutQuestion(currentIndex, msg))}
+                                className="rounded-full border border-purple-200 bg-white px-2.5 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-100"
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="space-y-2">
+                            {(lexiChats[currentIndex] || []).map((message, msgIndex) => (
+                              <div key={msgIndex} className={`rounded-xl p-2 text-xs leading-6 ${message.role === "user" ? "border border-slate-200 bg-white text-slate-800" : "border border-purple-200 bg-purple-100 text-slate-800"}`}>
+                                <span className="font-semibold">{message.role === "user" ? "You: " : "Lexi: "}</span>
+                                {message.text}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-2 flex gap-2">
+                            <input
+                              type="text"
+                              value={lexiInputs[currentIndex] || ""}
+                              onChange={(e) => setLexiInput(currentIndex, e.target.value)}
+                              placeholder="Ask Lexi..."
+                              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-purple-400"
+                            />
+                            <button
+                              onClick={() => guardQuizAction(() => askLexiAboutQuestion(currentIndex))}
+                              disabled={lexiLoadingMap[currentIndex] || !(lexiInputs[currentIndex] || "").trim()}
+                              className="rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
+                            >
+                              {lexiLoadingMap[currentIndex] ? "..." : "Ask"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          onClick={previousQuestion}
+                          disabled={currentIndex === 0}
+                          className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:opacity-50"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          onClick={() => guardQuizAction(() => nextQuestion())}
+                          disabled={loading}
+                          className="rounded-xl bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
+                        >
+                          {currentIndex < questions.length - 1 ? "Next Question" : "Finish Set"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Exam Mode buttons */}
+                  {isExamMode && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        onClick={previousQuestion}
+                        disabled={currentIndex === 0}
+                        className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={() => guardQuizAction(() => nextQuestion())}
+                        disabled={!currentHasSelection || loading}
+                        className="rounded-xl bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
+                      >
+                        {currentIndex < questions.length - 1 ? "Lock In & Next" : "Finish Exam"}
+                      </button>
+                      <button
+                        onClick={finishSetNow}
+                        className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                      >
+                        End Exam
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Upgrade Modal */}
+            {showUpgradeModal && !canUseQuiz && (
+              <div className="absolute inset-0 z-30 flex items-center justify-center p-4">
+                <div className="absolute inset-0 rounded-2xl bg-slate-950/35 backdrop-blur-[2px]" />
+                <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-xl">🔒</div>
+                  <h3 className="text-center text-xl font-black text-slate-900">Upgrade to use Quiz Generator</h3>
+                  <p className="mt-2 text-center text-sm text-slate-600">
+                    Generating questions, revealing answers, and practicing requires the Starter plan.
+                  </p>
+                  <div className="mt-5 grid gap-2">
+                    <a href="/pricing" className="rounded-xl bg-orange-500 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-orange-600">
+                      View Pricing
+                    </a>
+                    <a href="/checkout?plan=starter-monthly&source=quiz-preview" className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
+                      Upgrade Now
+                    </a>
+                    <button onClick={() => setShowUpgradeModal(false)} className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    </main>
+  );
 }
 
 function QuizPageFallback() {
-  return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
-      <Navbar />
-      <section className="mx-auto max-w-7xl px-6 py-10">
-        <div className="rounded-3xl border border-blue-100 bg-white p-12 shadow-2xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-2xl">
-              📝
-            </div>
-            <h2 className="text-2xl font-bold">Loading quiz...</h2>
-            <p className="mt-3 text-slate-600">
-              Preparing your quiz page.
-            </p>
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
+      <Navbar />
+      <section className="mx-auto max-w-7xl px-4 py-6">
+        <div className="rounded-2xl border border-blue-100 bg-white p-10 shadow-sm">
+          <div className="mx-auto max-w-md text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-100 text-2xl">📝</div>
+            <h2 className="text-xl font-bold">Loading quiz...</h2>
+            <p className="mt-2 text-sm text-slate-600">Preparing your quiz page.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
 }
 
 export default function QuizPage() {
-  return (
-    <Suspense fallback={<QuizPageFallback />}>
-      <QuizPageInner />
-    </Suspense>
-  );
+  return (
+    <Suspense fallback={<QuizPageFallback />}>
+      <QuizPageInner />
+    </Suspense>
+  );
 }
