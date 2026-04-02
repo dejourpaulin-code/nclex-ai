@@ -159,7 +159,7 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 xl:px-8">
 
         {/* Top row: logo + actions */}
-        <div className="flex items-center justify-between gap-4 py-3">
+        <div className="flex items-center justify-between gap-4 py-2">
           <Link href="/" className="flex shrink-0 items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-900 to-orange-500 text-base font-bold text-white shadow-md">
               N
@@ -273,7 +273,7 @@ export default function Navbar() {
         </div>
 
         {/* Nav row — fits all items; scrollable on narrow screens without scrollbar */}
-        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto pb-1">
+        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto py-1.5 border-t border-slate-100">
           {allNavItems.map((item) => {
             const active = isActive(item.href);
             const unlocked = isUnlocked(item);
@@ -281,7 +281,7 @@ export default function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
+                className={`whitespace-nowrap rounded-lg px-3 py-1 text-xs font-semibold transition ${
                   active
                     ? "bg-blue-900 text-white shadow-sm"
                     : unlocked
