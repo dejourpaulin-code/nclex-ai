@@ -158,7 +158,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
       <div className="mx-auto max-w-7xl px-4 xl:px-8">
         {/* Top row: logo + actions */}
-        <div className="flex items-center justify-between gap-4 pt-2 pb-1">
+        <div className="flex items-center justify-between gap-4 pt-2 pb-0">
           <Link href="/" className="flex shrink-0 items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-900 to-orange-500 text-base font-bold text-white shadow-md">
               N
