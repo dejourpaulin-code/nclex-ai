@@ -157,13 +157,12 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
       <div className="mx-auto max-w-7xl px-4 xl:px-8">
-        {/* Top row: logo + actions */}
-        <div className="flex items-center justify-between gap-4 pt-2 pb-0">
+        <div className="flex items-center justify-between gap-4 py-2">
           <Link href="/" className="flex shrink-0 items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-900 to-orange-500 text-base font-bold text-white shadow-md">
               N
             </div>
-            <div className="hidden sm:block leading-tight">
+            <div className="hidden leading-tight sm:block">
               <p className="text-base font-bold text-slate-900">NCLEXAI</p>
               <p className="text-[10px] text-slate-500">Built for nursing students</p>
             </div>
@@ -213,7 +212,7 @@ export default function Navbar() {
                   </button>
 
                   {menuOpen && (
-                    <div className="absolute right-0 mt-3 z-50 w-64 rounded-2xl border border-slate-200 bg-white p-2 text-slate-900 shadow-2xl">
+                    <div className="absolute right-0 z-50 mt-3 w-64 rounded-2xl border border-slate-200 bg-white p-2 text-slate-900 shadow-2xl">
                       <div className="mb-2 rounded-xl bg-slate-50 px-4 py-3">
                         <p className="truncate text-sm font-semibold text-slate-900">{email}</p>
                         <p className="mt-1 text-xs text-slate-500">
@@ -271,11 +270,11 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Nav row — fits all items; scrollable on narrow screens without scrollbar */}
-        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto pb-2">
+        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto pb-2 pt-0">
           {allNavItems.map((item) => {
             const active = isActive(item.href);
             const unlocked = isUnlocked(item);
+
             return (
               <Link
                 key={item.href}
