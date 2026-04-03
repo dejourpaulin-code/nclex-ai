@@ -155,14 +155,16 @@ export default function Navbar() {
         access.accessLevel !== "full-program"));
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_rgba(15,23,42,0.08)]">
       <div className="mx-auto max-w-7xl px-4 xl:px-8">
-        <div className="flex items-center justify-between gap-4 py-2">
+
+        {/* Top row: logo + actions */}
+        <div className="flex items-center justify-between gap-4 py-3">
           <Link href="/" className="flex shrink-0 items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-900 to-orange-500 text-base font-bold text-white shadow-md">
               N
             </div>
-            <div className="hidden leading-tight sm:block">
+            <div className="hidden sm:block leading-tight">
               <p className="text-base font-bold text-slate-900">NCLEXAI</p>
               <p className="text-[10px] text-slate-500">Built for nursing students</p>
             </div>
@@ -202,7 +204,7 @@ export default function Navbar() {
                       {initials}
                     </div>
                     <div className="hidden text-left sm:block">
-                      <p className="max-w-[108px] truncate text-sm font-semibold text-slate-900">
+                      <p className="max-w-[120px] truncate text-sm font-semibold text-slate-900">
                         {email}
                       </p>
                       <p className="text-[10px] text-slate-500">
@@ -212,7 +214,7 @@ export default function Navbar() {
                   </button>
 
                   {menuOpen && (
-                    <div className="absolute right-0 z-50 mt-3 w-64 rounded-2xl border border-slate-200 bg-white p-2 text-slate-900 shadow-2xl">
+                    <div className="absolute right-0 mt-3 z-50 w-64 rounded-2xl border border-slate-200 bg-white p-2 text-slate-900 shadow-2xl">
                       <div className="mb-2 rounded-xl bg-slate-50 px-4 py-3">
                         <p className="truncate text-sm font-semibold text-slate-900">{email}</p>
                         <p className="mt-1 text-xs text-slate-500">
@@ -270,16 +272,16 @@ export default function Navbar() {
           </div>
         </div>
 
-        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto pb-2 pt-0">
+        {/* Nav row — fits all items; scrollable on narrow screens without scrollbar */}
+        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto pb-1">
           {allNavItems.map((item) => {
             const active = isActive(item.href);
             const unlocked = isUnlocked(item);
-
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`whitespace-nowrap rounded-lg px-3 py-1 text-xs font-semibold transition ${
+                className={`whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
                   active
                     ? "bg-blue-900 text-white shadow-sm"
                     : unlocked
@@ -296,6 +298,7 @@ export default function Navbar() {
             );
           })}
         </nav>
+
       </div>
     </header>
   );
