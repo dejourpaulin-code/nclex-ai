@@ -231,6 +231,10 @@ export default function LiveFullLecturePage() {
   const lastSavedTranscriptLengthRef = useRef(0);
   const analysisInFlightRef = useRef(false);
   const transcribeInFlightRef = useRef(false);
+  const transcriptionQueueRef = useRef<Map<number, string>>(new Map());
+  const nextChunkIdRef = useRef(0);
+  const nextFlushIdRef = useRef(0);
+  const activeTranscriptionsRef = useRef(0);
   const isStoppingRef = useRef(false);
 
   const sessionIdRef = useRef<string | null>(null);
@@ -649,97 +653,76 @@ export default function LiveFullLecturePage() {
     [analyzeTranscript, getCurrentTranscript, requireLiveFullAccess]
   );
 
-  const processAudioQueue = useCallback(async () => {
-    if (transcribeInFlightRef.current) return;
-
-    const nextBlob = pendingAudioChunksRef.current.shift();
-    if (!nextBlob) {
-      if (mountedRef.current) {
-        setTranscribing(false);
-        setLiveText("");
-      }
-      return;
-    }
-
-    transcribeInFlightRef.current = true;
-    setTranscribing(true);
-    setLiveText(
-      pendingAudioChunksRef.current.length > 0
-        ? `Transcribing audio... (${pendingAudioChunksRef.current.length + 1} queued)`
-        : "Transcribing audio..."
-    );
-
-    try {
-      const mimeInfo = currentMimeInfoRef.current;
-      const blobType = nextBlob.type || mimeInfo?.mimeType || "audio/webm";
-      const extension = mimeInfo?.extension || "webm";
-
-      const file = new File([nextBlob], `lecture.${extension}`, {
-        type: blobType,
-      });
-
-      const formData = new FormData();
-      formData.append("audio", file);
-      formData.append("recentContext", fullTranscriptRef.current.slice(-500));
-      formData.append("sessionTitle", title || "Full Live Lecture Session");
-
-      const res = await fetch("/api/live-lecture/transcribe", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.warn("Transcription failed:", data);
-        setError(data?.error || "Transcription failed.");
-        return;
-      }
-
-      const text = String(data?.text || "").trim();
-      if (!text) return;
-
-      setFullTranscript((prev) => {
-        const next = `${prev} ${text}`.replace(/\s+/g, " ").trim();
-        fullTranscriptRef.current = next;
-        return next;
-      });
-
-      setLiveText("Lecture heard. Updating analysis...");
-    } catch (err) {
-      console.error("Chunk transcription error:", err);
-      setError("Failed to transcribe live audio.");
-    } finally {
-      transcribeInFlightRef.current = false;
-
-      if (mountedRef.current) {
-        if (pendingAudioChunksRef.current.length > 0) {
-          void processAudioQueue();
-        } else {
-          setTranscribing(false);
-          setLiveText("");
-        }
+  // Each chunk fires its own API call immediately -- no serial queue
+  const flushTranscriptQueue = useCallback(() => {
+    while (transcriptionQueueRef.current.has(nextFlushIdRef.current)) {
+      const text = transcriptionQueueRef.current.get(nextFlushIdRef.current) ?? "";
+      transcriptionQueueRef.current.delete(nextFlushIdRef.current);
+      nextFlushIdRef.current += 1;
+      if (text) {
+        setFullTranscript((prev) => {
+          const next = `${prev} ${text}`.replace(/\s+/g, " ").trim();
+          fullTranscriptRef.current = next;
+          return next;
+        });
       }
     }
-  }, [title]);
+    if (activeTranscriptionsRef.current <= 0 && mountedRef.current) {
+      setTranscribing(false);
+      setLiveText("");
+    }
+  }, []);
+
+  const transcribeChunkAsync = useCallback(
+    async (blob: Blob, chunkId: number) => {
+      try {
+        const mimeInfo = currentMimeInfoRef.current;
+        const blobType = blob.type || mimeInfo?.mimeType || "audio/webm";
+        const extension = mimeInfo?.extension || "webm";
+
+        const file = new File([blob], `lecture.${extension}`, { type: blobType });
+        const formData = new FormData();
+        formData.append("audio", file);
+        formData.append("recentContext", fullTranscriptRef.current.slice(-500));
+        formData.append("sessionTitle", title || "Full Live Lecture Session");
+
+        const res = await fetch("/api/live-lecture/transcribe", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await res.json();
+        const text = res.ok ? String(data?.text || "").trim() : "";
+        if (!res.ok) console.warn("Transcription failed for chunk", chunkId, data?.error);
+        transcriptionQueueRef.current.set(chunkId, text);
+      } catch (err) {
+        console.error("Chunk transcription error:", err);
+        transcriptionQueueRef.current.set(chunkId, "");
+      } finally {
+        activeTranscriptionsRef.current -= 1;
+        if (mountedRef.current) flushTranscriptQueue();
+      }
+    },
+    [title, flushTranscriptQueue]
+  );
 
   const enqueueAudioChunk = useCallback(
     (blob: Blob) => {
       if (!blob || blob.size === 0) return;
-      pendingAudioChunksRef.current.push(blob);
-      void processAudioQueue();
+      const chunkId = nextChunkIdRef.current;
+      nextChunkIdRef.current += 1;
+      activeTranscriptionsRef.current += 1;
+      setTranscribing(true);
+      setLiveText("Transcribing audio...");
+      void transcribeChunkAsync(blob, chunkId);
     },
-    [processAudioQueue]
+    [transcribeChunkAsync]
   );
 
   const waitForAudioQueueToFlush = useCallback(async () => {
     let attempts = 0;
-
-    while (
-      (transcribeInFlightRef.current || pendingAudioChunksRef.current.length > 0) &&
-      attempts < 250
-    ) {
-      await new Promise((resolve) => window.setTimeout(resolve, 150));
+    while (activeTranscriptionsRef.current > 0 && attempts < 300) {
+      await new Promise((resolve) => window.setTimeout(resolve, 100));
       attempts += 1;
     }
   }, []);
@@ -860,8 +843,10 @@ export default function LiveFullLecturePage() {
 
     try {
       stopMediaCapture();
-      pendingAudioChunksRef.current = [];
-      transcribeInFlightRef.current = false;
+      transcriptionQueueRef.current = new Map();
+      nextChunkIdRef.current = 0;
+      nextFlushIdRef.current = 0;
+      activeTranscriptionsRef.current = 0;
       currentMimeInfoRef.current = null;
       isStoppingRef.current = false;
       setLiveText("");
@@ -925,9 +910,11 @@ export default function LiveFullLecturePage() {
 
   function resetLecture() {
     analysisInFlightRef.current = false;
-    transcribeInFlightRef.current = false;
     isStoppingRef.current = false;
-    pendingAudioChunksRef.current = [];
+    transcriptionQueueRef.current = new Map();
+    nextChunkIdRef.current = 0;
+    nextFlushIdRef.current = 0;
+    activeTranscriptionsRef.current = 0;
     currentMimeInfoRef.current = null;
     mp4ChunkModeRef.current = false;
 
@@ -956,9 +943,11 @@ export default function LiveFullLecturePage() {
 
   async function startSession() {
     analysisInFlightRef.current = false;
-    transcribeInFlightRef.current = false;
     isStoppingRef.current = false;
-    pendingAudioChunksRef.current = [];
+    transcriptionQueueRef.current = new Map();
+    nextChunkIdRef.current = 0;
+    nextFlushIdRef.current = 0;
+    activeTranscriptionsRef.current = 0;
     currentMimeInfoRef.current = null;
     mp4ChunkModeRef.current = false;
 
