@@ -41,6 +41,8 @@ Your job:
 - Do not invent fake website features.
 `;
 
+const FREE_MESSAGE_LIMIT = 8;
+
 export async function POST(req: Request) {
   try {
     const { message, userId, conversationId } = await req.json();
@@ -54,6 +56,41 @@ export async function POST(req: Request) {
     }
 
     let activeConversationId = conversationId as string | null;
+
+    // Check access level and enforce free message limit
+    const accessRes = await supabase
+      .from("user_access")
+      .select("access_level, status")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .order("id", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const accessLevel = accessRes.data?.access_level || "free";
+    const isFreeUser = accessLevel === "free";
+
+    if (isFreeUser) {
+      // Count total user messages across all conversations
+      const convRes = await supabase
+        .from("lexi_conversations")
+        .select("id")
+        .eq("user_id", userId);
+      const convIds = (convRes.data || []).map((c: { id: string }) => c.id);
+      let freeMessageCount = 0;
+      if (convIds.length > 0) {
+        const { count } = await supabase
+          .from("lexi_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("role", "user")
+          .in("conversation_id", convIds);
+        freeMessageCount = count ?? 0;
+      }
+
+      if (freeMessageCount >= FREE_MESSAGE_LIMIT) {
+        return NextResponse.json({ upgrade: true }, { status: 200 });
+      }
+    }
 
     let profileText = "No saved user profile.";
     let weakAreasText = "No weak areas recorded yet.";

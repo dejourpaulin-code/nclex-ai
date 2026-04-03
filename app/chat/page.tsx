@@ -50,6 +50,7 @@ export default function ChatPage() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [history, setHistory] = useState<ConversationRow[]>([]);
+  const [showUpgradeWall, setShowUpgradeWall] = useState(false);
 
   useEffect(() => {
     void loadProfileAndHistory();
@@ -192,6 +193,12 @@ export default function ChatPage() {
       });
 
       const data = await res.json();
+
+      if (data.upgrade) {
+        setShowUpgradeWall(true);
+        setLoading(false);
+        return;
+      }
 
       if (!res.ok) {
         setMessages([
@@ -382,6 +389,40 @@ export default function ChatPage() {
                     </div>
                   </div>
                 )}
+
+                {showUpgradeWall && (
+                  <div className="flex items-start gap-3">
+                    <AvatarDisplay lexi size={36} />
+                    <div className="max-w-[82%] rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-white p-4 shadow-sm">
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-orange-400">Lexi</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        You&apos;ve used your free messages with me!
+                      </p>
+                      <p className="mt-1.5 text-sm leading-6 text-slate-600">
+                        I hope I&apos;ve been helpful so far. To keep going — unlimited conversations, full tutoring, weak-area coaching, adaptive quizzes, and lecture intelligence — you&apos;ll need a plan. Students who use the full system study smarter and stop wasting time on the wrong material.
+                      </p>
+                      <div className="mt-3 space-y-1.5 text-xs text-slate-600">
+                        {[
+                          "Unlimited Lexi conversations",
+                          "Adaptive quizzes targeting your weak areas",
+                          "Live lecture intelligence during class",
+                          "Full study history and performance tracking",
+                        ].map((f) => (
+                          <div key={f} className="flex items-center gap-1.5">
+                            <span className="text-orange-400">✓</span>
+                            <span>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <a
+                        href="/pricing"
+                        className="mt-4 block rounded-xl bg-orange-500 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-orange-600"
+                      >
+                        See Plans &amp; Pricing
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -391,13 +432,14 @@ export default function ChatPage() {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Talk to Lexi..."
-                  className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500"
+                  placeholder={showUpgradeWall ? "Upgrade to keep chatting with Lexi..." : "Talk to Lexi..."}
+                  disabled={showUpgradeWall}
+                  className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 disabled:opacity-50"
                   onKeyDown={(e) => { if (e.key === "Enter") void sendMessage(); }}
                 />
                 <button
                   onClick={() => void sendMessage()}
-                  disabled={loading || !input.trim()}
+                  disabled={loading || !input.trim() || showUpgradeWall}
                   className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
                 >
                   Send
