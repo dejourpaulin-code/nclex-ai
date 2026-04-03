@@ -447,499 +447,307 @@ export default function HistoryPage() {
     setRetryLoading(false);
   }
 
-  return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
-      <Navbar />
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
+      <Navbar />
 
-      <section className="mx-auto max-w-7xl px-6 py-10 xl:px-10">
-        <div className="mb-10 grid gap-8 xl:grid-cols-[1.1fr_0.9fr] xl:items-end">
-          <div>
-            <div className="mb-4 inline-flex items-center rounded-full border border-blue-200 bg-blue-100 px-4 py-1 text-sm font-medium text-blue-800">
-              Saved practice history
-            </div>
+      <section className="mx-auto max-w-7xl px-4 py-5">
 
-            <h1 className="text-4xl font-black tracking-tight md:text-5xl xl:text-6xl">
-              Review your
-              <span className="ml-3 inline-block rounded-2xl bg-gradient-to-r from-blue-900 to-orange-500 px-4 py-1 text-white">
-                learning history
-              </span>
-            </h1>
+        {/* Compact header */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="mb-1 inline-flex rounded-full border border-blue-200 bg-blue-100 px-3 py-0.5 text-xs font-medium text-blue-800">
+              Saved practice history
+            </div>
+            <h1 className="text-2xl font-black tracking-tight">Learning History</h1>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <div className="rounded-xl border border-blue-100 bg-white px-4 py-2 text-center shadow-sm">
+              <p className="text-xs text-slate-500">Sessions</p>
+              <p className="text-xl font-bold">{sessionCards.length}</p>
+            </div>
+            <div className="rounded-xl border border-blue-100 bg-white px-4 py-2 text-center shadow-sm">
+              <p className="text-xs text-slate-500">Reviewed</p>
+              <p className="text-xl font-bold">{totalQuestions}</p>
+            </div>
+            <div className="rounded-xl border border-emerald-100 bg-white px-4 py-2 text-center shadow-sm">
+              <p className="text-xs text-slate-500">Correct</p>
+              <p className="text-xl font-bold">{totalCorrect}</p>
+            </div>
+            <div className="rounded-xl border border-orange-100 bg-white px-4 py-2 text-center shadow-sm">
+              <p className="text-xs text-slate-500">Accuracy</p>
+              <p className="text-xl font-bold">{overallAccuracy}%</p>
+            </div>
+          </div>
+        </div>
 
-            <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">
-              Go back through recent questions, see exactly where you were right or wrong,
-              and turn old attempts into better future scores.
-            </p>
+        {/* Filters */}
+        <div className="mb-4 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-bold text-slate-700">Filters</h2>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => retryQuestionsFromHistory(incorrectRows)}
+                disabled={retryLoading || incorrectRows.length === 0}
+                className="rounded-xl bg-purple-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
+              >
+                {retryLoading ? "Building..." : "Retry Incorrect"}
+              </button>
+              <button
+                onClick={() => resumeSimilarSetFromRows(incorrectRows)}
+                disabled={incorrectRows.length === 0}
+                className="rounded-xl border border-blue-300 bg-white px-4 py-1.5 text-xs font-semibold text-blue-800 transition hover:bg-blue-50 disabled:opacity-50"
+              >
+                Resume Similar Set
+              </button>
+              <a href="/quiz" className="rounded-xl bg-orange-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-600">
+                New Quiz
+              </a>
+            </div>
+          </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm">
-                Review rationales
-              </span>
-              <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm">
-                Search by topic
-              </span>
-              <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm">
-                Filter right vs wrong
-              </span>
-              <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm">
-                Retry weak concepts
-              </span>
-              <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm">
-                Session review
-              </span>
-            </div>
-          </div>
+          {retryError && (
+            <div className="mb-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">{retryError}</div>
+          )}
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-3xl border border-blue-100 bg-white p-5 shadow-lg">
-              <p className="text-sm text-slate-500">Sessions</p>
-              <p className="mt-2 text-3xl font-black">{sessionCards.length}</p>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Search</label>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by topic, question, or type..."
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Result</label>
+              <select
+                value={resultFilter}
+                onChange={(e) => setResultFilter(e.target.value as FilterMode)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+              >
+                <option>All</option>
+                <option>Correct</option>
+                <option>Incorrect</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Topic</label>
+              <select
+                value={topicFilter}
+                onChange={(e) => setTopicFilter(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+              >
+                {topics.map((topic) => (
+                  <option key={topic}>{topic}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
 
-            <div className="rounded-3xl border border-blue-100 bg-white p-5 shadow-lg">
-              <p className="text-sm text-slate-500">Total Reviewed</p>
-              <p className="mt-2 text-3xl font-black">{totalQuestions}</p>
-            </div>
+        {loading ? (
+          <div className="rounded-2xl border border-blue-100 bg-white p-8 shadow-sm text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-xl">📚</div>
+            <h2 className="text-lg font-bold">Loading history...</h2>
+          </div>
+        ) : sessions.length === 0 && rows.length === 0 ? (
+          <div className="rounded-2xl border border-blue-100 bg-white p-8 shadow-sm text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-xl">📝</div>
+            <h2 className="text-lg font-bold">No saved history yet</h2>
+            <p className="mt-2 text-sm text-slate-600">Answer quiz questions to build your history.</p>
+            <a href="/quiz" className="mt-4 inline-block rounded-xl bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">
+              Start Practicing
+            </a>
+          </div>
+        ) : filteredSessions.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-xl">🔎</div>
+            <h2 className="text-lg font-bold">No matches found</h2>
+            <p className="mt-2 text-sm text-slate-600">Try clearing your search or changing your filters.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredSessions.map(({ session, rows: sessionRows }, sessionIndex) => {
+              const expanded = !!expandedSessions[session.id];
+              const missedInSession = sessionRows.filter((row) => row.is_correct === false);
 
-            <div className="rounded-3xl border border-emerald-100 bg-white p-5 shadow-lg">
-              <p className="text-sm text-slate-500">Correct</p>
-              <p className="mt-2 text-3xl font-black">{totalCorrect}</p>
-            </div>
+              return (
+                <div key={session.id} className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  {/* Session header */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+                    <div>
+                      <div className="mb-1.5 flex flex-wrap gap-1.5">
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">{session.topic || "Unknown"}</span>
+                        <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">{session.difficulty || "Unknown"}</span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{session.question_type || "Unknown"}</span>
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">{session.accuracy ?? 0}% accuracy</span>
+                      </div>
+                      <p className="text-sm font-bold text-slate-900">
+                        Session #{sessionIndex + 1} · {(session.total_questions ?? sessionRows.length) || 0} questions · {session.correct_count ?? sessionRows.filter((r) => r.is_correct === true).length} correct
+                      </p>
+                      <p className="text-xs text-slate-400">{new Date(session.created_at).toLocaleString()}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => retryQuestionsFromHistory(missedInSession)}
+                        disabled={retryLoading || missedInSession.length === 0}
+                        className="rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
+                      >
+                        Retry Missed
+                      </button>
+                      <button
+                        onClick={() => resumeSimilarSetFromRows(sessionRows)}
+                        disabled={sessionRows.length === 0}
+                        className="rounded-xl border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-800 transition hover:bg-blue-50 disabled:opacity-50"
+                      >
+                        Resume Similar
+                      </button>
+                      <button
+                        onClick={() => toggleSession(session.id)}
+                        className="rounded-xl bg-blue-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800"
+                      >
+                        {expanded ? "Hide" : "Open"}
+                      </button>
+                    </div>
+                  </div>
 
-            <div className="rounded-3xl border border-orange-100 bg-white p-5 shadow-lg">
-              <p className="text-sm text-slate-500">Accuracy</p>
-              <p className="mt-2 text-3xl font-black">{overallAccuracy}%</p>
-            </div>
-          </div>
-        </div>
+                  {expanded && (
+                    <div className="space-y-3 border-t border-slate-200 p-4">
+                      {sessionRows.map((row, index) => {
+                        const lexiMessages = lexiChats[row.id] || [];
+                        const lexiLoading = lexiLoadingMap[row.id] || false;
 
-        <div className="mb-8 rounded-[32px] border border-blue-100 bg-white p-6 shadow-2xl">
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Review filters</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Narrow your history to the exact questions you want to revisit.
-              </p>
-            </div>
+                        return (
+                          <div key={row.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex flex-wrap gap-1.5">
+                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">{row.topic}</span>
+                                <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">{row.difficulty}</span>
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{row.question_type}</span>
+                                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${row.is_correct ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                                  {row.is_correct ? "Correct" : "Incorrect"}
+                                </span>
+                              </div>
+                              <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-600">Q{index + 1}</span>
+                            </div>
 
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => retryQuestionsFromHistory(incorrectRows)}
-                disabled={retryLoading || incorrectRows.length === 0}
-                className="rounded-2xl bg-purple-600 px-5 py-3 text-center font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
-              >
-                {retryLoading ? "Building Retry Set..." : "Retry Incorrect Questions"}
-              </button>
+                            <p className="mb-3 text-sm font-bold leading-6 text-slate-900">{row.question}</p>
 
-              <button
-                onClick={() => resumeSimilarSetFromRows(incorrectRows)}
-                disabled={incorrectRows.length === 0}
-                className="rounded-2xl border border-blue-300 bg-white px-5 py-3 text-center font-semibold text-blue-800 transition hover:bg-blue-50 disabled:opacity-50"
-              >
-                Resume Similar Set
-              </button>
+                            <div className="mb-3 grid grid-cols-2 gap-2">
+                              <div className="rounded-xl border border-slate-200 bg-white p-2">
+                                <p className="text-xs text-slate-500">Your answer</p>
+                                <p className="text-sm font-bold text-slate-900">{row.selected_answer || "None"}</p>
+                              </div>
+                              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-2">
+                                <p className="text-xs text-slate-500">Correct answer</p>
+                                <p className="text-sm font-bold text-slate-900">{row.correct_answer}</p>
+                              </div>
+                            </div>
 
-              <a
-                href="/quiz"
-                className="rounded-2xl bg-orange-500 px-5 py-3 text-center font-semibold text-white transition hover:bg-orange-600"
-              >
-                Generate New Quiz
-              </a>
-            </div>
-          </div>
+                            {row.choices && (
+                              <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3">
+                                <p className="mb-2 text-xs font-semibold text-slate-600">Answer choices</p>
+                                <div className="grid gap-2 md:grid-cols-2">
+                                  {(["A", "B", "C", "D"] as const).map((letter) => (
+                                    <div key={letter} className={`rounded-lg border p-2 ${choiceCardClass(letter, row.selected_answer, row.correct_answer)}`}>
+                                      <div className="flex items-start gap-2">
+                                        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${choiceBadgeClass(letter, row.selected_answer, row.correct_answer)}`}>
+                                          {letter}
+                                        </div>
+                                        <p className="text-xs leading-5 text-slate-800">{row.choices?.[letter] || "—"}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
-          {retryError && (
-            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
-              {retryError}
-            </div>
-          )}
+                            <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50 p-3">
+                              <p className="mb-1 text-xs font-semibold text-blue-900">Rationale</p>
+                              <p className="text-xs leading-6 text-slate-700">{row.rationale}</p>
+                            </div>
 
-          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr]">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Search</label>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by topic, question, or type..."
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500"
-              />
-            </div>
+                            <div className="mb-3 flex flex-wrap gap-2">
+                              <button
+                                onClick={() => retryQuestionsFromHistory([row])}
+                                disabled={retryLoading}
+                                className="rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
+                              >
+                                Retry
+                              </button>
+                              <button
+                                onClick={() => resumeSimilarSetFromRows([row])}
+                                className="rounded-xl border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-800 transition hover:bg-blue-50"
+                              >
+                                Similar Set
+                              </button>
+                              <button
+                                onClick={() => askLexiFromHistory(row, "Why did I get this wrong?")}
+                                disabled={lexiLoading}
+                                className="rounded-xl border border-purple-300 bg-white px-3 py-1.5 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 disabled:opacity-50"
+                              >
+                                Ask Lexi
+                              </button>
+                            </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Result</label>
-              <select
-                value={resultFilter}
-                onChange={(e) => setResultFilter(e.target.value as FilterMode)}
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500"
-              >
-                <option>All</option>
-                <option>Correct</option>
-                <option>Incorrect</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Topic</label>
-              <select
-                value={topicFilter}
-                onChange={(e) => setTopicFilter(e.target.value)}
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500"
-              >
-                {topics.map((topic) => (
-                  <option key={topic}>{topic}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="rounded-[32px] border border-blue-100 bg-white p-10 shadow-2xl">
-            <div className="mx-auto max-w-2xl text-center">
-              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-2xl">
-                📚
-              </div>
-              <h2 className="text-2xl font-bold">Loading history...</h2>
-              <p className="mt-3 text-slate-600">
-                Pulling in your recent quiz performance.
-              </p>
-            </div>
-          </div>
-        ) : sessions.length === 0 && rows.length === 0 ? (
-          <div className="rounded-[32px] border border-blue-100 bg-white p-12 shadow-2xl">
-            <div className="mx-auto max-w-2xl text-center">
-              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-2xl">
-                📝
-              </div>
-              <h2 className="text-3xl font-black">No saved history yet</h2>
-              <p className="mt-4 text-lg leading-8 text-slate-600">
-                Once you answer quiz questions, your review history will show up here.
-              </p>
-
-              <a
-                href="/quiz"
-                className="mt-6 inline-block rounded-2xl bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600"
-              >
-                Start Practicing
-              </a>
-            </div>
-          </div>
-        ) : filteredSessions.length === 0 ? (
-          <div className="rounded-[32px] border border-slate-200 bg-white p-12 shadow-2xl">
-            <div className="mx-auto max-w-2xl text-center">
-              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
-                🔎
-              </div>
-              <h2 className="text-3xl font-black">No matches found</h2>
-              <p className="mt-4 text-lg leading-8 text-slate-600">
-                Try clearing your search or changing your filters.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {filteredSessions.map(({ session, rows: sessionRows }, sessionIndex) => {
-              const expanded = !!expandedSessions[session.id];
-              const missedInSession = sessionRows.filter((row) => row.is_correct === false);
-
-              return (
-                <div
-                  key={session.id}
-                  className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-xl"
-                >
-                  <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
-                          {session.topic || "Unknown Topic"}
-                        </span>
-                        <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
-                          {session.difficulty || "Unknown Difficulty"}
-                        </span>
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                          {session.question_type || "Unknown Type"}
-                        </span>
-                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                          {session.accuracy ?? 0}% accuracy
-                        </span>
-                      </div>
-
-                      <p className="mt-4 text-xl font-bold text-slate-900">
-                        Session #{sessionIndex + 1}
-                      </p>
-
-                      <p className="mt-2 text-sm leading-7 text-slate-600">
-                        {(session.total_questions ?? sessionRows.length) || 0} question
-                        {((session.total_questions ?? sessionRows.length) || 0) === 1 ? "" : "s"} •{" "}
-                        {session.correct_count ??
-                          sessionRows.filter((r) => r.is_correct === true).length}{" "}
-                        correct •{" "}
-                        {session.incorrect_count ??
-                          sessionRows.filter((r) => r.is_correct === false).length}{" "}
-                        incorrect
-                      </p>
-
-                      <p className="mt-1 text-sm text-slate-500">
-                        {new Date(session.created_at).toLocaleString()}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-3">
-                      <button
-                        onClick={() => retryQuestionsFromHistory(missedInSession)}
-                        disabled={retryLoading || missedInSession.length === 0}
-                        className="rounded-2xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
-                      >
-                        Retry Missed In Session
-                      </button>
-
-                      <button
-                        onClick={() => resumeSimilarSetFromRows(sessionRows)}
-                        disabled={sessionRows.length === 0}
-                        className="rounded-2xl border border-blue-300 bg-white px-5 py-3 text-sm font-semibold text-blue-800 transition hover:bg-blue-50 disabled:opacity-50"
-                      >
-                        Resume Similar Set
-                      </button>
-
-                      <button
-                        onClick={() => toggleSession(session.id)}
-                        className="rounded-2xl bg-blue-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
-                      >
-                        {expanded ? "Hide Session" : "Open Session"}
-                      </button>
-                    </div>
-                  </div>
-
-                  {expanded && (
-                    <div className="mt-6 space-y-5 border-t border-slate-200 pt-6">
-                      {sessionRows.map((row, index) => {
-                        const lexiMessages = lexiChats[row.id] || [];
-                        const lexiLoading = lexiLoadingMap[row.id] || false;
-
-                        return (
-                          <div
-                            key={row.id}
-                            className="rounded-[28px] border border-slate-200 bg-slate-50 p-6"
-                          >
-                            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                              <div className="flex flex-wrap gap-2">
-                                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
-                                  {row.topic}
-                                </span>
-                                <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
-                                  {row.difficulty}
-                                </span>
-                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                                  {row.question_type}
-                                </span>
-                                <span
-                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                    row.is_correct
-                                      ? "bg-emerald-100 text-emerald-700"
-                                      : "bg-red-100 text-red-700"
-                                  }`}
-                                >
-                                  {row.is_correct ? "Correct" : "Incorrect"}
-                                </span>
-                              </div>
-
-                              <div className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-600">
-                                Q{index + 1}
-                              </div>
-                            </div>
-
-                            <h2 className="text-xl font-bold leading-8 text-slate-900">
-                              {row.question}
-                            </h2>
-
-                            <div className="mt-5 grid gap-4 md:grid-cols-2">
-                              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                                <p className="text-sm text-slate-500">Your answer</p>
-                                <p className="mt-2 text-lg font-bold text-slate-900">
-                                  {row.selected_answer || "None"}
-                                </p>
-                              </div>
-
-                              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-                                <p className="text-sm text-slate-500">Correct answer</p>
-                                <p className="mt-2 text-lg font-bold text-slate-900">
-                                  {row.correct_answer}
-                                </p>
-                              </div>
-                            </div>
-
-                            {row.choices && (
-                              <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-5">
-                                <div className="mb-4 flex items-center justify-between">
-                                  <p className="text-sm font-semibold text-slate-900">
-                                    Saved answer choices
-                                  </p>
-                                  <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
-                                    A / B / C / D review
-                                  </span>
-                                </div>
-
-                                <div className="grid gap-3 md:grid-cols-2">
-                                  {(["A", "B", "C", "D"] as const).map((letter) => (
-                                    <div
-                                      key={letter}
-                                      className={`rounded-2xl border p-4 ${choiceCardClass(
-                                        letter,
-                                        row.selected_answer,
-                                        row.correct_answer
-                                      )}`}
-                                    >
-                                      <div className="flex items-start gap-4">
-                                        <div
-                                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-bold ${choiceBadgeClass(
-                                            letter,
-                                            row.selected_answer,
-                                            row.correct_answer
-                                          )}`}
-                                        >
-                                          {letter}
-                                        </div>
-
-                                        <div className="min-w-0">
-                                          <p className="text-sm leading-7 text-slate-800">
-                                            {row.choices?.[letter] || "No saved text for this choice."}
-                                          </p>
-
-                                          <div className="mt-2 flex flex-wrap gap-2">
-                                            {row.selected_answer === letter && (
-                                              <span className="rounded-full bg-white px-2 py-1 text-[11px] font-semibold text-slate-700">
-                                                Your choice
-                                              </span>
-                                            )}
-
-                                            {row.correct_answer === letter && (
-                                              <span className="rounded-full bg-white px-2 py-1 text-[11px] font-semibold text-emerald-700">
-                                                Correct
-                                              </span>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="mt-5 rounded-3xl border border-blue-100 bg-blue-50 p-5">
-                              <div className="mb-2 flex items-center justify-between">
-                                <p className="text-sm font-semibold text-blue-900">Rationale</p>
-                                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700">
-                                  Review note
-                                </span>
-                              </div>
-
-                              <p className="leading-7 text-slate-700">{row.rationale}</p>
-                            </div>
-
-                            <div className="mt-5 flex flex-wrap gap-3">
-                              <button
-                                onClick={() => retryQuestionsFromHistory([row])}
-                                disabled={retryLoading}
-                                className="rounded-2xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
-                              >
-                                Retry This Question
-                              </button>
-
-                              <button
-                                onClick={() => resumeSimilarSetFromRows([row])}
-                                className="rounded-2xl border border-blue-300 bg-white px-5 py-3 text-sm font-semibold text-blue-800 transition hover:bg-blue-50"
-                              >
-                                Resume Similar Set
-                              </button>
-
-                              <button
-                                onClick={() => askLexiFromHistory(row, "Why did I get this wrong?")}
-                                disabled={lexiLoading}
-                                className="rounded-2xl border border-purple-300 bg-white px-5 py-3 text-sm font-semibold text-purple-700 transition hover:bg-purple-50 disabled:opacity-50"
-                              >
-                                Ask Lexi Again
-                              </button>
-                            </div>
-
-                            <div className="mt-5 rounded-2xl border border-purple-200 bg-purple-50 p-4">
-                              <div className="mb-3 inline-flex rounded-full border border-purple-200 bg-white px-3 py-1 text-xs font-semibold text-purple-700">
-                                Lexi History Chat
-                              </div>
-
-                              {!row.is_correct && (
-                                <div className="mb-3 flex flex-wrap gap-2">
-                                  <button
-                                    onClick={() => askLexiFromHistory(row, "Why is my answer wrong?")}
-                                    className="rounded-full border border-purple-200 bg-white px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"
-                                  >
-                                    Why is my answer wrong?
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      askLexiFromHistory(row, "Explain the correct answer simply.")
-                                    }
-                                    className="rounded-full border border-purple-200 bg-white px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"
-                                  >
-                                    Explain simply
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      askLexiFromHistory(row, "How would NCLEX test this again?")
-                                    }
-                                    className="rounded-full border border-purple-200 bg-white px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"
-                                  >
-                                    NCLEX angle
-                                  </button>
-                                </div>
-                              )}
-
-                              <div className="space-y-3">
-                                {lexiMessages.map((message, msgIndex) => (
-                                  <div
-                                    key={msgIndex}
-                                    className={`rounded-2xl p-3 text-sm leading-7 ${
-                                      message.role === "user"
-                                        ? "border border-slate-200 bg-white text-slate-800"
-                                        : "border border-purple-200 bg-purple-100 text-slate-800"
-                                    }`}
-                                  >
-                                    <span className="font-semibold">
-                                      {message.role === "user" ? "You: " : "Lexi: "}
-                                    </span>
-                                    {message.text}
-                                  </div>
-                                ))}
-                              </div>
-
-                              <div className="mt-4 flex gap-3">
-                                <input
-                                  type="text"
-                                  value={lexiInputs[row.id] || ""}
-                                  onChange={(e) => setLexiInput(row.id, e.target.value)}
-                                  placeholder="Ask Lexi about this question..."
-                                  className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-purple-400"
-                                />
-                                <button
-                                  onClick={() => askLexiFromHistory(row)}
-                                  disabled={lexiLoading || !(lexiInputs[row.id] || "").trim()}
-                                  className="rounded-2xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
-                                >
-                                  {lexiLoading ? "Asking..." : "Ask"}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-    </main>
-  );
+                            <div className="rounded-xl border border-purple-200 bg-purple-50 p-3">
+                              <p className="mb-2 text-xs font-semibold text-purple-700">Lexi Chat</p>
+                              {!row.is_correct && (
+                                <div className="mb-2 flex flex-wrap gap-1.5">
+                                  {[
+                                    ["Why wrong?", "Why is my answer wrong?"],
+                                    ["Explain simply", "Explain the correct answer simply."],
+                                    ["NCLEX angle", "How would NCLEX test this again?"],
+                                  ].map(([label, msg]) => (
+                                    <button
+                                      key={label}
+                                      onClick={() => askLexiFromHistory(row, msg)}
+                                      className="rounded-full border border-purple-200 bg-white px-2.5 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-100"
+                                    >
+                                      {label}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="space-y-2">
+                                {lexiMessages.map((message, msgIndex) => (
+                                  <div key={msgIndex} className={`rounded-lg p-2 text-xs leading-6 ${message.role === "user" ? "border border-slate-200 bg-white text-slate-800" : "border border-purple-200 bg-purple-100 text-slate-800"}`}>
+                                    <span className="font-semibold">{message.role === "user" ? "You: " : "Lexi: "}</span>
+                                    {message.text}
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="mt-2 flex gap-2">
+                                <input
+                                  type="text"
+                                  value={lexiInputs[row.id] || ""}
+                                  onChange={(e) => setLexiInput(row.id, e.target.value)}
+                                  placeholder="Ask Lexi..."
+                                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-purple-400"
+                                />
+                                <button
+                                  onClick={() => askLexiFromHistory(row)}
+                                  disabled={lexiLoading || !(lexiInputs[row.id] || "").trim()}
+                                  className="rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
+                                >
+                                  {lexiLoading ? "..." : "Ask"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </main>
+  );
 }
