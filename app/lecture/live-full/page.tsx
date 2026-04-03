@@ -874,11 +874,11 @@ export default function LiveFullLecturePage() {
       }
 
       currentMimeInfoRef.current = mimeInfo;
-      mp4ChunkModeRef.current = isMp4ChunkMode(mimeInfo);
+      mp4ChunkModeRef.current = true; // always use stop-restart so every chunk is a complete decodable file
 
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          echoCancellation: true,
+          echoCancellation: false, // off = better pickup for distant lecturer
           noiseSuppression: true,
           autoGainControl: true,
           channelCount: 1,
