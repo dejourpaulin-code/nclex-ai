@@ -45,13 +45,11 @@ async function transcribeWithModel(
   sessionTitle: string
 ) {
   const prompt = [
-    "This is a live nursing lecture transcript.",
+    "This is a live nursing classroom lecture. Transcribe with accurate clinical spelling.",
     sessionTitle ? `Lecture title: ${sessionTitle}.` : "",
-    recentContext
-      ? `Recent transcript context for continuity: ${recentContext.slice(-800)}`
-      : "",
-    "Prefer clear clinical wording, proper sentence continuity, medication names, nursing terminology, anatomy, physiology, and classroom lecture phrasing.",
-    "Keep transcription faithful, but resolve obvious sentence breaks when possible.",
+    recentContext ? `Recent context: ${recentContext.slice(-600)}` : "",
+    "Clinical vocabulary: tachycardia, bradycardia, dysrhythmia, arrhythmia, myocardial infarction, angina, atrial fibrillation, ventricular fibrillation, pulmonary embolism, deep vein thrombosis, heart failure, hypertension, hypotension, COPD, pneumonia, asthma, pneumothorax, anaphylaxis, sepsis, DKA, diabetic ketoacidosis, hypoglycemia, hyperglycemia, Addison's disease, Cushing's syndrome, hypothyroidism, hyperthyroidism, Graves' disease, pyelonephritis, glomerulonephritis, urinary tract infection, hepatitis, cirrhosis, pancreatitis, stroke, TIA, multiple sclerosis, Parkinson's disease, heparin, warfarin, metformin, insulin, digoxin, furosemide, lisinopril, metoprolol, atorvastatin, prednisone, albuterol, morphine, IV bolus, nasogastric tube, Foley catheter, tracheostomy, intubation, SpO2, CBC, BMP, ABG, creatinine, potassium, sodium, SBAR, NPO, PRN, STAT, NCLEX, priority, assessment, intervention.",
+    "Keep transcription faithful to speech. Correct obvious phonetic substitutions using clinical context.",
   ]
     .filter(Boolean)
     .join(" ");

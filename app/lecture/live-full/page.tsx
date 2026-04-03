@@ -94,7 +94,7 @@ type RecorderMimeInfo = {
   extension: string;
 };
 
-const TRANSCRIBE_INTERVAL_MS = 20000;
+const TRANSCRIBE_INTERVAL_MS = 10000;
 const ANALYZE_INTERVAL_MS = 12000;
 const MIN_ANALYZE_CHARS = 140;
 
@@ -155,17 +155,24 @@ function canUseMediaRecorder() {
 function getSupportedRecorderMime(): RecorderMimeInfo | null {
   if (
     typeof window === "undefined" ||
-    typeof window.MediaRecorder === "undefined" ||
-    typeof window.MediaRecorder.isTypeSupported !== "function"
+    typeof window.MediaRecorder === "undefined"
   ) {
     return null;
+  }
+
+  // If isTypeSupported is unavailable, use browser default (common on older mobile)
+  if (typeof window.MediaRecorder.isTypeSupported !== "function") {
+    return { mimeType: "", extension: "mp4" };
   }
 
   const candidates: RecorderMimeInfo[] = [
     { mimeType: "audio/webm;codecs=opus", extension: "webm" },
     { mimeType: "audio/webm", extension: "webm" },
+    { mimeType: "audio/mp4;codecs=mp4a.40.2", extension: "mp4" },
     { mimeType: "audio/mp4", extension: "mp4" },
+    { mimeType: "audio/aac", extension: "m4a" },
     { mimeType: "audio/ogg;codecs=opus", extension: "ogg" },
+    { mimeType: "audio/ogg", extension: "ogg" },
   ];
 
   for (const candidate of candidates) {
@@ -174,12 +181,20 @@ function getSupportedRecorderMime(): RecorderMimeInfo | null {
     }
   }
 
-  return null;
+  // Fallback: let the browser pick its own format (works on iOS Safari)
+  return { mimeType: "", extension: "mp4" };
 }
 
 function isMp4ChunkMode(mimeInfo: RecorderMimeInfo | null) {
   if (!mimeInfo) return false;
-  return mimeInfo.extension === "mp4" || mimeInfo.mimeType.includes("mp4");
+  // mp4/m4a/aac all require stop-restart chunking (no requestData support)
+  return (
+    mimeInfo.extension === "mp4" ||
+    mimeInfo.extension === "m4a" ||
+    mimeInfo.mimeType.includes("mp4") ||
+    mimeInfo.mimeType.includes("aac") ||
+    mimeInfo.mimeType === ""
+  );
 }
 
 export default function LiveFullLecturePage() {
@@ -731,9 +746,7 @@ export default function LiveFullLecturePage() {
 
   const createRecorder = useCallback(
     (stream: MediaStream, mimeInfo: RecorderMimeInfo) => {
-      const recorder = new MediaRecorder(stream, {
-        mimeType: mimeInfo.mimeType,
-      });
+      const recorder = new MediaRecorder(stream, ...(mimeInfo.mimeType ? [{ mimeType: mimeInfo.mimeType }] : []));
 
       recorder.ondataavailable = (event: BlobEvent) => {
         if (event.data && event.data.size > 0) {
