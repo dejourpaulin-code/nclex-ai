@@ -2,8 +2,6 @@
 
 import Navbar from "../components/Navbar";
 import Reveal from "../components/Reveal";
-import WaitlistForm from "../components/WaitlistForm";
-import WaitlistCount from "../components/WaitlistCount";
 import { supabase } from "../lib/supabase";
 
 const testimonials = [
@@ -427,13 +425,18 @@ export default function Home() {
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-slate-500">
-                    Early access is filling now
+                    Built for nursing students
                   </p>
                   <p className="mt-1 text-lg font-bold text-slate-900">
-                    Join before the next rollout window closes.
+                    Start today — no setup, no learning curve.
                   </p>
                 </div>
-                <WaitlistCount />
+                <a
+                  href="/pricing"
+                  className="shrink-0 rounded-2xl bg-orange-500 px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-orange-600"
+                >
+                  View Plans
+                </a>
               </div>
             </div>
 
@@ -1003,38 +1006,40 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="mt-5">
-                <WaitlistCount dark />
-              </div>
-
               <div className="w-full max-w-xl">
-                <div className="mb-4 flex flex-col gap-4 sm:flex-row">
+                <div className="mb-5 flex flex-col gap-4 sm:flex-row">
                   <a
-                    href="/checkout?plan=semester&source=bottom-primary"
-                    onClick={() => trackCtaClick("bottom-primary", "Start Practicing")}
+                    href="/pricing"
+                    onClick={() => trackCtaClick("bottom-primary", "See Plans")}
                     className="rounded-2xl bg-white px-8 py-4 text-center text-lg font-semibold text-blue-950 transition duration-300 hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-xl"
                   >
-                    Start Practicing
+                    See Plans &amp; Pricing
                   </a>
 
                   <a
-                    href="/checkout?plan=full-program&source=bottom-secondary"
-                    onClick={() => trackCtaClick("bottom-secondary", "Get Full Program Access")}
+                    href="/chat"
+                    onClick={() => trackCtaClick("bottom-secondary", "Try Lexi Free")}
                     className="rounded-2xl border border-white/30 bg-white/10 px-8 py-4 text-center text-lg font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/20"
                   >
-                    Get Full Program Access
+                    Try Lexi Free
                   </a>
                 </div>
 
                 <div className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur">
-                  <p className="mb-2 text-sm font-semibold text-orange-100">
-                    Join the waitlist before the next access wave fills.
-                  </p>
-                  <p className="mb-4 text-sm leading-7 text-blue-100">
-                    If you want early updates, launch access, and first priority when new features roll out,
-                    put your email in now.
-                  </p>
-                  <WaitlistForm source="homepage-cta" dark />
+                  <p className="mb-3 text-sm font-semibold text-orange-200">Why students switch to NCLEXAI</p>
+                  <div className="space-y-2">
+                    {[
+                      "Stops wasted study time by targeting exactly what you keep missing",
+                      "Lexi explains the why behind every answer — not just right or wrong",
+                      "Live lecture intelligence catches what professors emphasize in real time",
+                      "Built by people who understand nursing school, not just software",
+                    ].map((reason) => (
+                      <div key={reason} className="flex items-start gap-2 text-sm leading-6 text-blue-100">
+                        <span className="mt-0.5 shrink-0 text-orange-300">✓</span>
+                        <span>{reason}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
