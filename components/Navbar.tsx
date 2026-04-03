@@ -42,7 +42,6 @@ const allNavItems: NavItem[] = [
   { href: "/cat", label: "CAT Exam", requires: "catExam" },
   { href: "/lecture", label: "Lecture Mode", requires: "lecture" },
   { href: "/lecture/live-full", label: "Live Full", requires: "liveFull" },
-  { href: "/lecture/stream", label: "Stream v2", requires: "lecture" },
   { href: "/account", label: "Account" },
 ];
 
