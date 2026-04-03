@@ -514,382 +514,282 @@ export default function CATPage() {
   const accuracy =
     results.length === 0 ? 0 : Math.round((score / results.length) * 100);
 
-  return (
-    <>
-      <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
-        <Navbar />
+  return (
+    <>
+      <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
+        <Navbar />
 
-        <section className="mx-auto max-w-7xl px-6 py-10">
-          <div className="mb-8">
-            <div className="mb-4 inline-flex rounded-full border border-purple-200 bg-purple-100 px-4 py-1 text-sm font-medium text-purple-800">
-              True adaptive exam
-            </div>
-            <h1 className="text-4xl font-black tracking-tight md:text-5xl">
-              Lexi CAT Exam
-            </h1>
-            <p className="mt-3 max-w-3xl text-lg text-slate-600">
-              Difficulty rises and falls based on your performance, just like a true adaptive test.
-            </p>
-          </div>
+        <section className="mx-auto max-w-7xl px-4 py-5">
 
-          {!canUseCAT && !accessLoading && (
-            <div className="mb-6 rounded-2xl border border-orange-200 bg-orange-50 p-4">
-              <p className="text-sm font-semibold text-orange-700">Preview mode</p>
-              <p className="mt-1 text-sm text-slate-700">
-                You can view the CAT page, but starting and using the CAT exam requires Core.
-              </p>
-            </div>
-          )}
+          {/* Compact header */}
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="mb-1 inline-flex rounded-full border border-purple-200 bg-purple-100 px-3 py-0.5 text-xs font-medium text-purple-800">
+                True adaptive exam
+              </div>
+              <h1 className="text-2xl font-black tracking-tight">Lexi CAT Exam</h1>
+            </div>
+          </div>
 
-          {!started && !showSummary && (
-            <div className="grid gap-8 lg:grid-cols-[340px_minmax(0,1fr)]">
-              <aside className="space-y-6">
-                <div className="rounded-3xl border border-blue-100 bg-white p-6 shadow-xl">
-                  <h2 className="text-xl font-bold">CAT Settings</h2>
+          {!canUseCAT && !accessLoading && (
+            <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50 p-3 text-sm text-orange-700">
+              Preview mode — starting the CAT exam requires Core.
+            </div>
+          )}
 
-                  <div className="mt-6 space-y-5">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Topic Focus
-                      </label>
-                      <select
-                        value={topic}
-                        onChange={(e) => setTopic(e.target.value as (typeof TOPICS)[number])}
-                        className="w-full rounded-2xl border border-slate-300 bg-white p-3"
-                      >
-                        {TOPICS.map((option) => (
-                          <option key={option}>{option}</option>
-                        ))}
-                      </select>
-                    </div>
+          {error && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Custom Topic
-                      </label>
-                      <input
-                        value={customTopic}
-                        onChange={(e) => setCustomTopic(e.target.value)}
-                        placeholder="Example: Acid-base imbalance"
-                        className="w-full rounded-2xl border border-slate-300 bg-white p-3"
-                      />
-                    </div>
+          {/* Setup screen */}
+          {!started && !showSummary && (
+            <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+              <aside className="space-y-4">
+                <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+                  <h2 className="mb-3 text-base font-bold">CAT Settings</h2>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-600">Topic Focus</label>
+                      <select
+                        value={topic}
+                        onChange={(e) => setTopic(e.target.value as (typeof TOPICS)[number])}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                      >
+                        {TOPICS.map((option) => (
+                          <option key={option}>{option}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic</label>
+                      <input
+                        value={customTopic}
+                        onChange={(e) => setCustomTopic(e.target.value)}
+                        placeholder="e.g. Acid-base imbalance"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic Details</label>
+                      <textarea
+                        value={customTopicDetails}
+                        onChange={(e) => setCustomTopicDetails(e.target.value)}
+                        placeholder="Add exactly what Lexi should test on..."
+                        rows={3}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-600">Number of Questions</label>
+                      <select
+                        value={targetCount}
+                        onChange={(e) => setTargetCount(Number(e.target.value))}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                      >
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={30}>30</option>
+                        <option value={50}>50</option>
+                      </select>
+                    </div>
+                    <button
+                      onClick={startExam}
+                      disabled={loading}
+                      className="w-full rounded-xl bg-orange-500 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
+                    >
+                      {loading ? "Preparing CAT..." : "Start Adaptive Exam"}
+                    </button>
+                  </div>
+                </div>
 
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Custom Topic Details
-                      </label>
-                      <textarea
-                        value={customTopicDetails}
-                        onChange={(e) => setCustomTopicDetails(e.target.value)}
-                        placeholder="Add exactly what Lexi should test on..."
-                        className="min-h-[120px] w-full rounded-2xl border border-slate-300 bg-white p-3"
-                      />
-                    </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <h2 className="text-base font-bold">CAT History</h2>
+                    <button
+                      onClick={startFreshCat}
+                      className="rounded-xl bg-blue-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800"
+                    >
+                      New CAT
+                    </button>
+                  </div>
+                  <div className="space-y-1.5">
+                    {historyLoading ? (
+                      <p className="text-xs text-slate-500">Loading...</p>
+                    ) : history.length === 0 ? (
+                      <p className="text-xs text-slate-500">No CAT exams yet.</p>
+                    ) : (
+                      history.map((item) => {
+                        const active = item.id === examId;
+                        const answeredCount = item.answers?.length || 0;
+                        const correctCount = Number(item.score || 0);
+                        const percent = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => openCatExam(item.id)}
+                            className={`w-full rounded-xl border px-3 py-2 text-left transition ${active ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white hover:bg-slate-50"}`}
+                          >
+                            <p className="truncate text-xs font-semibold text-slate-900">{item.title}</p>
+                            <p className="text-[10px] text-slate-400">{new Date(item.updated_at).toLocaleString()}</p>
+                            {item.score !== null && answeredCount > 0 && (
+                              <p className="text-[10px] font-semibold text-orange-700">{correctCount}/{answeredCount} ({percent}%)</p>
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </aside>
 
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Number of Questions
-                      </label>
-                      <select
-                        value={targetCount}
-                        onChange={(e) => setTargetCount(Number(e.target.value))}
-                        className="w-full rounded-2xl border border-slate-300 bg-white p-3"
-                      >
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                        <option value={30}>30</option>
-                        <option value={50}>50</option>
-                      </select>
-                    </div>
+              <div className="rounded-2xl border border-purple-100 bg-white p-4 shadow-sm">
+                <h2 className="mb-3 text-base font-bold">How this works</h2>
+                <div className="space-y-2">
+                  {[
+                    "If you answer correctly, the next question gets harder.",
+                    "If you answer incorrectly, the next question eases slightly.",
+                    "Lexi uses your adaptive performance to better estimate your readiness.",
+                  ].map((text) => (
+                    <div key={text} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      {text}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
-                    <button
-                      onClick={startExam}
-                      disabled={loading}
-                      className="w-full rounded-2xl bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
-                    >
-                      {loading ? "Preparing CAT..." : "Start Adaptive Exam"}
-                    </button>
-                  </div>
-                </div>
+          {/* Active question */}
+          {started && currentQuestion && !showSummary && (
+            <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                <span className="rounded-full bg-purple-100 px-3 py-0.5 text-xs font-semibold text-purple-800">CAT Exam</span>
+                <span className="rounded-full bg-blue-100 px-3 py-0.5 text-xs font-semibold text-blue-800">{currentQuestion.topic || customTopic || topic}</span>
+                <span className="rounded-full bg-orange-100 px-3 py-0.5 text-xs font-semibold text-orange-700">{difficulty}</span>
+                <span className="rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-semibold text-emerald-700">Q{questionNumber} of {targetCount}</span>
+              </div>
 
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
-                  <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-xl font-bold">CAT Exam History</h2>
-                    <button
-                      onClick={startFreshCat}
-                      className="rounded-2xl bg-blue-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
-                    >
-                      New CAT
-                    </button>
-                  </div>
+              <h2 className="mb-4 text-lg font-bold leading-relaxed text-slate-900">{currentQuestion.question}</h2>
 
-                  <p className="mt-2 text-sm text-slate-500">
-                    Reopen your past adaptive exams.
-                  </p>
+              <div className="space-y-2">
+                {(["A", "B", "C", "D"] as const).map((letter) => {
+                  const isSelected = selectedAnswer === letter;
+                  return (
+                    <button
+                      key={letter}
+                      onClick={() => handleSelectAnswer(letter)}
+                      className={`w-full rounded-xl border p-3 text-left transition ${isSelected ? "border-blue-300 bg-blue-50 shadow-sm" : "border-slate-200 bg-white hover:bg-slate-50"}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700">
+                          {letter}
+                        </div>
+                        <div className="pt-0.5 text-sm leading-6 text-slate-800">{currentQuestion.choices[letter]}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
 
-                  <div className="mt-4 space-y-3">
-                    {historyLoading ? (
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                        Loading CAT history...
-                      </div>
-                    ) : history.length === 0 ? (
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                        No CAT exams yet.
-                      </div>
-                    ) : (
-                      history.map((item) => {
-                        const active = item.id === examId;
-                        const answeredCount = item.answers?.length || 0;
-                        const correctCount = Number(item.score || 0);
-                        const percent =
-                          answeredCount > 0
-                            ? Math.round((correctCount / answeredCount) * 100)
-                            : 0;
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={lockAnswerAndContinue}
+                  disabled={!selectedAnswer || loading}
+                  className="rounded-xl bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
+                >
+                  {questionNumber < targetCount ? "Lock In & Next" : "Finish CAT"}
+                </button>
+                <button
+                  onClick={generateAnotherCat}
+                  className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                >
+                  Cancel / New CAT
+                </button>
+              </div>
+            </div>
+          )}
 
-                        return (
-                          <button
-                            key={item.id}
-                            onClick={() => openCatExam(item.id)}
-                            className={`w-full rounded-2xl border p-4 text-left transition ${
-                              active
-                                ? "border-blue-300 bg-blue-50"
-                                : "border-slate-200 bg-white hover:bg-slate-50"
-                            }`}
-                          >
-                            <p className="font-semibold text-slate-900">{item.title}</p>
-                            <p className="mt-1 text-xs text-slate-500">
-                              {new Date(item.updated_at).toLocaleString()}
-                            </p>
-                            {item.score !== null && answeredCount > 0 && (
-                              <p className="mt-2 text-xs font-semibold text-orange-700">
-                                Score: {correctCount}/{answeredCount} ({percent}%)
-                              </p>
-                            )}
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              </aside>
+          {/* Summary */}
+          {showSummary && (
+            <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-xl">✅</div>
+                <div>
+                  <h2 className="text-xl font-black">CAT Exam Complete</h2>
+                  <p className="text-sm text-slate-500">Here is how you performed.</p>
+                </div>
+              </div>
 
-              <div className="rounded-3xl border border-purple-100 bg-white p-8 shadow-xl">
-                <h2 className="text-2xl font-bold">How this works</h2>
-                <div className="mt-5 space-y-4 text-slate-700">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    If you answer correctly, the next question gets harder.
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    If you answer incorrectly, the next question eases slightly.
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    Lexi uses your adaptive performance to better estimate your readiness.
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+              <div className="mb-4 grid grid-cols-3 gap-3">
+                <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-center">
+                  <p className="text-xs text-slate-500">Answered</p>
+                  <p className="text-2xl font-bold">{results.length}</p>
+                </div>
+                <div className="rounded-xl border border-orange-100 bg-orange-50 p-3 text-center">
+                  <p className="text-xs text-slate-500">Correct</p>
+                  <p className="text-2xl font-bold">{score}</p>
+                </div>
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-center">
+                  <p className="text-xs text-slate-500">Accuracy</p>
+                  <p className="text-2xl font-bold">{accuracy}%</p>
+                </div>
+              </div>
 
-          {error && (
-            <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
-              {error}
-            </div>
-          )}
+              <div className="mb-4 flex flex-wrap gap-2">
+                <button onClick={generateAnotherCat} className="rounded-xl bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">
+                  Another CAT Exam
+                </button>
+                <button onClick={startFreshCat} className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
+                  Back to Setup
+                </button>
+              </div>
 
-          {started && currentQuestion && !showSummary && (
-            <div className="rounded-3xl border border-blue-100 bg-white p-8 shadow-2xl">
-              <div className="mb-6 flex flex-wrap gap-3">
-                <span className="rounded-full bg-purple-100 px-4 py-1 text-sm font-semibold text-purple-800">
-                  CAT Exam
-                </span>
-                <span className="rounded-full bg-blue-100 px-4 py-1 text-sm font-semibold text-blue-800">
-                  {currentQuestion.topic || customTopic || topic}
-                </span>
-                <span className="rounded-full bg-orange-100 px-4 py-1 text-sm font-semibold text-orange-700">
-                  {difficulty}
-                </span>
-                <span className="rounded-full bg-emerald-100 px-4 py-1 text-sm font-semibold text-emerald-700">
-                  Question {questionNumber} of {targetCount}
-                </span>
-              </div>
+              <div className="space-y-3">
+                {results.map((row, index) => (
+                  <div key={index} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">{row.topic}</span>
+                      <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">{row.difficulty}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${row.isCorrect ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                        {row.isCorrect ? "Correct" : "Incorrect"}
+                      </span>
+                    </div>
+                    <p className="mb-2 text-sm font-semibold text-slate-900">{row.questionNumber}. {row.question}</p>
+                    <div className="mb-2 flex gap-4 text-xs text-slate-700">
+                      <span>Your answer: <strong>{row.selectedAnswer || "None"}</strong></span>
+                      <span>Correct: <strong>{row.correctAnswer}</strong></span>
+                    </div>
+                    <p className="text-xs leading-6 text-slate-600">{row.rationale}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
 
-              <h2 className="text-2xl font-bold leading-relaxed">
-                {currentQuestion.question}
-              </h2>
-
-              <div className="mt-8 space-y-4">
-                {(["A", "B", "C", "D"] as const).map((letter) => {
-                  const isSelected = selectedAnswer === letter;
-
-                  return (
-                    <button
-                      key={letter}
-                      onClick={() => handleSelectAnswer(letter)}
-                      className={`w-full rounded-2xl border p-4 text-left transition ${
-                        isSelected
-                          ? "border-blue-300 bg-blue-50 shadow-md"
-                          : "border-slate-200 bg-white hover:bg-slate-50"
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700">
-                          {letter}
-                        </div>
-                        <div className="pt-1 text-[15px] leading-7 text-slate-800">
-                          {currentQuestion.choices[letter]}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                <button
-                  onClick={lockAnswerAndContinue}
-                  disabled={!selectedAnswer || loading}
-                  className="rounded-2xl bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
-                >
-                  {questionNumber < targetCount ? "Lock In & Next" : "Finish CAT"}
-                </button>
-
-                <button
-                  onClick={generateAnotherCat}
-                  className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-                >
-                  Cancel / New CAT
-                </button>
-              </div>
-            </div>
-          )}
-
-          {showSummary && (
-            <div className="rounded-3xl border border-emerald-100 bg-white p-8 shadow-2xl">
-              <div className="text-center">
-                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-2xl">
-                  ✅
-                </div>
-                <h2 className="text-3xl font-black">CAT Exam Complete</h2>
-                <p className="mt-3 text-slate-600">Here’s how you performed.</p>
-              </div>
-
-              <div className="mt-8 grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6 text-center">
-                  <p className="text-sm text-slate-500">Answered</p>
-                  <p className="mt-2 text-3xl font-bold">{results.length}</p>
-                </div>
-                <div className="rounded-2xl border border-orange-100 bg-orange-50 p-6 text-center">
-                  <p className="text-sm text-slate-500">Correct</p>
-                  <p className="mt-2 text-3xl font-bold">{score}</p>
-                </div>
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-center">
-                  <p className="text-sm text-slate-500">Accuracy</p>
-                  <p className="mt-2 text-3xl font-bold">{accuracy}%</p>
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button
-                  onClick={generateAnotherCat}
-                  className="rounded-2xl bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600"
-                >
-                  Generate Another CAT Exam
-                </button>
-
-                <button
-                  onClick={startFreshCat}
-                  className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-                >
-                  Back to Setup
-                </button>
-              </div>
-
-              <div className="mt-8 space-y-5">
-                {results.map((row, index) => (
-                  <div
-                    key={index}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
-                  >
-                    <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
-                        {row.topic}
-                      </span>
-                      <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
-                        {row.difficulty}
-                      </span>
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          row.isCorrect
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {row.isCorrect ? "Correct" : "Incorrect"}
-                      </span>
-                    </div>
-
-                    <p className="mt-3 font-semibold text-slate-900">
-                      {row.questionNumber}. {row.question}
-                    </p>
-
-                    <p className="mt-3 text-sm text-slate-700">
-                      Your answer:{" "}
-                      <span className="font-semibold">{row.selectedAnswer || "None"}</span>
-                    </p>
-                    <p className="mt-1 text-sm text-slate-700">
-                      Correct answer:{" "}
-                      <span className="font-semibold">{row.correctAnswer}</span>
-                    </p>
-                    <p className="mt-3 text-sm leading-7 text-slate-600">{row.rationale}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
-      </main>
-
-      {showUpgradeModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 px-6">
-          <div className="w-full max-w-md rounded-3xl border border-orange-200 bg-white p-8 shadow-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-600">
-              Core Feature
-            </p>
-
-            <h2 className="mt-3 text-3xl font-black text-slate-900">
-              Unlock CAT Exam
-            </h2>
-
-            <p className="mt-4 text-slate-600">
-              You can preview this page, but starting and using the CAT exam requires the Core plan.
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/checkout?plan=core-monthly&source=cat-modal&returnTo=/cat"
-                className="rounded-2xl bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600"
-              >
-                Upgrade to Core
-              </Link>
-
-              <Link
-                href="/pricing"
-                className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-              >
-                View Pricing
-              </Link>
-
-              <button
-                onClick={() => setShowUpgradeModal(false)}
-                className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 px-6">
+          <div className="w-full max-w-sm rounded-2xl border border-orange-200 bg-white p-5 shadow-2xl">
+            <p className="text-xs font-semibold uppercase tracking-widest text-orange-600">Core Feature</p>
+            <h2 className="mt-2 text-xl font-black text-slate-900">Unlock CAT Exam</h2>
+            <p className="mt-2 text-sm text-slate-600">Starting and using the CAT exam requires the Core plan.</p>
+            <div className="mt-4 grid gap-2">
+              <Link href="/pricing" className="rounded-xl bg-orange-500 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-orange-600">
+                View Pricing
+              </Link>
+              <Link href="/pricing" className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
+                Upgrade to Core
+              </Link>
+              <button onClick={() => setShowUpgradeModal(false)} className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
