@@ -302,7 +302,7 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
       <Navbar />
 
-      <div className="sticky top-[104px] z-20 border-b border-slate-200/60 bg-white/95 backdrop-blur-xl">
+      <div className="sticky top-[100px] z-20 border-b border-slate-200/60 bg-white/95 backdrop-blur-xl">
   <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 overflow-x-auto px-6 py-3 xl:px-10">
     <div className="hidden shrink-0 text-sm font-semibold text-slate-500 md:block">
       Explore
