@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
+export const maxDuration = 120;
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -124,12 +125,29 @@ export async function POST(req: Request) {
       type: audio.type || "audio/webm",
     });
 
-    const transcription = await openai.audio.transcriptions.create({
-      file: audioFile,
-      model: "gpt-4o-mini-transcribe",
-    });
+    const transcribePrompt = [
+      "This is a recorded nursing classroom lecture.",
+      title ? `Lecture title: ${title}.` : "",
+      "Use accurate clinical spelling. Clinical vocabulary: tachycardia, bradycardia, dysrhythmia, myocardial infarction, atrial fibrillation, pulmonary embolism, heart failure, hypertension, COPD, pneumonia, anaphylaxis, sepsis, DKA, hypoglycemia, hypothyroidism, hyperthyroidism, pyelonephritis, hepatitis, stroke, TIA, heparin, warfarin, metformin, insulin, digoxin, furosemide, lisinopril, metoprolol, albuterol, morphine, SpO2, CBC, BMP, ABG, SBAR, NPO, PRN, STAT.",
+    ].filter(Boolean).join(" ");
 
-    const transcript = transcription.text?.trim();
+    let transcript = "";
+    try {
+      const transcription = await openai.audio.transcriptions.create({
+        file: audioFile,
+        model: "gpt-4o-transcribe",
+        prompt: transcribePrompt,
+      });
+      transcript = transcription.text?.trim() ?? "";
+    } catch (primaryErr) {
+      console.warn("gpt-4o-transcribe failed, falling back to whisper-1:", primaryErr);
+      const fallback = await openai.audio.transcriptions.create({
+        file: audioFile,
+        model: "whisper-1",
+        prompt: transcribePrompt,
+      });
+      transcript = fallback.text?.trim() ?? "";
+    }
 
     if (!transcript) {
       return NextResponse.json(
