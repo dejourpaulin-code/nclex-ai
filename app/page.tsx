@@ -1107,7 +1107,7 @@ export default function Home() {
                   <a href="/refund" className="block transition hover:text-blue-900">
                     Refund Policy
                   </a>
-                  <a href="mailto:support@nclexai.com" className="block transition hover:text-blue-900">
+                  <a href="mailto:nclexai@gmail.com" className="block transition hover:text-blue-900">
                     Contact Us
                   </a>
                 </div>
@@ -1120,7 +1120,7 @@ export default function Home() {
                 <a href="/privacy" className="hover:text-blue-900 transition">Privacy Policy</a>
                 <a href="/terms" className="hover:text-blue-900 transition">Terms of Service</a>
                 <a href="/refund" className="hover:text-blue-900 transition">Refund Policy</a>
-                <a href="mailto:support@nclexai.com" className="hover:text-blue-900 transition">support@nclexai.com</a>
+                <a href="mailto:nclexai@gmail.com" className="hover:text-blue-900 transition">nclexai@gmail.com</a>
               </div>
             </div>
           </div>

@@ -37,8 +37,8 @@ export default function RefundPage() {
               </Link>{" "}
               and click &quot;Manage Billing.&quot; This opens the Stripe billing portal where you
               can cancel your subscription directly. You can also email us at{" "}
-              <a href="mailto:support@nclexai.com" className="text-blue-900 hover:underline">
-                support@nclexai.com
+              <a href="mailto:nclexai@gmail.com" className="text-blue-900 hover:underline">
+                nclexai@gmail.com
               </a>{" "}
               and we will cancel it for you.
             </p>
@@ -87,8 +87,8 @@ export default function RefundPage() {
             <h2 className="mb-2 text-base font-bold text-slate-900">4. How to Request a Refund</h2>
             <p>
               Email us at{" "}
-              <a href="mailto:support@nclexai.com" className="text-blue-900 hover:underline">
-                support@nclexai.com
+              <a href="mailto:nclexai@gmail.com" className="text-blue-900 hover:underline">
+                nclexai@gmail.com
               </a>{" "}
               with the subject line &quot;Refund Request&quot; and include your account email address
               and the reason for your request. We will respond within 2 business days.
@@ -109,8 +109,8 @@ export default function RefundPage() {
             <h2 className="mb-2 text-base font-bold text-slate-900">6. Contact</h2>
             <p>
               Questions about billing or refunds? Reach us at:{" "}
-              <a href="mailto:support@nclexai.com" className="text-blue-900 hover:underline">
-                support@nclexai.com
+              <a href="mailto:nclexai@gmail.com" className="text-blue-900 hover:underline">
+                nclexai@gmail.com
               </a>
             </p>
           </section>

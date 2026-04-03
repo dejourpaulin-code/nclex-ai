@@ -57,8 +57,8 @@ export default function TermsPage() {
             <p>
               You are responsible for maintaining the security of your account credentials.
               You must notify us immediately at{" "}
-              <a href="mailto:support@nclexai.com" className="text-blue-900 hover:underline">
-                support@nclexai.com
+              <a href="mailto:nclexai@gmail.com" className="text-blue-900 hover:underline">
+                nclexai@gmail.com
               </a>{" "}
               if you believe your account has been compromised. We are not liable for any
               losses resulting from unauthorized access to your account.
@@ -198,8 +198,8 @@ export default function TermsPage() {
             <h2 className="mb-2 text-base font-bold text-slate-900">14. Contact</h2>
             <p>
               For any questions about these Terms, contact us at:{" "}
-              <a href="mailto:support@nclexai.com" className="text-blue-900 hover:underline">
-                support@nclexai.com
+              <a href="mailto:nclexai@gmail.com" className="text-blue-900 hover:underline">
+                nclexai@gmail.com
               </a>
             </p>
           </section>

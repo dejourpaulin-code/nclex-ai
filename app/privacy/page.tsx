@@ -29,8 +29,8 @@ export default function PrivacyPage() {
               services. We provide an AI-powered nursing study platform for nursing students
               preparing for class exams and the NCLEX licensing exam. If you have questions
               about this policy, contact us at{" "}
-              <a href="mailto:support@nclexai.com" className="text-blue-900 hover:underline">
-                support@nclexai.com
+              <a href="mailto:nclexai@gmail.com" className="text-blue-900 hover:underline">
+                nclexai@gmail.com
               </a>
               .
             </p>
@@ -155,8 +155,8 @@ export default function PrivacyPage() {
             </ul>
             <p className="mt-3">
               To exercise any of these rights, email us at{" "}
-              <a href="mailto:support@nclexai.com" className="text-blue-900 hover:underline">
-                support@nclexai.com
+              <a href="mailto:nclexai@gmail.com" className="text-blue-900 hover:underline">
+                nclexai@gmail.com
               </a>
               .
             </p>
@@ -195,8 +195,8 @@ export default function PrivacyPage() {
             <h2 className="mb-2 text-base font-bold text-slate-900">11. Contact Us</h2>
             <p>
               For any privacy-related questions or requests, contact us at:{" "}
-              <a href="mailto:support@nclexai.com" className="text-blue-900 hover:underline">
-                support@nclexai.com
+              <a href="mailto:nclexai@gmail.com" className="text-blue-900 hover:underline">
+                nclexai@gmail.com
               </a>
             </p>
           </section>
