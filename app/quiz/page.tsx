@@ -841,11 +841,56 @@ function QuizPageInner() {
         </div>
 
         {!canUseQuiz && !accessLoading && (
-          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            Preview mode. Upgrade to Starter to generate questions and use the quiz.
+          <div className="mb-6 overflow-hidden rounded-2xl border border-blue-200 bg-white shadow-sm">
+            <div className="bg-gradient-to-r from-blue-900 to-orange-500 px-6 py-5 text-white">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-widest opacity-80">Preview Mode</div>
+              <h2 className="text-xl font-black">Unlock the Quiz Generator</h2>
+              <p className="mt-1 text-sm opacity-90">You need at least the Starter plan to generate questions, answer them, and track your progress.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 px-6 py-4">
+              <a href="/pricing" className="rounded-xl bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">
+                View Pricing
+              </a>
+              <a href="/login" className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                Log In
+              </a>
+              <span className="text-sm text-slate-500">Already subscribed? Log in to access your plan.</span>
+            </div>
           </div>
         )}
 
+        {!canUseQuiz && !accessLoading ? (
+          <div className="relative select-none rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <div className="pointer-events-none mb-6 opacity-30 blur-[2px]">
+              <div className="mb-4 grid grid-cols-3 gap-3">
+                {["Cardiac","Respiratory","Pharmacology"].map((t) => (
+                  <div key={t} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-semibold text-slate-600">{t}</div>
+                ))}
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
+                <p className="font-semibold text-slate-700">A nurse is caring for a patient with heart failure. Which assessment finding requires immediate intervention?</p>
+                <div className="mt-4 space-y-2">
+                  {["A. Bilateral crackles","B. 2+ pitting edema","C. SpO2 of 88%","D. Heart rate of 88 bpm"].map((c) => (
+                    <div key={c} className="rounded-lg border border-slate-200 bg-white p-3 text-left text-sm text-slate-700">{c}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="mx-auto max-w-sm">
+              <div className="mb-2 text-3xl">🔒</div>
+              <h3 className="text-lg font-black text-slate-900">Starter plan required</h3>
+              <p className="mt-2 text-sm text-slate-600">Get full access to the Quiz Generator, answer tracking, weak area analysis, and more.</p>
+              <div className="mt-4 flex justify-center gap-3">
+                <a href="/pricing" className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600">
+                  View Pricing
+                </a>
+                <a href="/login" className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                  Log In
+                </a>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
 
           {/* Sidebar */}
@@ -1411,6 +1456,7 @@ function QuizPageInner() {
             )}
           </div>
         </div>
+        )}
       </section>
     </main>
   );
