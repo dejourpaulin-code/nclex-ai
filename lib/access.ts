@@ -1,6 +1,6 @@
 export const FEATURE_MATRIX = {
   free: {
-    quiz: true,
+    quiz: false,
     lexi: true,
     history: false,
     study: false,

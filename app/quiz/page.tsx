@@ -840,25 +840,6 @@ function QuizPageInner() {
           </div>
         </div>
 
-        {!canUseQuiz && !accessLoading && (
-          <div className="mb-6 overflow-hidden rounded-2xl border border-blue-200 bg-white shadow-sm">
-            <div className="bg-gradient-to-r from-blue-900 to-orange-500 px-6 py-5 text-white">
-              <div className="mb-1 text-xs font-semibold uppercase tracking-widest opacity-80">Preview Mode</div>
-              <h2 className="text-xl font-black">Unlock the Quiz Generator</h2>
-              <p className="mt-1 text-sm opacity-90">You need at least the Starter plan to generate questions, answer them, and track your progress.</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3 px-6 py-4">
-              <a href="/pricing" className="rounded-xl bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">
-                View Pricing
-              </a>
-              <a href="/login" className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-                Log In
-              </a>
-              <span className="text-sm text-slate-500">Already subscribed? Log in to access your plan.</span>
-            </div>
-          </div>
-        )}
-
         {!canUseQuiz && !accessLoading ? (
           <div className="relative select-none rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
             <div className="pointer-events-none mb-6 opacity-30 blur-[2px]">
@@ -1444,7 +1425,7 @@ function QuizPageInner() {
                     <a href="/pricing" className="rounded-xl bg-orange-500 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-orange-600">
                       View Pricing
                     </a>
-                    <a href="/checkout?plan=starter-monthly&source=quiz-preview" className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
+                    <a href="/pricing" className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
                       Upgrade Now
                     </a>
                     <button onClick={() => setShowUpgradeModal(false)} className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
