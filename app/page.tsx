@@ -1095,19 +1095,33 @@ export default function Home() {
 
               <div>
                 <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">
-                  Brand
+                  Legal
                 </h3>
                 <div className="mt-4 space-y-3 text-slate-600">
-                  <p>Built for focused nursing students</p>
-                  <p>Lexi-powered study support</p>
-                  <p>NCLEX-style practice workflow</p>
+                  <a href="/privacy" className="block transition hover:text-blue-900">
+                    Privacy Policy
+                  </a>
+                  <a href="/terms" className="block transition hover:text-blue-900">
+                    Terms of Service
+                  </a>
+                  <a href="/refund" className="block transition hover:text-blue-900">
+                    Refund Policy
+                  </a>
+                  <a href="mailto:support@nclexai.com" className="block transition hover:text-blue-900">
+                    Contact Us
+                  </a>
                 </div>
               </div>
             </div>
 
             <div className="mt-10 flex flex-col gap-3 border-t border-slate-200 pt-6 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
               <p>© 2026 NCLEXAI. Built for nursing students.</p>
-              <p>Adaptive quizzes • Lexi tutoring • Weak-area tracking</p>
+              <div className="flex flex-wrap gap-4">
+                <a href="/privacy" className="hover:text-blue-900 transition">Privacy Policy</a>
+                <a href="/terms" className="hover:text-blue-900 transition">Terms of Service</a>
+                <a href="/refund" className="hover:text-blue-900 transition">Refund Policy</a>
+                <a href="mailto:support@nclexai.com" className="hover:text-blue-900 transition">support@nclexai.com</a>
+              </div>
             </div>
           </div>
         </Reveal>
