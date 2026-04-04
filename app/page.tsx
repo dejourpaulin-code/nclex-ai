@@ -1017,7 +1017,7 @@ export default function Home() {
                   </a>
 
                   <a
-                    href="/chat"
+                    href="/login?returnTo=/chat"
                     onClick={() => trackCtaClick("bottom-secondary", "Try Lexi Free")}
                     className="rounded-2xl border border-white/30 bg-white/10 px-8 py-4 text-center text-lg font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/20"
                   >

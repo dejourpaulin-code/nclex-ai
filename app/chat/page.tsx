@@ -51,6 +51,7 @@ export default function ChatPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [history, setHistory] = useState<ConversationRow[]>([]);
   const [showUpgradeWall, setShowUpgradeWall] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     void loadProfileAndHistory();
@@ -61,7 +62,7 @@ export default function ChatPage() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) return;
+    if (!user) { setAuthChecked(true); return; }
 
     setUserId(user.id);
 
@@ -89,6 +90,7 @@ export default function ChatPage() {
     });
 
     await loadHistory(user.id);
+    setAuthChecked(true);
   }
 
   async function loadHistory(explicitUserId?: string) {
@@ -228,6 +230,36 @@ export default function ChatPage() {
 
     setLoading(false);
   }
+
+  // Not logged in -- show sign-up gate
+  if (authChecked && !userId) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
+        <Navbar />
+        <section className="mx-auto max-w-xl px-4 py-16 text-center">
+          <div className="rounded-2xl border border-blue-100 bg-white p-8 shadow-sm">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-900 to-orange-500 text-2xl font-black text-white shadow">L</div>
+            <h1 className="text-2xl font-black">Meet Lexi</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Lexi is your AI nursing tutor. She explains concepts, breaks down weak areas, answers study questions, and coaches you through NCLEX-style practice.
+            </p>
+            <p className="mt-3 text-sm font-semibold text-slate-700">
+              Create a free account to get 8 free messages &mdash; no credit card required.
+            </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <a href="/login?returnTo=/chat" className="block rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white transition hover:bg-orange-600">
+                Create Free Account
+              </a>
+              <a href="/login?returnTo=/chat" className="block rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                Log In
+              </a>
+            </div>
+            <p className="mt-4 text-xs text-slate-400">Already have an account? Log in above.</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
