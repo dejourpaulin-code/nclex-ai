@@ -23,6 +23,36 @@ const testimonials = [
     name: "BSN Student",
     role: "Daily Review Workflow",
   },
+  {
+    quote:
+      "I used to dread studying after a long clinical day. Now I open this, ask Lexi one question, and somehow end up in a full review session without even noticing.",
+    name: "Second-Year Nursing Student",
+    role: "Pediatrics + OB",
+  },
+  {
+    quote:
+      "My professor kept saying I needed to stop memorizing and start thinking like a nurse. Lexi actually helped me get there faster than any textbook did.",
+    name: "ADN Student",
+    role: "Fundamentals + Pharmacology",
+  },
+  {
+    quote:
+      "I failed my first med-surg exam and didn't know where to start. The weak-area tracking showed me exactly what was dragging me down and I passed the next one.",
+    name: "Nursing Student",
+    role: "Med-Surg II",
+  },
+  {
+    quote:
+      "The live lecture feature is something I didn't know I needed. I stopped missing key points the professor emphasized and my notes got so much better.",
+    name: "BSN Student",
+    role: "Live Lecture Mode",
+  },
+  {
+    quote:
+      "I've tried other question banks and they just throw questions at you. This one actually adapts and coaches. It's a completely different experience.",
+    name: "Pre-NCLEX Student",
+    role: "Exit Exam Prep",
+  },
 ];
 
 const features = [
@@ -830,38 +860,36 @@ export default function Home() {
         className="scroll-mt-28 border-y border-slate-200 bg-slate-950 text-white"
       >
         <div className="mx-auto max-w-[1500px] px-6 py-16 xl:px-10">
-          <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-            <Reveal>
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-300">
-                  Why students stay with it
-                </p>
-                <h2 className="mt-4 text-3xl font-black tracking-tight md:text-4xl">
-                  It does not just give more questions.
-                  <br />
-                  It gives students a sharper way to win.
-                </h2>
-                <p className="mt-4 max-w-xl text-lg leading-8 text-slate-300">
-                  Students do not stay because the interface looks nice.
-                  They stay because the system helps them find what is weak, fix it faster,
-                  and stop burning time on the wrong things.
-                </p>
-              </div>
-            </Reveal>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              {testimonials.map((item, index) => (
-                <Reveal key={item.quote} delayMs={index * 100}>
-                  <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur transition duration-300 hover:-translate-y-1 hover:bg-white/10 hover:shadow-xl">
-                    <p className="text-sm leading-7 text-slate-200">“{item.quote}”</p>
-                    <div className="mt-6">
-                      <p className="font-semibold text-white">{item.name}</p>
-                      <p className="text-sm text-slate-400">{item.role}</p>
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
+          <Reveal>
+            <div className="mb-10 text-center">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-300">
+                Why students stay with it
+              </p>
+              <h2 className="mt-4 text-3xl font-black tracking-tight md:text-4xl">
+                It does not just give more questions.
+                <br />
+                It gives students a sharper way to win.
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-slate-300">
+                Students do not stay because the interface looks nice.
+                They stay because the system helps them find what is weak, fix it faster,
+                and stop burning time on the wrong things.
+              </p>
             </div>
+          </Reveal>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {testimonials.map((item, index) => (
+              <Reveal key={item.quote} delayMs={index * 60}>
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur transition duration-300 hover:-translate-y-1 hover:bg-white/10 hover:shadow-xl">
+                  <p className="text-sm leading-7 text-slate-200">&#x201C;{item.quote}&#x201D;</p>
+                  <div className="mt-6">
+                    <p className="font-semibold text-white">{item.name}</p>
+                    <p className="text-sm text-slate-400">{item.role}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
