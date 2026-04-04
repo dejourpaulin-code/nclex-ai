@@ -287,6 +287,30 @@ const faqs = [
   },
 ];
 
+const lectureTestimonials = [
+  {
+    quote:
+      "I used to sit in pharmacology frantically writing notes and still miss the connection she made between the drug and the side effect. Now I just listen and let NCLEXAI capture every word. I review the transcript that night and I actually understand what she was building toward.",
+    name: "Maya L.",
+    role: "Pharmacology + Fundamentals",
+    outcome: "Never misses a professor connection anymore",
+  },
+  {
+    quote:
+      "My professor talks faster than I can write. I was always two sentences behind and panicking. The first time I used Live Lecture Mode I nearly cried. I had a full transcript, the key points highlighted, and a list of what she was hinting would be on the test.",
+    name: "Kayla T.",
+    role: "Med-Surg II",
+    outcome: "Full transcript + study guide from every class",
+  },
+  {
+    quote:
+      "No other study tool I have ever used touches what happens inside the actual classroom. UWorld does not know what my professor said on Tuesday. NCLEXAI does. That is a completely different kind of advantage.",
+    name: "Devon R.",
+    role: "BSN Program",
+    outcome: "Studies directly from what professor emphasized",
+  },
+];
+
 const comparisonRows = [
   { feature: "Adaptive weak-area targeting", nclexai: true, generic: false },
   { feature: "AI tutor that explains reasoning", nclexai: true, generic: false },
@@ -620,6 +644,171 @@ export default function Home() {
                   <h3 className="text-xl font-bold text-white">{feature.title}</h3>
                   <p className="mt-2 text-sm font-semibold text-orange-300">{feature.outcome}</p>
                   <p className="mt-3 leading-7 text-slate-400">{feature.description}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── LIVE LECTURE SPOTLIGHT ─── */}
+      <section className="relative overflow-hidden bg-[#050d1a] py-24 text-white">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-0 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full bg-blue-700/10 blur-[120px]" />
+          <div className="absolute right-0 bottom-0 h-[400px] w-[400px] rounded-full bg-orange-500/10 blur-[100px]" />
+        </div>
+
+        <div className="relative mx-auto max-w-[1500px] px-6 xl:px-10">
+          <Reveal>
+            <div className="mb-4 flex items-center gap-3">
+              <span className="rounded-full bg-orange-500/20 px-4 py-1.5 text-xs font-black uppercase tracking-[0.25em] text-orange-400">
+                Only on NCLEXAI
+              </span>
+              <span className="text-xs font-semibold text-slate-500">
+                — no other nursing platform has built this
+              </span>
+            </div>
+
+            <h2 className="max-w-4xl text-4xl font-black leading-[1.05] tracking-tight md:text-6xl">
+              Your professor is saying the most important thing
+              <br />
+              <span className="text-orange-400">on your next exam right now.</span>
+              <br />
+              <span className="text-slate-400">Are you catching it?</span>
+            </h2>
+
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
+              Live Lecture Mode listens to your class in real time, transcribes every word with medical-grade accuracy, flags what your professor emphasizes, and converts it into a study guide — while you sit there and actually pay attention.
+            </p>
+          </Reveal>
+
+          <div className="mt-16 grid gap-12 xl:grid-cols-[1.1fr_0.9fr] xl:items-start">
+            {/* Live mockup */}
+            <Reveal>
+              <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur shadow-2xl">
+                {/* Header bar */}
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20">
+                      <span className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">Live Lecture Mode</p>
+                      <p className="text-xs text-slate-400">Med-Surg II — Tuesday 9:04 AM</p>
+                    </div>
+                  </div>
+                  <span className="rounded-full border border-red-400/30 bg-red-500/10 px-3 py-1 text-xs font-bold text-red-400">
+                    ● LIVE
+                  </span>
+                </div>
+
+                {/* Transcript lines */}
+                <div className="space-y-3 rounded-2xl border border-white/10 bg-black/30 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Live transcript</p>
+
+                  {[
+                    { text: "Alright, so when we talk about heart failure, the first thing I want you to understand is the difference between left-sided and right-sided...", dim: true, flag: null },
+                    { text: "Left-sided heart failure — and this is going to be on your exam — causes pulmonary edema because the left ventricle cannot pump efficiently forward.", dim: false, flag: "testable" },
+                    { text: "The classic signs: dyspnea, orthopnea, crackles in the lungs. Remember that.", dim: false, flag: "emphasis" },
+                    { text: "Right-sided failure, on the other hand, backs up into systemic circulation. Peripheral edema, JVD, hepatomegaly...", dim: true, flag: null },
+                    { text: "I always say — if the fluid goes to the lungs, think left. If it goes to the body, think right. That distinction will save you on the NCLEX.", dim: false, flag: "testable" },
+                  ].map((line, i) => (
+                    <div key={i} className={`rounded-xl p-3 ${line.dim ? "opacity-50" : ""}`}>
+                      <div className="flex items-start gap-2">
+                        {line.flag === "testable" && (
+                          <span className="mt-0.5 shrink-0 rounded-md bg-orange-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-orange-400">
+                            ⚡ Testable
+                          </span>
+                        )}
+                        {line.flag === "emphasis" && (
+                          <span className="mt-0.5 shrink-0 rounded-md bg-blue-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-blue-400">
+                            🔔 Emphasized
+                          </span>
+                        )}
+                        <p className={`text-sm leading-6 ${line.dim ? "text-slate-500" : line.flag ? "text-white" : "text-slate-300"}`}>
+                          {line.text}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                    <p className="text-xs text-slate-500">Transcribing...</p>
+                  </div>
+                </div>
+
+                {/* Auto-generated study notes */}
+                <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-5">
+                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-emerald-400">Auto-generated study notes</p>
+                  <div className="space-y-2 text-sm text-slate-300">
+                    <p>• Left-sided HF → pulmonary edema (dyspnea, crackles, orthopnea)</p>
+                    <p>• Right-sided HF → systemic backup (edema, JVD, hepatomegaly)</p>
+                    <p className="font-semibold text-orange-300">⚡ Memory hook: Fluid to lungs = Left. Fluid to body = Right.</p>
+                  </div>
+                </div>
+
+                <p className="mt-4 text-center text-xs text-slate-600">
+                  Runs in your browser — no app, no download, works on your phone
+                </p>
+              </div>
+            </Reveal>
+
+            {/* Right column */}
+            <Reveal delayMs={100}>
+              <div className="space-y-6">
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">What it captures</p>
+                  <div className="mt-5 space-y-4">
+                    {[
+                      ["⚡", "Testable moments", "Flags every time your professor signals something will be on the exam — the phrases, the emphasis, the repetition."],
+                      ["🔔", "Professor emphasis", "Detects when your professor slows down, repeats a point, or says 'remember this' — and marks it in your transcript."],
+                      ["📝", "Auto study notes", "Converts the transcript into clean, scannable study bullets you can review that night instead of rereading 80 slides."],
+                      ["📱", "Works on your phone", "Open it in Safari or Chrome, tap record, set it on your desk. Your phone works while you take notes the normal way."],
+                      ["🧠", "Medical terminology", "Trained on clinical vocabulary — hears pharmacology, pathophysiology, and NCLEX terms the way a nursing student expects."],
+                    ].map(([icon, title, desc]) => (
+                      <div key={String(title)} className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 p-5">
+                        <span className="text-2xl">{icon}</span>
+                        <div>
+                          <p className="font-bold text-white">{title}</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-400">{desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <a
+                  href="/lecture/live-full"
+                  className="block rounded-2xl bg-orange-500 px-8 py-4 text-center text-lg font-bold text-white shadow-lg transition hover:bg-orange-400"
+                >
+                  Try Live Lecture Mode Free
+                </a>
+                <p className="text-center text-xs text-slate-500">No payment required to try it — open in any browser</p>
+              </div>
+            </Reveal>
+          </div>
+
+          {/* Lecture testimonials */}
+          <div className="mt-16 grid gap-5 md:grid-cols-3">
+            {lectureTestimonials.map((item, index) => (
+              <Reveal key={item.name} delayMs={index * 70}>
+                <div className="flex h-full flex-col rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+                  <div className="mb-2 flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <span key={i} className="text-sm text-yellow-400">★</span>
+                    ))}
+                  </div>
+                  <p className="flex-1 text-sm leading-7 text-slate-200">
+                    &#x201C;{item.quote}&#x201D;
+                  </p>
+                  <div className="mt-5 rounded-2xl border border-orange-400/20 bg-orange-500/10 px-4 py-2">
+                    <p className="text-xs font-semibold text-orange-300">{item.outcome}</p>
+                  </div>
+                  <div className="mt-4">
+                    <p className="font-bold text-white">{item.name}</p>
+                    <p className="text-xs text-slate-400">{item.role}</p>
+                  </div>
                 </div>
               </Reveal>
             ))}
