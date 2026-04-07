@@ -10,7 +10,8 @@ function LoginPageContent() {
   const sessionId = searchParams.get("session_id");
   const returnTo = searchParams.get("returnTo") || "/dashboard";
 
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const modeParam = searchParams.get("mode");
+  const [mode, setMode] = useState<"login" | "signup">(modeParam === "signup" ? "signup" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -101,12 +102,13 @@ function LoginPageContent() {
             </div>
 
             <h1 className="text-3xl font-black">
-              {mode === "login" ? "Log in" : "Create account"}
+              {mode === "login" ? "Log in" : "Create your free account"}
             </h1>
 
             <p className="mt-2 text-slate-600">
-              Save your quiz history, track weak areas, and keep your NCLEX
-              progress in one place.
+              {mode === "signup"
+                ? "Free account — no credit card required. Get 8 free messages with Lexi."
+                : "Log in to access Lexi, your quiz history, and weak-area tracking."}
             </p>
 
             {sessionId && (

@@ -247,10 +247,10 @@ export default function ChatPage() {
               Create a free account to get 8 free messages &mdash; no credit card required.
             </p>
             <div className="mt-6 flex flex-col gap-3">
-              <a href="/login?returnTo=/chat" className="block rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white transition hover:bg-orange-600">
+              <a href="/login?returnTo=/chat&mode=signup" className="block rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white transition hover:bg-orange-600">
                 Create Free Account
               </a>
-              <a href="/login?returnTo=/chat" className="block rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+              <a href="/login?returnTo=/chat&mode=signup" className="block rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                 Log In
               </a>
             </div>

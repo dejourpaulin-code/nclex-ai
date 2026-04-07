@@ -436,7 +436,7 @@ export default function Home() {
                     Get Semester Access — $129
                   </a>
                   <a
-                    href="/login?returnTo=/chat"
+                    href="/login?returnTo=/chat&mode=signup"
                     onClick={() => trackCtaClick("hero-secondary", "Try Lexi Free")}
                     className="rounded-2xl border border-white/25 bg-white/10 px-8 py-4 text-center text-lg font-semibold text-white backdrop-blur transition hover:bg-white/20"
                   >
@@ -1158,7 +1158,7 @@ export default function Home() {
                   </a>
 
                   <a
-                    href="/login?returnTo=/chat"
+                    href="/login?returnTo=/chat&mode=signup"
                     onClick={() => trackCtaClick("final-cta-secondary", "Try Lexi Free")}
                     className="rounded-2xl border border-white/20 bg-white/10 px-8 py-4 text-center text-base font-semibold text-white backdrop-blur transition hover:bg-white/20"
                   >
