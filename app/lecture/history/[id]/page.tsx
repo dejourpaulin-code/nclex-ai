@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Navbar from "../../../../components/Navbar";
 import { supabase } from "../../../../lib/supabase";
@@ -128,6 +128,16 @@ export default function LectureSessionDetailPage() {
   const [studyGuideError, setStudyGuideError] = useState("");
   const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "transcript">("overview");
 
+  const [overviewSummary, setOverviewSummary] = useState<string | null>(null);
+  const [overviewKeyPoints, setOverviewKeyPoints] = useState<string[]>([]);
+  const [overviewLoading, setOverviewLoading] = useState(false);
+  const [expandedKeyPoint, setExpandedKeyPoint] = useState<number | null>(null);
+
+  const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     async function loadAccess() {
       try {
@@ -189,6 +199,58 @@ export default function LectureSessionDetailPage() {
     if (!accessLoading && access?.features?.lecture) void loadSession();
     else if (!accessLoading && !access?.features?.lecture) setLoading(false);
   }, [id, accessLoading, access]);
+
+  // Auto-generate Lexi overview when tab is first opened
+  useEffect(() => {
+    if (activeTab !== "overview" || overviewSummary !== null || overviewLoading || !session || !id) return;
+    async function loadOverview() {
+      setOverviewLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setOverviewLoading(false); return; }
+        const res = await fetch("/api/lecture-overview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: id, userId: user.id }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setOverviewSummary(data.summary || "");
+          setOverviewKeyPoints(data.keyPoints || []);
+        }
+      } catch { /* silent */ }
+      setOverviewLoading(false);
+    }
+    void loadOverview();
+  }, [activeTab, session, id, overviewSummary, overviewLoading]);
+
+  // Scroll chat to bottom on new messages
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
+  async function sendChatMessage() {
+    const text = chatInput.trim();
+    if (!text || chatLoading || !id) return;
+    const newMessages = [...chatMessages, { role: "user" as const, content: text }];
+    setChatMessages(newMessages);
+    setChatInput("");
+    setChatLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setChatLoading(false); return; }
+      const res = await fetch("/api/lecture-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: id, userId: user.id, messages: newMessages }),
+      });
+      const data = await res.json();
+      setChatMessages((prev) => [...prev, { role: "assistant", content: data.reply || "Sorry, I couldn't respond." }]);
+    } catch {
+      setChatMessages((prev) => [...prev, { role: "assistant", content: "Failed to connect. Try again." }]);
+    }
+    setChatLoading(false);
+  }
 
   async function generateStudyGuide() {
     if (!id) return;
@@ -492,53 +554,133 @@ ${(d.studyPlan || []).map((step, i) => `
 
         {/* Overview tab */}
         {activeTab === "overview" && (
-          <div className="space-y-3">
-            {/* Summary card */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">Session Summary</p>
-              <p className="text-sm leading-7 text-slate-700">{session.summary || "No summary saved yet."}</p>
+          <div className="space-y-4">
+            {/* Lexi Summary */}
+            <div className="rounded-2xl border border-blue-100 bg-white shadow-sm">
+              <div className="flex items-center gap-2.5 border-b border-blue-50 px-4 py-3">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-900 text-xs font-black text-white">L</div>
+                <p className="text-sm font-bold text-slate-800">Lexi&apos;s Summary</p>
+              </div>
+              <div className="px-4 py-4">
+                {overviewLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-300 border-t-blue-700" />
+                    Reading your lecture...
+                  </div>
+                ) : overviewSummary ? (
+                  <p className="text-sm leading-7 text-slate-700">{overviewSummary}</p>
+                ) : (
+                  <p className="text-sm text-slate-400">No transcript available to summarize.</p>
+                )}
+              </div>
             </div>
 
-            {/* Key points — max 6, headings only, expandable */}
-            {(() => {
-              const typed = mappedTimeline.filter((e) => e.type === "Exam Nugget" || e.type === "Professor Emphasis");
-              const keyPoints = typed.length > 0
-                ? typed.slice(0, 6)
-                : transcriptChunks.filter((c) => c.heading).slice(0, 6).map((c) => ({
-                    id: `chunk-${c.id}`,
-                    time: formatSecondsToTimestamp(c.started_at_seconds),
-                    type: "Topic",
-                    text: c.heading!,
-                    confidence: 60,
-                    transcriptTargetId: c.id,
-                  }));
-
-              if (keyPoints.length === 0) return null;
-
-              return (
-                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <p className="border-b border-slate-100 px-4 py-2.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                    Key Points — tap to read more
-                  </p>
-                  <div className="divide-y divide-slate-100">
-                    {keyPoints.map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => jumpToTranscript(item.transcriptTargetId)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
-                      >
-                        <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${timelineBadge(item.type)}`}>
-                          {item.type === "Exam Nugget" ? "Exam" : item.type === "Professor Emphasis" ? "Emphasis" : "Topic"}
-                        </span>
-                        <p className="flex-1 truncate text-[12px] font-medium text-slate-700">{item.text}</p>
-                        <span className="shrink-0 text-[10px] text-slate-400">{item.time}</span>
-                        <span className="shrink-0 text-[10px] font-semibold text-blue-600">→</span>
-                      </button>
-                    ))}
-                  </div>
+            {/* Key Points */}
+            {overviewKeyPoints.length > 0 && (
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="border-b border-slate-100 px-4 py-3">
+                  <p className="text-sm font-bold text-slate-800">Key Points from this Lecture</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Tap any point to expand details</p>
                 </div>
-              );
-            })()}
+                <div className="divide-y divide-slate-100">
+                  {overviewKeyPoints.map((point, i) => {
+                    const isOpen = expandedKeyPoint === i;
+                    // Find matching transcript chunk for context
+                    const matchedChunk = transcriptChunks.find((c) =>
+                      c.body && point.toLowerCase().split(" ").slice(0, 4).some((word) =>
+                        word.length > 4 && c.body!.toLowerCase().includes(word)
+                      )
+                    );
+                    return (
+                      <div key={i}>
+                        <button
+                          onClick={() => setExpandedKeyPoint(isOpen ? null : i)}
+                          className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
+                        >
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[10px] font-bold text-orange-700">
+                            {i + 1}
+                          </span>
+                          <p className="flex-1 text-[13px] leading-5 text-slate-700">{point}</p>
+                          <span className="shrink-0 text-[11px] text-slate-400">{isOpen ? "▲" : "▼"}</span>
+                        </button>
+                        {isOpen && (
+                          <div className="border-t border-slate-100 bg-slate-50 px-4 py-3">
+                            {matchedChunk ? (
+                              <>
+                                <p className="text-[11px] font-semibold text-slate-500 mb-1">
+                                  {matchedChunk.heading || "From transcript"} · {formatSecondsToTimestamp(matchedChunk.started_at_seconds)}
+                                </p>
+                                <p className="text-[12px] leading-6 text-slate-700">{matchedChunk.body}</p>
+                              </>
+                            ) : (
+                              <p className="text-[12px] text-slate-400">No matching transcript section found. View the Transcript tab for full details.</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Ask Lexi chat */}
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 px-4 py-3">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-900 text-xs font-black text-white">L</div>
+                <div>
+                  <p className="text-sm font-bold text-slate-800">Ask Lexi About This Lecture</p>
+                  <p className="text-[11px] text-slate-400">Lexi has read the full transcript and can answer any question about it</p>
+                </div>
+              </div>
+
+              {/* Messages */}
+              {chatMessages.length > 0 && (
+                <div className="max-h-80 space-y-3 overflow-y-auto px-4 py-3">
+                  {chatMessages.map((msg, i) => (
+                    <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                      {msg.role === "assistant" && (
+                        <div className="mr-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-900 text-[9px] font-black text-white">L</div>
+                      )}
+                      <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-[13px] leading-6 ${
+                        msg.role === "user"
+                          ? "bg-blue-900 text-white"
+                          : "border border-slate-200 bg-slate-50 text-slate-800"
+                      }`}>
+                        {msg.content}
+                      </div>
+                    </div>
+                  ))}
+                  {chatLoading && (
+                    <div className="flex justify-start">
+                      <div className="mr-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-900 text-[9px] font-black text-white">L</div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-400">Thinking...</div>
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+              )}
+
+              {/* Input */}
+              <div className={`flex gap-2 px-4 py-3 ${chatMessages.length > 0 ? "border-t border-slate-100" : ""}`}>
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendChatMessage(); } }}
+                  placeholder="Ask anything about this lecture..."
+                  disabled={chatLoading || overviewLoading}
+                  className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:opacity-50"
+                />
+                <button
+                  onClick={() => void sendChatMessage()}
+                  disabled={chatLoading || !chatInput.trim()}
+                  className="rounded-xl bg-blue-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:opacity-50"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
