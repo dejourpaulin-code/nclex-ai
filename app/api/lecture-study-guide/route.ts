@@ -170,8 +170,19 @@ export async function POST(req: Request) {
     const events = eventsRes.data || [];
     const transcriptText = buildTranscriptText(session.transcript, chunks);
 
+    // Only send headings/timestamps for chunks — body is already in the transcript
+    const chunkOutline = chunks
+      .map((c) => `[${c.started_at_seconds ?? 0}s] ${c.heading || "Section"}`)
+      .join("\n");
+
+    // Only send label/description for events, skip raw fields
+    const eventOutline = events
+      .slice(0, 30)
+      .map((e) => `[${e.started_at_seconds ?? 0}s] ${e.event_type || ""}: ${e.description || e.label || ""}`)
+      .join("\n");
+
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       temperature: 0.3,
       response_format: {
         type: "json_schema",
@@ -180,18 +191,14 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "system",
-          content: `You are Lexi, an elite nursing study guide author. You are building a complete, detailed, exam-ready study guide from a recorded nursing lecture. This is not a summary — it is a full study guide a student can use to prepare for the exact exam their professor will write.
+          content: `You are Lexi, an elite nursing study guide author. Build a complete, exam-ready study guide from a recorded nursing lecture. This is not a summary — it is a full guide a student can use to prepare for the exact exam their professor will write.
 
 Your guide must:
-- Explain every major concept in detail with clinical application
-- Write each concept breakdown as if tutoring a student who is struggling
-- Identify exactly what the professor emphasized and why it will appear on the test
-- Include 5 realistic NCLEX-style practice questions built directly from lecture content
-- Write a specific, actionable study plan for the week
-- Include memory hooks (mnemonics, analogies, clinical stories) for hard concepts
-- Be comprehensive enough that a student does not need to reread their notes
-
-Be specific, clinical, and thorough. Long, detailed explanations are better than short ones here.`,
+- Explain every major concept with clinical application
+- Identify what the professor emphasized and why it will appear on the test
+- Include 5 realistic NCLEX-style practice questions from lecture content
+- Include memory hooks (mnemonics, analogies) for hard concepts
+- Be comprehensive enough that a student does not need to reread their notes`,
         },
         {
           role: "user",
@@ -199,26 +206,26 @@ Be specific, clinical, and thorough. Long, detailed explanations are better than
 
 Lecture title: ${session.title || "Untitled lecture"}
 
-Full transcript:
+Transcript:
 """
 ${transcriptText || "No transcript available."}
 """
 
-Timeline events (professor emphasis signals):
-${JSON.stringify(events, null, 2)}
+Section outline:
+${chunkOutline || "No sections."}
 
-Transcript chunks with headings:
-${JSON.stringify(chunks, null, 2)}
+Professor emphasis signals:
+${eventOutline || "None recorded."}
 
 Instructions:
-- sessionOverview: Write 3-5 sentences summarizing what this lecture covered and what students need to know going into the exam.
-- majorTopics: List every distinct topic covered (5-10 items).
-- conceptBreakdowns: For EACH major concept, write a full breakdown — explanation (2-3 sentences), clinical application (specific patient scenario), why it matters on the NCLEX, and a memory hook. Aim for 6-10 concepts.
-- professorEmphasisNarrative: Write 2-3 paragraphs describing what the professor kept coming back to, what they flagged as important, and what that means for the exam.
-- examNuggets: List 6-10 specific testable points from this lecture — exact facts, thresholds, clinical decision points the professor mentioned.
-- practiceQuestions: Write exactly 5 NCLEX-style questions drawn directly from this lecture's content. Each must have 4 choices, 1 correct answer (A/B/C/D), and a rationale.
-- studyPlan: Write 5-7 specific study actions for the next 3 days before the exam.
-- quickReferenceNotes: 8-12 bullet-point facts a student should memorize cold before the exam.`,
+- sessionOverview: 3-5 sentences summarizing what was covered and what students need for the exam.
+- majorTopics: 5-10 distinct topics covered.
+- conceptBreakdowns: For each major concept — explanation, clinical application, why it matters on NCLEX, memory hook. Aim for 6-10.
+- professorEmphasisNarrative: 2-3 paragraphs on what the professor flagged as important and what that means for the exam.
+- examNuggets: 6-10 specific testable facts, thresholds, or clinical decision points from the lecture.
+- practiceQuestions: Exactly 5 NCLEX-style questions with 4 choices, 1 correct answer (A/B/C/D), and a rationale each.
+- studyPlan: 5-7 specific study actions for the next 3 days.
+- quickReferenceNotes: 8-12 facts to memorize cold before the exam.`,
         },
       ],
     });
