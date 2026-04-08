@@ -161,6 +161,12 @@ export default function CATPage() {
   const [examId, setExamId] = useState<string | null>(null);
   const [history, setHistory] = useState<CatHistoryRow[]>([]);
 
+  const [catSource, setCatSource] = useState<"topics" | "study-guide">("topics");
+  const [studyGuideFile, setStudyGuideFile] = useState<File | null>(null);
+  const [studyGuideError, setStudyGuideError] = useState("");
+  const [studyGuidePool, setStudyGuidePool] = useState<QuestionData[]>([]);
+  const [studyGuidePoolIndex, setStudyGuidePoolIndex] = useState(0);
+
   useEffect(() => {
     async function init() {
       const {
@@ -175,6 +181,13 @@ export default function CATPage() {
 
     void init();
   }, []);
+
+  // Auto-start CAT from study guide once pool is loaded
+  useEffect(() => {
+    if (catSource === "study-guide" && studyGuidePool.length > 0 && !started && !showSummary && loading) {
+      serveNextFromPool(studyGuidePool, 0, 1);
+    }
+  }, [studyGuidePool]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function requireCoreAccess() {
     if (!canUseCAT) {
@@ -262,6 +275,9 @@ export default function CATPage() {
     setScore(0);
     setResults([]);
     setQuestionSnapshots([]);
+    setStudyGuidePool([]);
+    setStudyGuidePoolIndex(0);
+    setStudyGuideError("");
     setShowSummary(false);
     setError("");
 
@@ -322,6 +338,66 @@ export default function CATPage() {
     setLoading(false);
   }
 
+  async function generateFromStudyGuide() {
+    if (!studyGuideFile) { setStudyGuideError("Please upload a study guide file."); return false; }
+    setLoading(true);
+    setStudyGuideError("");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setStudyGuideError("You must be logged in."); setLoading(false); return false; }
+
+      const signRes = await fetch("/api/study/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, fileName: studyGuideFile.name, folder: studyGuideFile.type === "application/pdf" ? "pdfs" : "images" }),
+      });
+      const signData = await signRes.json();
+      if (!signRes.ok || !signData.signedUrl) { setStudyGuideError("Upload failed. Try again."); setLoading(false); return false; }
+
+      const uploadRes = await fetch(signData.signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": studyGuideFile.type || "application/octet-stream" },
+        body: studyGuideFile,
+      });
+      if (!uploadRes.ok) { setStudyGuideError("Upload failed. Please try again."); setLoading(false); return false; }
+
+      const res = await fetch("/api/generate-from-study-guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filePath: signData.path, fileType: studyGuideFile.type || "application/pdf", questionCount: Math.max(targetCount * 2, 30), difficulty: "Medium", questionType: "Multiple Choice" }),
+      });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data) || data.length === 0) {
+        setStudyGuideError(data.error || "Could not generate questions from this file.");
+        setLoading(false);
+        return false;
+      }
+      setStudyGuidePool(data as QuestionData[]);
+      setStudyGuidePoolIndex(0);
+      return true;
+    } catch {
+      setStudyGuideError("Failed to connect to the server.");
+      setLoading(false);
+      return false;
+    }
+  }
+
+  function serveNextFromPool(pool: QuestionData[], poolIndex: number, nextQuestionNumber: number) {
+    if (poolIndex >= pool.length) {
+      setShowSummary(true);
+      setStarted(false);
+      setCurrentQuestion(null);
+      return;
+    }
+    setCurrentQuestion(pool[poolIndex]);
+    setSelectedAnswer("");
+    setStudyGuidePoolIndex(poolIndex + 1);
+    setQuestionNumber(nextQuestionNumber);
+    setStarted(true);
+    setShowSummary(false);
+    setLoading(false);
+  }
+
   async function startExam() {
     if (!requireCoreAccess()) return;
 
@@ -329,6 +405,17 @@ export default function CATPage() {
 
     const freshExamId = newExamId();
     setExamId(freshExamId);
+
+    if (catSource === "study-guide") {
+      if (studyGuidePool.length === 0) {
+        setStudyGuideError("");
+        const ok = await generateFromStudyGuide();
+        if (!ok) return;
+      } else {
+        serveNextFromPool(studyGuidePool, 0, 1);
+      }
+    return;
+    }
 
     await generateQuestion("Medium", 1);
   }
@@ -502,6 +589,10 @@ export default function CATPage() {
       return;
     }
 
+    if (catSource === "study-guide") {
+      serveNextFromPool(studyGuidePool, studyGuidePoolIndex, questionNumber + 1);
+      return;
+    }
     const nextDifficulty = getNextDifficulty(difficulty, isCorrect);
     await generateQuestion(nextDifficulty, questionNumber + 1);
   }
@@ -548,38 +639,58 @@ export default function CATPage() {
             <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
               <aside className="space-y-4">
                 <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex rounded-xl border border-slate-200 bg-slate-100 p-1">
+                    <button onClick={() => { setCatSource("topics"); setStudyGuidePool([]); }} className={"flex-1 rounded-lg py-1.5 text-xs font-bold transition " + (catSource === "topics" ? "bg-white text-blue-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}>Topics</button>
+                    <button onClick={() => { setCatSource("study-guide"); setStudyGuidePool([]); }} className={"flex-1 rounded-lg py-1.5 text-xs font-bold transition " + (catSource === "study-guide" ? "bg-white text-orange-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}>Study Guide</button>
+                  </div>
                   <h2 className="mb-3 text-base font-bold">CAT Settings</h2>
                   <div className="space-y-3">
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">Topic Focus</label>
-                      <select
-                        value={topic}
-                        onChange={(e) => setTopic(e.target.value as (typeof TOPICS)[number])}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-                      >
-                        {TOPICS.map((option) => (
-                          <option key={option}>{option}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic</label>
-                      <input
-                        value={customTopic}
-                        onChange={(e) => setCustomTopic(e.target.value)}
-                        placeholder="e.g. Acid-base imbalance"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic Details</label>
-                      <textarea
-                        value={customTopicDetails}
-                        onChange={(e) => setCustomTopicDetails(e.target.value)}
-                        placeholder="Add exactly what Lexi should test on..."
-                        rows={3}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-                      />
+                      {catSource === "topics" ? (
+                      <>
+                        <label className="mb-1 block text-xs font-medium text-slate-600">Topic Focus</label>
+                        <select
+                          value={topic}
+                          onChange={(e) => setTopic(e.target.value as (typeof TOPICS)[number])}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                        >
+                          {TOPICS.map((option) => (
+                            <option key={option}>{option}</option>
+                          ))}
+                        </select>
+                        <div className="mt-3">
+                          <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic</label>
+                          <input
+                            value={customTopic}
+                            onChange={(e) => setCustomTopic(e.target.value)}
+                            placeholder="e.g. Acid-base imbalance"
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="mt-3">
+                          <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic Details</label>
+                          <textarea
+                            value={customTopicDetails}
+                            onChange={(e) => setCustomTopicDetails(e.target.value)}
+                            placeholder="Add exactly what Lexi should test on..."
+                            rows={3}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="rounded-xl border-2 border-dashed border-orange-200 bg-orange-50 p-4 text-center">
+                        <p className="text-xs font-bold text-slate-700">Upload Study Guide</p>
+                        <p className="mt-1 text-[10px] text-slate-500">PDF or image. Lexi generates CAT questions directly from your class material.</p>
+                        <label className="mt-3 inline-block cursor-pointer rounded-lg bg-blue-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800">
+                          {studyGuideFile ? studyGuideFile.name.slice(0, 22) + (studyGuideFile.name.length > 22 ? "..." : "") : "Choose File"}
+                          <input type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setStudyGuideFile(f); setStudyGuidePool([]); setStudyGuideError(""); } }} />
+                        </label>
+                        {studyGuideFile && studyGuidePool.length === 0 && <p className="mt-2 text-[10px] font-semibold text-emerald-600">Ready — click Start to generate</p>}
+                        {studyGuidePool.length > 0 && <p className="mt-2 text-[10px] font-semibold text-blue-700">{studyGuidePool.length} questions ready</p>}
+                        {studyGuideError && <p className="mt-2 text-[10px] text-red-600">{studyGuideError}</p>}
+                      </div>
+                    )}
                     </div>
                     <div>
                       <label className="mb-1 block text-xs font-medium text-slate-600">Number of Questions</label>
@@ -599,7 +710,7 @@ export default function CATPage() {
                       disabled={loading}
                       className="w-full rounded-xl bg-orange-500 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
                     >
-                      {loading ? "Preparing CAT..." : "Start Adaptive Exam"}
+                      {loading ? (catSource === "study-guide" ? "Generating from PDF..." : "Preparing CAT...") : catSource === "study-guide" ? "Start CAT from Study Guide" : "Start Adaptive Exam"}
                     </button>
                   </div>
                 </div>
