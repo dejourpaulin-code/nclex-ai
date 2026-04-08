@@ -332,6 +332,16 @@ export async function POST(req: Request) {
       console.error("user_weak_areas non-blocking error:", weakAreaError);
     }
 
+    // Fire-and-forget unlock check
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://nclexai.com";
+      void fetch(`${baseUrl}/api/check-unlocks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      }).catch(() => {});
+    } catch { /* non-blocking */ }
+
     return NextResponse.json({
       success: true,
       sessionId,

@@ -1,7 +1,7 @@
 "use client";
 
 import Navbar from "../../components/Navbar";
-import AvatarDisplay from "../../components/AvatarDisplay";
+import AvatarDisplay, { AvatarConfig } from "../../components/AvatarDisplay";
 import ItemPreview from "../../components/ItemPreview";
 import { supabase } from "../../lib/supabase";
 import { useEffect, useMemo, useState } from "react";
@@ -20,37 +20,32 @@ type Profile = {
   equipped_badge: string | null;
   equipped_stethoscope: string | null;
   equipped_scrubs: string | null;
+  avatar_gender?: string | null;
+  avatar_skin_tone?: string | null;
+  avatar_hair_color?: string | null;
 };
-
-function itemVisual(itemKey: string, itemType: string) {
-  if (itemType === "hat") {
-    return itemKey === "hat-nurse-cap" ? "⛑️" : "🎓";
-  }
-
-  if (itemType === "badge") {
-    return itemKey === "badge-bronze" ? "🥉" : "🏅";
-  }
-
-  if (itemType === "stethoscope") {
-    return "🩺";
-  }
-
-  if (itemType === "scrubs") {
-    if (itemKey === "scrubs-blue") return "🔵";
-    if (itemKey === "scrubs-green") return "🟢";
-    if (itemKey === "scrubs-purple") return "🟣";
-  }
-
-  return "✨";
-}
 
 function formatItemName(itemKey: string | null) {
   if (!itemKey) return "None";
-
   return itemKey
     .replaceAll("-", " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
+
+const SKIN_OPTIONS: { key: AvatarConfig["skinTone"]; label: string; color: string }[] = [
+  { key: "light",  label: "Light",  color: "#FFE0BA" },
+  { key: "medium", label: "Medium", color: "#D4956A" },
+  { key: "tan",    label: "Tan",    color: "#C68642" },
+  { key: "dark",   label: "Dark",   color: "#8D5524" },
+];
+
+const HAIR_OPTIONS: { key: AvatarConfig["hairColor"]; label: string; color: string }[] = [
+  { key: "black",  label: "Black",  color: "#1A1A1A" },
+  { key: "brown",  label: "Brown",  color: "#4A2810" },
+  { key: "blonde", label: "Blonde", color: "#D4A93E" },
+  { key: "red",    label: "Red",    color: "#C0392B" },
+  { key: "auburn", label: "Auburn", color: "#7B3F00" },
+];
 
 export default function ClosetPage() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -58,6 +53,13 @@ export default function ClosetPage() {
   const [items, setItems] = useState<Unlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [activeTab, setActiveTab] = useState<"items" | "customize">("items");
+
+  // Customize state
+  const [customGender, setCustomGender] = useState<"female" | "male">("female");
+  const [customSkin, setCustomSkin] = useState<AvatarConfig["skinTone"]>("light");
+  const [customHair, setCustomHair] = useState<AvatarConfig["hairColor"]>("black");
+  const [savingConfig, setSavingConfig] = useState(false);
 
   useEffect(() => {
     loadCloset();
@@ -81,7 +83,6 @@ export default function ClosetPage() {
 
     const [profileRes, unlockRes] = await Promise.all([
       supabase.from("user_profiles").select("*").eq("user_id", user.id).maybeSingle(),
-
       supabase
         .from("user_unlocks")
         .select("*")
@@ -90,7 +91,11 @@ export default function ClosetPage() {
     ]);
 
     if (profileRes.data) {
-      setProfile(profileRes.data as Profile);
+      const p = profileRes.data as Profile;
+      setProfile(p);
+      if (p.avatar_gender === "male") setCustomGender("male");
+      if (p.avatar_skin_tone) setCustomSkin(p.avatar_skin_tone as AvatarConfig["skinTone"]);
+      if (p.avatar_hair_color) setCustomHair(p.avatar_hair_color as AvatarConfig["hairColor"]);
     }
 
     setItems((unlockRes.data || []) as Unlock[]);
@@ -99,30 +104,44 @@ export default function ClosetPage() {
 
   async function equipItem(itemKey: string, itemType: string) {
     if (!userId) return;
-
     setMessage("Equipping item...");
 
     const res = await fetch("/api/equip-item", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId,
-        itemKey,
-        itemType,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, itemKey, itemType }),
     });
 
     const data = await res.json();
-
     if (!res.ok) {
       setMessage(data.error || "Failed to equip item.");
       return;
     }
-
     setMessage("Item equipped.");
     await loadCloset();
+  }
+
+  async function saveAvatarConfig() {
+    if (!userId) return;
+    setSavingConfig(true);
+
+    const res = await fetch("/api/save-avatar-config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, gender: customGender, skinTone: customSkin, hairColor: customHair }),
+    });
+
+    setSavingConfig(false);
+    if (res.ok) {
+      setProfile((prev) =>
+        prev
+          ? { ...prev, avatar_gender: customGender, avatar_skin_tone: customSkin, avatar_hair_color: customHair }
+          : prev
+      );
+      setMessage("Avatar saved!");
+    } else {
+      setMessage("Failed to save avatar.");
+    }
   }
 
   const hats = items.filter((item) => item.item_type === "hat");
@@ -133,14 +152,18 @@ export default function ClosetPage() {
   const totalUnlocked = items.length;
   const totalEquipped = items.filter((item) => item.equipped).length;
 
-  const itemTypeCounts = useMemo(() => {
-    return {
-      hats: hats.length,
-      badges: badges.length,
-      stethoscopes: stethoscopes.length,
-      scrubs: scrubs.length,
-    };
-  }, [hats.length, badges.length, stethoscopes.length, scrubs.length]);
+  const itemTypeCounts = useMemo(() => ({
+    hats: hats.length,
+    badges: badges.length,
+    stethoscopes: stethoscopes.length,
+    scrubs: scrubs.length,
+  }), [hats.length, badges.length, stethoscopes.length, scrubs.length]);
+
+  const liveConfig: AvatarConfig = {
+    gender: customGender,
+    skinTone: customSkin,
+    hairColor: customHair,
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
@@ -156,7 +179,6 @@ export default function ClosetPage() {
             <h1 className="text-2xl font-black tracking-tight">Your Nurse Identity</h1>
           </div>
 
-          {/* Stat pills */}
           <div className="flex flex-wrap gap-2">
             <div className="rounded-xl border border-blue-100 bg-white px-3 py-1.5 text-center shadow-sm">
               <p className="text-xs text-slate-500">Unlocked</p>
@@ -179,16 +201,150 @@ export default function ClosetPage() {
           </div>
         </div>
 
+        {/* Tab toggle */}
+        <div className="mb-4 flex gap-2">
+          <button
+            onClick={() => setActiveTab("items")}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+              activeTab === "items"
+                ? "bg-orange-500 text-white shadow"
+                : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            My Items
+          </button>
+          <button
+            onClick={() => setActiveTab("customize")}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+              activeTab === "customize"
+                ? "bg-orange-500 text-white shadow"
+                : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            Create Your Avatar
+          </button>
+        </div>
+
         {loading ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
             Loading locker...
           </div>
-        ) : (
-          <div className="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
+        ) : activeTab === "customize" ? (
 
+          /* ── CUSTOMIZE TAB ── */
+          <div className="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
+            {/* Live preview */}
+            <aside className="space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-sm font-bold">Live Preview</h2>
+                  <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">Editing</span>
+                </div>
+                <div className="flex justify-center rounded-xl border border-slate-100 bg-slate-50 py-6">
+                  <AvatarDisplay
+                    avatarId={profile?.avatar_id}
+                    scrubs={profile?.equipped_scrubs}
+                    hat={profile?.equipped_hat}
+                    badge={profile?.equipped_badge}
+                    stethoscope={profile?.equipped_stethoscope}
+                    size={160}
+                    config={liveConfig}
+                  />
+                </div>
+                {message && (
+                  <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-slate-700">
+                    {message}
+                  </div>
+                )}
+                <button
+                  onClick={saveAvatarConfig}
+                  disabled={savingConfig}
+                  className="mt-3 w-full rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-60"
+                >
+                  {savingConfig ? "Saving..." : "Save Avatar"}
+                </button>
+              </div>
+            </aside>
+
+            {/* Customization options */}
+            <div className="space-y-4">
+              {/* Gender */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h2 className="mb-4 text-sm font-bold">Gender</h2>
+                <div className="flex gap-3">
+                  {(["female", "male"] as const).map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setCustomGender(g)}
+                      className={`flex flex-1 flex-col items-center gap-2 rounded-2xl border-2 py-4 transition ${
+                        customGender === g
+                          ? "border-orange-400 bg-orange-50"
+                          : "border-slate-200 bg-slate-50 hover:bg-white"
+                      }`}
+                    >
+                      <AvatarDisplay size={80} config={{ gender: g, skinTone: customSkin, hairColor: customHair }} />
+                      <span className="text-sm font-semibold capitalize text-slate-700">{g}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Skin tone */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h2 className="mb-4 text-sm font-bold">Skin Tone</h2>
+                <div className="grid grid-cols-4 gap-3">
+                  {SKIN_OPTIONS.map(({ key, label, color }) => (
+                    <button
+                      key={key}
+                      onClick={() => setCustomSkin(key)}
+                      className={`flex flex-col items-center gap-2 rounded-2xl border-2 py-3 transition ${
+                        customSkin === key
+                          ? "border-orange-400 bg-orange-50"
+                          : "border-slate-200 bg-slate-50 hover:bg-white"
+                      }`}
+                    >
+                      <span
+                        className="h-8 w-8 rounded-full border-2 border-white shadow"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span className="text-xs font-medium text-slate-600">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hair color */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h2 className="mb-4 text-sm font-bold">Hair Color</h2>
+                <div className="grid grid-cols-5 gap-3">
+                  {HAIR_OPTIONS.map(({ key, label, color }) => (
+                    <button
+                      key={key}
+                      onClick={() => setCustomHair(key)}
+                      className={`flex flex-col items-center gap-2 rounded-2xl border-2 py-3 transition ${
+                        customHair === key
+                          ? "border-orange-400 bg-orange-50"
+                          : "border-slate-200 bg-slate-50 hover:bg-white"
+                      }`}
+                    >
+                      <span
+                        className="h-8 w-8 rounded-full border-2 border-white shadow"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span className="text-xs font-medium text-slate-600">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+        ) : (
+
+          /* ── MY ITEMS TAB ── */
+          <div className="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
             {/* Sidebar */}
             <aside className="space-y-4">
-              {/* Avatar preview */}
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-sm font-bold">Avatar Preview</h2>
@@ -203,6 +359,11 @@ export default function ClosetPage() {
                     badge={profile?.equipped_badge}
                     stethoscope={profile?.equipped_stethoscope}
                     size={160}
+                    config={{
+                      gender: (profile?.avatar_gender as AvatarConfig["gender"]) ?? "female",
+                      skinTone: (profile?.avatar_skin_tone as AvatarConfig["skinTone"]) ?? "light",
+                      hairColor: (profile?.avatar_hair_color as AvatarConfig["hairColor"]) ?? "black",
+                    }}
                   />
                 </div>
 
@@ -242,7 +403,6 @@ export default function ClosetPage() {
                 </div>
               </div>
 
-              {/* Collection breakdown */}
               <div className="rounded-2xl border border-orange-100 bg-white p-4 shadow-sm">
                 <h2 className="mb-3 text-sm font-bold">Collection</h2>
                 <div className="space-y-3">
@@ -268,17 +428,8 @@ export default function ClosetPage() {
   );
 }
 
-function CollectionRow({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) {
+function CollectionRow({ label, value, color }: { label: string; value: number; color: string }) {
   const width = Math.min(value * 25, 100);
-
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between text-xs">
@@ -329,9 +480,7 @@ function LockerSection({
                 <ItemPreview itemKey={item.item_key} itemType={item.item_type} />
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                    item.equipped
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-white text-slate-500"
+                    item.equipped ? "bg-emerald-100 text-emerald-700" : "bg-white text-slate-500"
                   }`}
                 >
                   {item.equipped ? "Equipped" : "Unlocked"}
