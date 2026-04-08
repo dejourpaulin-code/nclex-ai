@@ -195,6 +195,9 @@ function QuizPageInner() {
   const [access, setAccess] = useState<AccessResponse | null>(null);
   const [accessLoading, setAccessLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [quizSource, setQuizSource] = useState<"topics" | "study-guide">("topics");
+  const [studyGuideFile, setStudyGuideFile] = useState<File | null>(null);
+  const [studyGuideError, setStudyGuideError] = useState("");
 
   const currentQuestion = questions[currentIndex] || null;
   const selectedAnswer = answers[currentIndex] || "";
@@ -426,6 +429,47 @@ function QuizPageInner() {
     }
 
     setLoading(false);
+  }
+
+  async function generateFromStudyGuide() {
+    if (!studyGuideFile) {
+      setStudyGuideError("Please upload a study guide file.");
+      return;
+    }
+
+    setLoading(true);
+    setStudyGuideError("");
+    setError("");
+    setSaveError("");
+    resetQuizUiForFreshSet(newSessionId());
+
+    try {
+      const fd = new FormData();
+      fd.append("file", studyGuideFile);
+      fd.append("questionCount", String(questionCount));
+      fd.append("difficulty", difficulty);
+      fd.append("questionType", questionType);
+
+      const res = await fetch("/api/generate-from-study-guide", {
+        method: "POST",
+        body: fd,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setStudyGuideError(data.error || "Failed to generate questions from study guide.");
+        setLoading(false);
+        return;
+      }
+
+      setQuestions(data);
+      setCurrentIndex(0);
+    } catch {
+      setStudyGuideError("Failed to connect to the server.");
+    }
+
+    setLoading(false);
   }
 
   async function generate(overrides?: {
@@ -877,43 +921,89 @@ function QuizPageInner() {
           {/* Sidebar */}
           <aside className="space-y-4">
             <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
-              <h2 className="mb-3 text-base font-bold">Practice Settings</h2>
+              <div className="mb-3 flex rounded-xl border border-slate-200 bg-slate-100 p-1">
+                <button
+                  onClick={() => setQuizSource("topics")}
+                  className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition ${quizSource === "topics" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  Topics
+                </button>
+                <button
+                  onClick={() => setQuizSource("study-guide")}
+                  className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition ${quizSource === "study-guide" ? "bg-white text-orange-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  Study Guide
+                </button>
+              </div>
 
               <div className="space-y-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">Topic</label>
-                  <select
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-blue-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
-                  >
-                    {TOPIC_OPTIONS.map((option) => (
-                      <option key={option}>{option}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic</label>
-                  <input
-                    type="text"
-                    value={customTopic}
-                    onChange={(e) => setCustomTopic(e.target.value)}
-                    placeholder="e.g. Fundamentals - elimination"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic Details</label>
-                  <textarea
-                    value={customTopicDetails}
-                    onChange={(e) => setCustomTopicDetails(e.target.value)}
-                    placeholder="e.g. Focus on urinary elimination, bowel incontinence, ostomy care..."
-                    rows={3}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
-                  />
-                </div>
+                {quizSource === "topics" ? (
+                  <>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-600">Topic</label>
+                      <select
+                        value={topic}
+                        onChange={(e) => setTopic(e.target.value)}
+                        className="w-full rounded-xl border border-slate-300 bg-blue-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                      >
+                        {TOPIC_OPTIONS.map((option) => (
+                          <option key={option}>{option}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic</label>
+                      <input
+                        type="text"
+                        value={customTopic}
+                        onChange={(e) => setCustomTopic(e.target.value)}
+                        placeholder="e.g. Fundamentals - elimination"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic Details</label>
+                      <textarea
+                        value={customTopicDetails}
+                        onChange={(e) => setCustomTopicDetails(e.target.value)}
+                        placeholder="e.g. Focus on urinary elimination, bowel incontinence, ostomy care..."
+                        rows={3}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50 p-4 text-center">
+                      <p className="mb-1 text-2xl">&#x1F4C4;</p>
+                      <p className="text-xs font-bold text-slate-700">Upload Study Guide</p>
+                      <p className="mt-1 text-[10px] text-slate-500">PDF or image (PNG, JPG). Max 20MB.</p>
+                      <label className="mt-3 inline-block cursor-pointer rounded-lg bg-blue-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800">
+                        {studyGuideFile ? studyGuideFile.name.slice(0, 22) + (studyGuideFile.name.length > 22 ? "..." : "") : "Choose File"}
+                        <input
+                          type="file"
+                          accept=".pdf,image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0] ?? null;
+                            setStudyGuideFile(f);
+                            setStudyGuideError("");
+                          }}
+                        />
+                      </label>
+                      {studyGuideFile && (
+                        <p className="mt-2 text-[10px] font-semibold text-emerald-600">Ready to generate</p>
+                      )}
+                    </div>
+                    <div className="rounded-xl border border-orange-100 bg-orange-50 p-3">
+                      <p className="text-[10px] font-bold text-orange-700">How it works</p>
+                      <p className="mt-1 text-[10px] text-slate-600">Lexi reads your study guide and generates exam questions directly from its content — the same way your professor writes the test.</p>
+                    </div>
+                    {studyGuideError && (
+                      <p className="rounded-xl border border-red-200 bg-red-50 p-2 text-xs text-red-600">{studyGuideError}</p>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
@@ -976,11 +1066,15 @@ function QuizPageInner() {
                 </div>
 
                 <button
-                  onClick={() => guardQuizAction(() => generate())}
+                  onClick={() => guardQuizAction(() => quizSource === "study-guide" ? generateFromStudyGuide() : generate())}
                   disabled={loading}
                   className="w-full rounded-xl bg-orange-500 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 disabled:opacity-50"
                 >
-                  {loading ? "Generating..." : "Generate Questions"}
+                  {loading
+                    ? "Generating..."
+                    : quizSource === "study-guide"
+                    ? "Generate from Study Guide"
+                    : "Generate Questions"}
                 </button>
 
                 <button
