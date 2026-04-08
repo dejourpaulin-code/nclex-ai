@@ -129,7 +129,7 @@ function buildTranscriptText(sessionTranscript: string | null, chunks: { body: s
     typeof sessionTranscript === "string" && sessionTranscript.trim()
       ? sessionTranscript.trim()
       : chunks.map((c) => c.body || "").filter(Boolean).join("\n\n").trim();
-  return transcript.slice(0, 120_000);
+  return transcript.slice(0, 40_000);
 }
 
 export async function POST(req: Request) {

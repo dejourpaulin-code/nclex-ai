@@ -205,8 +205,21 @@ export default function LectureSessionDetailPage() {
         body: JSON.stringify({ sessionId: id, userId: user.id }),
       });
 
-      const data = await res.json();
-      if (!res.ok) { setStudyGuideError(data.error || "Failed to generate study guide."); setStudyGuideLoading(false); return; }
+      let data: unknown;
+      try {
+        data = await res.json();
+      } catch {
+        setStudyGuideError("The server took too long to respond. Try again — shorter lectures generate faster.");
+        setStudyGuideLoading(false);
+        return;
+      }
+
+      if (!res.ok) {
+        const errData = data as { error?: string };
+        setStudyGuideError(errData?.error || "Failed to generate study guide.");
+        setStudyGuideLoading(false);
+        return;
+      }
 
       const d = data as {
         lectureTitle?: string;
@@ -486,8 +499,104 @@ ${(d.studyPlan || []).map((step, i) => `
               <p className="text-sm leading-7 text-slate-600">{session.summary || "No summary saved yet."}</p>
             </div>
 
-            {/* Top moments */}
-            {topMoments.length > 0 && (
+            {/* Topics covered — from transcript chunk headings */}
+            {transcriptChunks.filter((c) => c.heading).length > 0 && (
+              <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+                <h2 className="mb-3 text-sm font-bold text-slate-700">Topics Covered</h2>
+                <div className="flex flex-wrap gap-2">
+                  {transcriptChunks.filter((c) => c.heading).map((c, i) => (
+                    <button
+                      key={c.id}
+                      onClick={() => jumpToTranscript(c.id)}
+                      className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800 transition hover:bg-blue-100"
+                    >
+                      {i + 1}. {c.heading}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Exam Nuggets */}
+            {mappedTimeline.filter((e) => e.type === "Exam Nugget").length > 0 && (
+              <div className="rounded-2xl border border-orange-100 bg-white p-4 shadow-sm">
+                <h2 className="mb-3 text-sm font-bold text-slate-700">
+                  Exam Nuggets
+                  <span className="ml-2 text-[10px] font-semibold text-orange-600">Lexi flagged these as testable</span>
+                </h2>
+                <div className="space-y-2">
+                  {mappedTimeline.filter((e) => e.type === "Exam Nugget").map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => jumpToTranscript(item.transcriptTargetId)}
+                      className="flex w-full items-start gap-3 rounded-xl border border-orange-100 bg-orange-50 p-3 text-left transition hover:bg-orange-100"
+                    >
+                      <span className="shrink-0 text-[10px] font-bold text-orange-400 pt-0.5 w-10">{item.time}</span>
+                      <p className="text-xs leading-5 text-slate-700">{item.text}</p>
+                      <span className={`ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${confidenceBadge(item.confidence)}`}>
+                        {item.confidence}%
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Professor Emphasis */}
+            {mappedTimeline.filter((e) => e.type === "Professor Emphasis").length > 0 && (
+              <div className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
+                <h2 className="mb-3 text-sm font-bold text-slate-700">
+                  Professor Emphasis
+                  <span className="ml-2 text-[10px] font-semibold text-rose-600">Your professor kept coming back to these</span>
+                </h2>
+                <div className="space-y-2">
+                  {mappedTimeline.filter((e) => e.type === "Professor Emphasis").map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => jumpToTranscript(item.transcriptTargetId)}
+                      className="flex w-full items-start gap-3 rounded-xl border border-rose-100 bg-rose-50 p-3 text-left transition hover:bg-rose-100"
+                    >
+                      <span className="shrink-0 text-[10px] font-bold text-rose-400 pt-0.5 w-10">{item.time}</span>
+                      <p className="text-xs leading-5 text-slate-700">{item.text}</p>
+                      <span className={`ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${confidenceBadge(item.confidence)}`}>
+                        {item.confidence}%
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Key transcript sections — body previews */}
+            {transcriptChunks.filter((c) => c.body).length > 0 && (
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h2 className="mb-3 text-sm font-bold text-slate-700">Key Notes from Lecture</h2>
+                <div className="space-y-3">
+                  {transcriptChunks.filter((c) => c.body).map((chunk, index) => (
+                    <div key={chunk.id} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <p className="text-[11px] font-bold text-slate-700">
+                          {chunk.heading || `Section ${index + 1}`}
+                        </p>
+                        <span className="shrink-0 text-[10px] text-slate-400">
+                          {formatSecondsToTimestamp(chunk.started_at_seconds)}
+                        </span>
+                      </div>
+                      <p className="text-[11px] leading-5 text-slate-600 line-clamp-4">{chunk.body}</p>
+                      <button
+                        onClick={() => jumpToTranscript(chunk.id)}
+                        className="mt-1.5 text-[10px] font-semibold text-blue-700 hover:underline"
+                      >
+                        Read full section →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Top moments fallback — only show if no typed events */}
+            {mappedTimeline.filter((e) => e.type === "Exam Nugget" || e.type === "Professor Emphasis").length === 0 && topMoments.length > 0 && (
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <h2 className="mb-3 text-sm font-bold text-slate-700">Top Moments — click to jump to transcript</h2>
                 <div className="grid gap-2 sm:grid-cols-2">
