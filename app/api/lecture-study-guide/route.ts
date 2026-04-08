@@ -129,7 +129,7 @@ function buildTranscriptText(sessionTranscript: string | null, chunks: { body: s
     typeof sessionTranscript === "string" && sessionTranscript.trim()
       ? sessionTranscript.trim()
       : chunks.map((c) => c.body || "").filter(Boolean).join("\n\n").trim();
-  return transcript.slice(0, 40_000);
+  return transcript.slice(0, 15_000);
 }
 
 export async function POST(req: Request) {
@@ -171,7 +171,7 @@ export async function POST(req: Request) {
     const transcriptText = buildTranscriptText(session.transcript, chunks);
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       temperature: 0.3,
       response_format: {
         type: "json_schema",

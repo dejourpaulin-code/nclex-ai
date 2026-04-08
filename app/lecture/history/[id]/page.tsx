@@ -492,132 +492,70 @@ ${(d.studyPlan || []).map((step, i) => `
 
         {/* Overview tab */}
         {activeTab === "overview" && (
-          <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             {/* Summary */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h2 className="mb-2 text-sm font-bold text-slate-700">Session Summary</h2>
-              <p className="text-sm leading-7 text-slate-600">{session.summary || "No summary saved yet."}</p>
+            <div className="border-b border-slate-100 p-4">
+              <p className="text-sm leading-7 text-slate-700">{session.summary || "No summary saved yet."}</p>
             </div>
 
-            {/* Topics covered — from transcript chunk headings */}
+            {/* Topics as compact pills */}
             {transcriptChunks.filter((c) => c.heading).length > 0 && (
-              <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
-                <h2 className="mb-3 text-sm font-bold text-slate-700">Topics Covered</h2>
-                <div className="flex flex-wrap gap-2">
-                  {transcriptChunks.filter((c) => c.heading).map((c, i) => (
+              <div className="border-b border-slate-100 px-4 py-3">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Topics Covered</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {transcriptChunks.filter((c) => c.heading).map((c) => (
                     <button
                       key={c.id}
                       onClick={() => jumpToTranscript(c.id)}
-                      className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800 transition hover:bg-blue-100"
+                      className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-800 transition hover:bg-blue-100"
                     >
-                      {i + 1}. {c.heading}
+                      {c.heading}
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Exam Nuggets */}
-            {mappedTimeline.filter((e) => e.type === "Exam Nugget").length > 0 && (
-              <div className="rounded-2xl border border-orange-100 bg-white p-4 shadow-sm">
-                <h2 className="mb-3 text-sm font-bold text-slate-700">
-                  Exam Nuggets
-                  <span className="ml-2 text-[10px] font-semibold text-orange-600">Lexi flagged these as testable</span>
-                </h2>
-                <div className="space-y-2">
-                  {mappedTimeline.filter((e) => e.type === "Exam Nugget").map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => jumpToTranscript(item.transcriptTargetId)}
-                      className="flex w-full items-start gap-3 rounded-xl border border-orange-100 bg-orange-50 p-3 text-left transition hover:bg-orange-100"
-                    >
-                      <span className="shrink-0 text-[10px] font-bold text-orange-400 pt-0.5 w-10">{item.time}</span>
-                      <p className="text-xs leading-5 text-slate-700">{item.text}</p>
-                      <span className={`ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${confidenceBadge(item.confidence)}`}>
-                        {item.confidence}%
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Professor Emphasis */}
-            {mappedTimeline.filter((e) => e.type === "Professor Emphasis").length > 0 && (
-              <div className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
-                <h2 className="mb-3 text-sm font-bold text-slate-700">
-                  Professor Emphasis
-                  <span className="ml-2 text-[10px] font-semibold text-rose-600">Your professor kept coming back to these</span>
-                </h2>
-                <div className="space-y-2">
-                  {mappedTimeline.filter((e) => e.type === "Professor Emphasis").map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => jumpToTranscript(item.transcriptTargetId)}
-                      className="flex w-full items-start gap-3 rounded-xl border border-rose-100 bg-rose-50 p-3 text-left transition hover:bg-rose-100"
-                    >
-                      <span className="shrink-0 text-[10px] font-bold text-rose-400 pt-0.5 w-10">{item.time}</span>
-                      <p className="text-xs leading-5 text-slate-700">{item.text}</p>
-                      <span className={`ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${confidenceBadge(item.confidence)}`}>
-                        {item.confidence}%
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Key transcript sections — body previews */}
-            {transcriptChunks.filter((c) => c.body).length > 0 && (
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <h2 className="mb-3 text-sm font-bold text-slate-700">Key Notes from Lecture</h2>
-                <div className="space-y-3">
-                  {transcriptChunks.filter((c) => c.body).map((chunk, index) => (
-                    <div key={chunk.id} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                      <div className="mb-1 flex items-center justify-between gap-2">
-                        <p className="text-[11px] font-bold text-slate-700">
-                          {chunk.heading || `Section ${index + 1}`}
-                        </p>
-                        <span className="shrink-0 text-[10px] text-slate-400">
-                          {formatSecondsToTimestamp(chunk.started_at_seconds)}
-                        </span>
-                      </div>
-                      <p className="text-[11px] leading-5 text-slate-600 line-clamp-4">{chunk.body}</p>
+            {/* Key points — exam nuggets + professor emphasis inline */}
+            {mappedTimeline.filter((e) => e.type === "Exam Nugget" || e.type === "Professor Emphasis").length > 0 && (
+              <div className="px-4 py-3">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Key Points</p>
+                <div className="space-y-1.5">
+                  {mappedTimeline
+                    .filter((e) => e.type === "Exam Nugget" || e.type === "Professor Emphasis")
+                    .map((item) => (
                       <button
-                        onClick={() => jumpToTranscript(chunk.id)}
-                        className="mt-1.5 text-[10px] font-semibold text-blue-700 hover:underline"
+                        key={item.id}
+                        onClick={() => jumpToTranscript(item.transcriptTargetId)}
+                        className="flex w-full items-start gap-2.5 rounded-lg p-2 text-left transition hover:bg-slate-50"
                       >
-                        Read full section →
+                        <span className={`mt-0.5 shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${timelineBadge(item.type)}`}>
+                          {item.type === "Exam Nugget" ? "Exam" : "Emphasis"}
+                        </span>
+                        <p className="flex-1 text-[12px] leading-5 text-slate-700">{item.text}</p>
+                        <span className="shrink-0 text-[10px] text-slate-400">{item.time}</span>
                       </button>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             )}
 
-            {/* Top moments fallback — only show if no typed events */}
+            {/* Fallback: top moments if no typed events */}
             {mappedTimeline.filter((e) => e.type === "Exam Nugget" || e.type === "Professor Emphasis").length === 0 && topMoments.length > 0 && (
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <h2 className="mb-3 text-sm font-bold text-slate-700">Top Moments — click to jump to transcript</h2>
-                <div className="grid gap-2 sm:grid-cols-2">
+              <div className="px-4 py-3">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Key Points</p>
+                <div className="space-y-1.5">
                   {topMoments.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => jumpToTranscript(item.transcriptTargetId)}
-                      className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition hover:bg-blue-50 hover:border-blue-200"
+                      className="flex w-full items-start gap-2.5 rounded-lg p-2 text-left transition hover:bg-slate-50"
                     >
-                      <span className="shrink-0 text-[10px] font-bold text-slate-400 pt-0.5">{item.time}</span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                          <span className={`rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${timelineBadge(item.type)}`}>
-                            {item.type}
-                          </span>
-                          <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${confidenceBadge(item.confidence)}`}>
-                            {item.confidence}%
-                          </span>
-                        </div>
-                        <p className="text-[11px] leading-4 text-slate-700 line-clamp-2">{item.text}</p>
-                      </div>
+                      <span className={`mt-0.5 shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${timelineBadge(item.type)}`}>
+                        {item.type}
+                      </span>
+                      <p className="flex-1 text-[12px] leading-5 text-slate-700">{item.text}</p>
+                      <span className="shrink-0 text-[10px] text-slate-400">{item.time}</span>
                     </button>
                   ))}
                 </div>
