@@ -860,15 +860,24 @@ export default function DashboardPage() {
 
                 {/* Recent Performance */}
                 <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
-                  <h2 className="mb-2 text-sm font-bold">Recent Performance <span className="font-normal text-slate-400 text-xs">— last 10 answers</span></h2>
-                  {recentTrend.length === 0 ? (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-400">No recent data yet.</div>
+                  <h2 className="mb-3 text-sm font-bold">Recent Performance <span className="font-normal text-slate-400 text-xs">— last 10 answers</span></h2>
+                  {history.slice(0, 10).length === 0 ? (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-400">No recent data yet. Answer some questions to see your performance here.</div>
                   ) : (
-                    <div className="flex h-32 items-end gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                      {recentTrend.map((item) => (
-                        <div key={item.label} className="flex flex-1 flex-col items-center gap-1">
-                          <div className={`w-full rounded-t-lg ${item.isCorrect ? "bg-emerald-500" : "bg-orange-400"}`} style={{ height: `${item.value}%` }} />
-                          <span className="text-[10px] text-slate-400">{item.label}</span>
+                    <div className="space-y-1.5">
+                      {history.slice(0, 10).map((row, i) => (
+                        <div key={row.id} className="flex items-center gap-2">
+                          <span className="w-4 shrink-0 text-[10px] font-bold text-slate-400">{i + 1}</span>
+                          <div className={`h-6 flex-1 rounded-lg ${row.is_correct === true ? "bg-emerald-100" : "bg-red-100"}`}>
+                            <div
+                              className={`h-full rounded-lg ${row.is_correct === true ? "bg-emerald-500" : "bg-red-400"}`}
+                              style={{ width: row.is_correct === true ? "100%" : "30%" }}
+                            />
+                          </div>
+                          <span className={`shrink-0 text-[10px] font-semibold ${row.is_correct === true ? "text-emerald-600" : "text-red-500"}`}>
+                            {row.is_correct === true ? "✓" : "✗"}
+                          </span>
+                          <span className="max-w-[90px] truncate text-[10px] text-slate-400">{row.topic}</span>
                         </div>
                       ))}
                     </div>

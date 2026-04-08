@@ -1347,9 +1347,10 @@ function QuizPageInner() {
 
                   {/* Question number dots */}
                   <div className="mb-4 flex flex-wrap gap-1.5">
-                    {questions.map((_, index) => {
+                    {questions.map((q, index) => {
                       const isCurrent = index === currentIndex;
-                      const isAnswered = !!savedMap[index];
+                      const isSaved = !!savedMap[index];
+                      const isWrong = isSaved && !isAnswerCorrect(q, answers[index] || "");
                       return (
                         <button
                           key={index}
@@ -1357,7 +1358,9 @@ function QuizPageInner() {
                           className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition ${
                             isCurrent
                               ? "border-blue-900 bg-blue-900 text-white"
-                              : isAnswered
+                              : isWrong
+                              ? "border-red-300 bg-red-50 text-red-700"
+                              : isSaved
                               ? "border-emerald-300 bg-emerald-50 text-emerald-700"
                               : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
                           }`}
