@@ -1,12 +1,21 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import pdfParse from "pdf-parse";
 
+export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const STUDY_BUCKET = "study-uploads";
 
 type AnswerLetter = "A" | "B" | "C" | "D";
 
@@ -227,39 +236,41 @@ function getSchema(questionType: SupportedQuestionType) {
 
 export async function POST(req: Request) {
   try {
-    const formData = await req.formData();
+    const body = await req.json();
 
-    const file = formData.get("file") as File | null;
-    const questionCount = Math.max(1, Math.min(50, Number(formData.get("questionCount") ?? 10)));
-    const difficulty = String(formData.get("difficulty") ?? "Medium");
-    const questionType = normalizeQuestionType(formData.get("questionType"));
+    const filePath = typeof body.filePath === "string" ? body.filePath : null;
+    const fileType = typeof body.fileType === "string" ? body.fileType : "application/pdf";
+    const questionCount = Math.max(1, Math.min(50, Number(body.questionCount ?? 10)));
+    const difficulty = typeof body.difficulty === "string" ? body.difficulty : "Medium";
+    const questionType = normalizeQuestionType(body.questionType);
 
-    if (!file) {
-      return NextResponse.json({ error: "No file uploaded." }, { status: 400 });
+    if (!filePath) {
+      return NextResponse.json({ error: "No file path provided." }, { status: 400 });
     }
 
-    const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg", "image/webp"];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: "Only PDF and image files are supported." }, { status: 400 });
+    // Download file from Supabase storage server-side (no Vercel payload limit)
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from(STUDY_BUCKET)
+      .download(filePath);
+
+    if (downloadError || !fileData) {
+      return NextResponse.json(
+        { error: "Failed to retrieve file from storage." },
+        { status: 500 }
+      );
     }
 
-    if (file.size > 20 * 1024 * 1024) {
-      return NextResponse.json({ error: "File too large. Maximum size is 20MB." }, { status: 400 });
-    }
+    const buffer = Buffer.from(await fileData.arrayBuffer());
 
-    // Extract text from PDF or image
+    // Extract text
     let studyGuideText = "";
 
-    if (file.type === "application/pdf") {
-      const buffer = Buffer.from(await file.arrayBuffer());
+    if (fileType === "application/pdf") {
       const parsed = await pdfParse(buffer);
       studyGuideText = parsed.text?.trim() ?? "";
     } else {
-      // For images, use OpenAI vision to extract text
-      const buffer = Buffer.from(await file.arrayBuffer());
+      // Image — use GPT-4.1 vision to extract text
       const base64 = buffer.toString("base64");
-      const mimeType = file.type;
-
       const visionRes = await client.chat.completions.create({
         model: "gpt-4.1-mini",
         messages: [
@@ -268,7 +279,7 @@ export async function POST(req: Request) {
             content: [
               {
                 type: "image_url",
-                image_url: { url: `data:${mimeType};base64,${base64}`, detail: "high" },
+                image_url: { url: `data:${fileType};base64,${base64}`, detail: "high" },
               },
               {
                 type: "text",
@@ -279,7 +290,6 @@ export async function POST(req: Request) {
         ],
         max_tokens: 4000,
       });
-
       studyGuideText = visionRes.choices[0]?.message?.content?.trim() ?? "";
     }
 
@@ -290,7 +300,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Truncate to avoid token limits (~12000 chars is safe for context)
+    // Truncate to safe token range (~12000 chars)
     const truncatedText = studyGuideText.slice(0, 12000);
 
     const questionTypeInstructions: Record<SupportedQuestionType, string> = {
@@ -360,6 +370,9 @@ Rules:
     if (normalizedQuestions.length === 0) {
       return NextResponse.json({ error: "Could not generate valid questions from this file." }, { status: 500 });
     }
+
+    // Clean up the uploaded file from storage after use
+    await supabase.storage.from(STUDY_BUCKET).remove([filePath]);
 
     return NextResponse.json(normalizedQuestions);
   } catch (error) {

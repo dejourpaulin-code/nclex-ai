@@ -444,15 +444,53 @@ function QuizPageInner() {
     resetQuizUiForFreshSet(newSessionId());
 
     try {
-      const fd = new FormData();
-      fd.append("file", studyGuideFile);
-      fd.append("questionCount", String(questionCount));
-      fd.append("difficulty", difficulty);
-      fd.append("questionType", questionType);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setStudyGuideError("You must be logged in to use this feature.");
+        setLoading(false);
+        return;
+      }
 
+      // Step 1: Get a signed upload URL (file goes to Supabase, bypasses Vercel 4.5MB limit)
+      const signRes = await fetch("/api/study/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          fileName: studyGuideFile.name,
+          folder: studyGuideFile.type === "application/pdf" ? "pdfs" : "images",
+        }),
+      });
+      const signData = await signRes.json();
+      if (!signRes.ok) {
+        setStudyGuideError(signData.error || "Failed to prepare upload.");
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Upload file directly to Supabase storage
+      const uploadRes = await fetch(signData.signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": studyGuideFile.type || "application/octet-stream" },
+        body: studyGuideFile,
+      });
+      if (!uploadRes.ok) {
+        setStudyGuideError("Upload failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Step 3: Ask API to generate questions from the stored file path
       const res = await fetch("/api/generate-from-study-guide", {
         method: "POST",
-        body: fd,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filePath: signData.path,
+          fileType: studyGuideFile.type || "application/pdf",
+          questionCount,
+          difficulty,
+          questionType,
+        }),
       });
 
       const data = await res.json();
