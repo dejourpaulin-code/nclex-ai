@@ -492,75 +492,53 @@ ${(d.studyPlan || []).map((step, i) => `
 
         {/* Overview tab */}
         {activeTab === "overview" && (
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            {/* Summary */}
-            <div className="border-b border-slate-100 p-4">
+          <div className="space-y-3">
+            {/* Summary card */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">Session Summary</p>
               <p className="text-sm leading-7 text-slate-700">{session.summary || "No summary saved yet."}</p>
             </div>
 
-            {/* Topics as compact pills */}
-            {transcriptChunks.filter((c) => c.heading).length > 0 && (
-              <div className="border-b border-slate-100 px-4 py-3">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Topics Covered</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {transcriptChunks.filter((c) => c.heading).map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => jumpToTranscript(c.id)}
-                      className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-800 transition hover:bg-blue-100"
-                    >
-                      {c.heading}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Key points — max 6, headings only, expandable */}
+            {(() => {
+              const typed = mappedTimeline.filter((e) => e.type === "Exam Nugget" || e.type === "Professor Emphasis");
+              const keyPoints = typed.length > 0
+                ? typed.slice(0, 6)
+                : transcriptChunks.filter((c) => c.heading).slice(0, 6).map((c) => ({
+                    id: `chunk-${c.id}`,
+                    time: formatSecondsToTimestamp(c.started_at_seconds),
+                    type: "Topic",
+                    text: c.heading!,
+                    confidence: 60,
+                    transcriptTargetId: c.id,
+                  }));
 
-            {/* Key points — exam nuggets + professor emphasis inline */}
-            {mappedTimeline.filter((e) => e.type === "Exam Nugget" || e.type === "Professor Emphasis").length > 0 && (
-              <div className="px-4 py-3">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Key Points</p>
-                <div className="space-y-1.5">
-                  {mappedTimeline
-                    .filter((e) => e.type === "Exam Nugget" || e.type === "Professor Emphasis")
-                    .map((item) => (
+              if (keyPoints.length === 0) return null;
+
+              return (
+                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <p className="border-b border-slate-100 px-4 py-2.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    Key Points — tap to read more
+                  </p>
+                  <div className="divide-y divide-slate-100">
+                    {keyPoints.map((item) => (
                       <button
                         key={item.id}
                         onClick={() => jumpToTranscript(item.transcriptTargetId)}
-                        className="flex w-full items-start gap-2.5 rounded-lg p-2 text-left transition hover:bg-slate-50"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
                       >
-                        <span className={`mt-0.5 shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${timelineBadge(item.type)}`}>
-                          {item.type === "Exam Nugget" ? "Exam" : "Emphasis"}
+                        <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${timelineBadge(item.type)}`}>
+                          {item.type === "Exam Nugget" ? "Exam" : item.type === "Professor Emphasis" ? "Emphasis" : "Topic"}
                         </span>
-                        <p className="flex-1 text-[12px] leading-5 text-slate-700">{item.text}</p>
+                        <p className="flex-1 truncate text-[12px] font-medium text-slate-700">{item.text}</p>
                         <span className="shrink-0 text-[10px] text-slate-400">{item.time}</span>
+                        <span className="shrink-0 text-[10px] font-semibold text-blue-600">→</span>
                       </button>
                     ))}
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* Fallback: top moments if no typed events */}
-            {mappedTimeline.filter((e) => e.type === "Exam Nugget" || e.type === "Professor Emphasis").length === 0 && topMoments.length > 0 && (
-              <div className="px-4 py-3">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">Key Points</p>
-                <div className="space-y-1.5">
-                  {topMoments.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => jumpToTranscript(item.transcriptTargetId)}
-                      className="flex w-full items-start gap-2.5 rounded-lg p-2 text-left transition hover:bg-slate-50"
-                    >
-                      <span className={`mt-0.5 shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${timelineBadge(item.type)}`}>
-                        {item.type}
-                      </span>
-                      <p className="flex-1 text-[12px] leading-5 text-slate-700">{item.text}</p>
-                      <span className="shrink-0 text-[10px] text-slate-400">{item.time}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
 
