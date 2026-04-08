@@ -2,6 +2,7 @@
 
 import Navbar from "../../components/Navbar";
 import AvatarDisplay from "../../components/AvatarDisplay";
+import ItemPreview from "../../components/ItemPreview";
 import { supabase } from "../../lib/supabase";
 import { useEffect, useMemo, useState } from "react";
 
@@ -325,7 +326,7 @@ function LockerSection({
               }`}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-2xl">{itemVisual(item.item_key, item.item_type)}</span>
+                <ItemPreview itemKey={item.item_key} itemType={item.item_type} />
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                     item.equipped
