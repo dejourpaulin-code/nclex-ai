@@ -149,16 +149,19 @@ function rebalanceQuestion(question: QuestionResponse): QuestionResponse {
 
   if (question.questionType === "Select All That Apply" && question.correctAnswers) {
     const correctTexts = question.correctAnswers.map((l) => question.choices[l]);
-    const newCorrectAnswers = shuffled
-      .filter((c) => correctTexts.includes(c.text))
-      .map((c) => c.letter)
+    const newCorrectAnswers = (["A", "B", "C", "D"] as AnswerLetter[])
+      .filter((_, i) => correctTexts.includes(shuffled[i].text))
       .sort();
     return { ...question, choices: remappedChoices, correctAnswers: newCorrectAnswers };
   }
 
   if (question.correctAnswer) {
     const correctText = question.choices[question.correctAnswer];
-    const newCorrectAnswer = shuffled.find((c) => c.text === correctText)?.letter ?? "A";
+    const newCorrectAnswer: AnswerLetter =
+      shuffled[0].text === correctText ? "A"
+      : shuffled[1].text === correctText ? "B"
+      : shuffled[2].text === correctText ? "C"
+      : "D";
     return { ...question, choices: remappedChoices, correctAnswer: newCorrectAnswer };
   }
 
