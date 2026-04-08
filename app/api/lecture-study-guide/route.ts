@@ -3,183 +3,143 @@ import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 function requireEnv(name: string): string {
   const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
+  if (!value) throw new Error(`Missing required environment variable: ${name}`);
   return value;
 }
 
-const openai = new OpenAI({
-  apiKey: requireEnv("OPENAI_API_KEY"),
-});
+const openai = new OpenAI({ apiKey: requireEnv("OPENAI_API_KEY") });
 
 const supabaseAdmin = createClient(
   requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
   requireEnv("SUPABASE_SERVICE_ROLE_KEY")
 );
 
+type ExamQuestion = {
+  question: string;
+  choices: { A: string; B: string; C: string; D: string };
+  correctAnswer: string;
+  rationale: string;
+};
+
+type ConceptBreakdown = {
+  concept: string;
+  explanation: string;
+  clinicalApplication: string;
+  whyItMatters: string;
+  memoryHook: string;
+};
+
 type StudyGuideResponse = {
-  sessionSummary: string;
-  topConcepts: string[];
-  examNuggets: {
-    concept: string;
-    whyItMatters: string;
-    howToThinkAboutIt: string;
-  }[];
-  professorEmphasis: string[];
-  topQuestionsToReview: string[];
-  quickStudyPlan: string[];
+  lectureTitle: string;
+  sessionOverview: string;
+  majorTopics: string[];
+  conceptBreakdowns: ConceptBreakdown[];
+  professorEmphasisNarrative: string;
+  examNuggets: { point: string; whyTestable: string }[];
+  practiceQuestions: ExamQuestion[];
+  studyPlan: string[];
+  quickReferenceNotes: string[];
 };
 
 const studyGuideSchema = {
-  name: "lecture_study_guide",
+  name: "lecture_study_guide_v2",
   strict: true,
   schema: {
     type: "object",
     additionalProperties: false,
     properties: {
-      sessionSummary: { type: "string" },
-      topConcepts: {
-        type: "array",
-        items: { type: "string" },
-      },
-      examNuggets: {
+      lectureTitle: { type: "string" },
+      sessionOverview: { type: "string" },
+      majorTopics: { type: "array", items: { type: "string" } },
+      conceptBreakdowns: {
         type: "array",
         items: {
           type: "object",
           additionalProperties: false,
           properties: {
             concept: { type: "string" },
+            explanation: { type: "string" },
+            clinicalApplication: { type: "string" },
             whyItMatters: { type: "string" },
-            howToThinkAboutIt: { type: "string" },
+            memoryHook: { type: "string" },
           },
-          required: ["concept", "whyItMatters", "howToThinkAboutIt"],
+          required: ["concept", "explanation", "clinicalApplication", "whyItMatters", "memoryHook"],
         },
       },
-      professorEmphasis: {
+      professorEmphasisNarrative: { type: "string" },
+      examNuggets: {
         type: "array",
-        items: { type: "string" },
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            point: { type: "string" },
+            whyTestable: { type: "string" },
+          },
+          required: ["point", "whyTestable"],
+        },
       },
-      topQuestionsToReview: {
+      practiceQuestions: {
         type: "array",
-        items: { type: "string" },
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            question: { type: "string" },
+            choices: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                A: { type: "string" },
+                B: { type: "string" },
+                C: { type: "string" },
+                D: { type: "string" },
+              },
+              required: ["A", "B", "C", "D"],
+            },
+            correctAnswer: { type: "string" },
+            rationale: { type: "string" },
+          },
+          required: ["question", "choices", "correctAnswer", "rationale"],
+        },
       },
-      quickStudyPlan: {
-        type: "array",
-        items: { type: "string" },
-      },
+      studyPlan: { type: "array", items: { type: "string" } },
+      quickReferenceNotes: { type: "array", items: { type: "string" } },
     },
     required: [
-      "sessionSummary",
-      "topConcepts",
+      "lectureTitle",
+      "sessionOverview",
+      "majorTopics",
+      "conceptBreakdowns",
+      "professorEmphasisNarrative",
       "examNuggets",
-      "professorEmphasis",
-      "topQuestionsToReview",
-      "quickStudyPlan",
+      "practiceQuestions",
+      "studyPlan",
+      "quickReferenceNotes",
     ],
   },
 } as const;
-
-function cleanStringArray(value: unknown, maxItems = 10): string[] {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, maxItems);
-}
-
-function normalizeStudyGuide(value: unknown, fallbackSummary: string): StudyGuideResponse | null {
-  if (!value || typeof value !== "object") return null;
-
-  const obj = value as Partial<StudyGuideResponse>;
-
-  const sessionSummary =
-    typeof obj.sessionSummary === "string" && obj.sessionSummary.trim()
-      ? obj.sessionSummary.trim()
-      : fallbackSummary;
-
-  const examNuggets = Array.isArray(obj.examNuggets)
-    ? obj.examNuggets
-        .map((item) => {
-          if (!item || typeof item !== "object") return null;
-
-          const nugget = item as {
-            concept?: unknown;
-            whyItMatters?: unknown;
-            howToThinkAboutIt?: unknown;
-          };
-
-          const concept =
-            typeof nugget.concept === "string" ? nugget.concept.trim() : "";
-          const whyItMatters =
-            typeof nugget.whyItMatters === "string"
-              ? nugget.whyItMatters.trim()
-              : "";
-          const howToThinkAboutIt =
-            typeof nugget.howToThinkAboutIt === "string"
-              ? nugget.howToThinkAboutIt.trim()
-              : "";
-
-          if (!concept) return null;
-
-          return {
-            concept,
-            whyItMatters,
-            howToThinkAboutIt,
-          };
-        })
-        .filter(
-          (
-            item
-          ): item is {
-            concept: string;
-            whyItMatters: string;
-            howToThinkAboutIt: string;
-          } => Boolean(item)
-        )
-        .slice(0, 8)
-    : [];
-
-  return {
-    sessionSummary,
-    topConcepts: cleanStringArray(obj.topConcepts, 8),
-    examNuggets,
-    professorEmphasis: cleanStringArray(obj.professorEmphasis, 8),
-    topQuestionsToReview: cleanStringArray(obj.topQuestionsToReview, 8),
-    quickStudyPlan: cleanStringArray(obj.quickStudyPlan, 8),
-  };
-}
 
 function buildTranscriptText(sessionTranscript: string | null, chunks: { body: string | null }[]) {
   const transcript =
     typeof sessionTranscript === "string" && sessionTranscript.trim()
       ? sessionTranscript.trim()
-      : chunks
-          .map((chunk) => chunk.body || "")
-          .filter(Boolean)
-          .join("\n\n")
-          .trim();
-
+      : chunks.map((c) => c.body || "").filter(Boolean).join("\n\n").trim();
   return transcript.slice(0, 120_000);
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const sessionId = String(body?.sessionId || "").trim();
     const userId = String(body?.userId || "").trim();
 
     if (!sessionId || !userId) {
-      return NextResponse.json(
-        { error: "sessionId and userId are required." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "sessionId and userId are required." }, { status: 400 });
     }
 
     const [sessionRes, chunksRes, eventsRes] = await Promise.all([
@@ -189,33 +149,25 @@ export async function POST(req: Request) {
         .eq("id", sessionId)
         .eq("user_id", userId)
         .maybeSingle(),
-
       supabaseAdmin
         .from("lecture_transcript_chunks")
         .select("chunk_index, heading, body, started_at_seconds, ended_at_seconds")
         .eq("lecture_session_id", sessionId)
         .order("chunk_index", { ascending: true }),
-
       supabaseAdmin
         .from("lecture_timeline_events")
-        .select(
-          "event_type, label, description, confidence, started_at_seconds, ended_at_seconds"
-        )
+        .select("event_type, label, description, confidence, started_at_seconds, ended_at_seconds")
         .eq("lecture_session_id", sessionId)
         .order("started_at_seconds", { ascending: true }),
     ]);
 
     if (sessionRes.error || !sessionRes.data) {
-      return NextResponse.json(
-        { error: "Lecture session not found." },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Lecture session not found." }, { status: 404 });
     }
 
     const session = sessionRes.data;
     const chunks = chunksRes.data || [];
     const events = eventsRes.data || [];
-
     const transcriptText = buildTranscriptText(session.transcript, chunks);
 
     const completion = await openai.chat.completions.create({
@@ -228,75 +180,65 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "system",
-          content: [
-            "You are Lexi, an elite nursing lecture study-guide builder.",
-            "Build a high-value study guide from a saved nursing lecture.",
-            "Focus on NCLEX relevance, professor emphasis, likely exam traps, and practical review structure.",
-            "Be concise, specific, and useful.",
-          ].join(" "),
+          content: `You are Lexi, an elite nursing study guide author. You are building a complete, detailed, exam-ready study guide from a recorded nursing lecture. This is not a summary — it is a full study guide a student can use to prepare for the exact exam their professor will write.
+
+Your guide must:
+- Explain every major concept in detail with clinical application
+- Write each concept breakdown as if tutoring a student who is struggling
+- Identify exactly what the professor emphasized and why it will appear on the test
+- Include 5 realistic NCLEX-style practice questions built directly from lecture content
+- Write a specific, actionable study plan for the week
+- Include memory hooks (mnemonics, analogies, clinical stories) for hard concepts
+- Be comprehensive enough that a student does not need to reread their notes
+
+Be specific, clinical, and thorough. Long, detailed explanations are better than short ones here.`,
         },
         {
           role: "user",
-          content: `
-Lecture title:
-${session.title || "Untitled lecture"}
+          content: `Build a full study guide from this nursing lecture.
 
-Existing session summary:
-${session.summary || "No summary yet."}
+Lecture title: ${session.title || "Untitled lecture"}
 
-Transcript:
+Full transcript:
 """
 ${transcriptText || "No transcript available."}
 """
 
-Timeline events:
+Timeline events (professor emphasis signals):
 ${JSON.stringify(events, null, 2)}
 
-Transcript chunks:
+Transcript chunks with headings:
 ${JSON.stringify(chunks, null, 2)}
-          `.trim(),
+
+Instructions:
+- sessionOverview: Write 3-5 sentences summarizing what this lecture covered and what students need to know going into the exam.
+- majorTopics: List every distinct topic covered (5-10 items).
+- conceptBreakdowns: For EACH major concept, write a full breakdown — explanation (2-3 sentences), clinical application (specific patient scenario), why it matters on the NCLEX, and a memory hook. Aim for 6-10 concepts.
+- professorEmphasisNarrative: Write 2-3 paragraphs describing what the professor kept coming back to, what they flagged as important, and what that means for the exam.
+- examNuggets: List 6-10 specific testable points from this lecture — exact facts, thresholds, clinical decision points the professor mentioned.
+- practiceQuestions: Write exactly 5 NCLEX-style questions drawn directly from this lecture's content. Each must have 4 choices, 1 correct answer (A/B/C/D), and a rationale.
+- studyPlan: Write 5-7 specific study actions for the next 3 days before the exam.
+- quickReferenceNotes: 8-12 bullet-point facts a student should memorize cold before the exam.`,
         },
       ],
     });
 
     const rawContent = completion.choices[0]?.message?.content?.trim() || "";
-
     if (!rawContent) {
-      return NextResponse.json(
-        { error: "Model returned no text content." },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Model returned no content." }, { status: 500 });
     }
 
-    let parsedJson: unknown;
+    let parsed: unknown;
     try {
-      parsedJson = JSON.parse(rawContent);
+      parsed = JSON.parse(rawContent);
     } catch {
-      return NextResponse.json(
-        { error: "Model returned invalid JSON.", raw: rawContent },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Model returned invalid JSON." }, { status: 500 });
     }
 
-    const safeResponse = normalizeStudyGuide(
-      parsedJson,
-      session.summary || "No study guide summary generated yet."
-    );
-
-    if (!safeResponse) {
-      return NextResponse.json(
-        { error: "Model returned unusable study guide JSON.", raw: rawContent },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(safeResponse);
-  } catch (error: any) {
-    console.error("lecture-study-guide route crash:", error);
-
-    return NextResponse.json(
-      { error: error?.message || "Failed to generate study guide." },
-      { status: 500 }
-    );
+    return NextResponse.json(parsed);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Failed to generate study guide.";
+    console.error("lecture-study-guide error:", error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
