@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     }
 
     const { data, error } = await supabase
-      .from("cat_exam")
+      .from("cat_exams")
       .select(
         "id, title, topic, topic_details, score, created_at, updated_at, questions, answers"
       )
