@@ -93,6 +93,17 @@ const studyGuideSchema = {
   },
 } as const;
 
+async function extractPdfText(blob: Blob): Promise<string> {
+  const buffer = Buffer.from(await blob.arrayBuffer());
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pdfParse = require("pdf-parse");
+  const result = await pdfParse(buffer);
+  return String(result?.text || "")
+    .replace(/\r/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -112,15 +123,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Could not retrieve the uploaded file." }, { status: 400 });
     }
 
-    // Upload as a file to OpenAI Files API so we can pass it to the model
-    const arrayBuffer = await blob.arrayBuffer();
-    const uint8 = new Uint8Array(arrayBuffer);
-    const pdfFile = new File([uint8], "study-material.pdf", { type: "application/pdf" });
+    // Extract text using pdf-parse (same approach as the study route)
+    let pdfText = "";
+    try {
+      pdfText = (await extractPdfText(blob)).slice(0, 45000);
+    } catch {
+      return NextResponse.json(
+        { error: "The PDF could not be read. Make sure it is a text-based PDF and not a scanned image." },
+        { status: 500 }
+      );
+    }
 
-    const uploaded = await openai.files.create({
-      file: pdfFile,
-      purpose: "user_data",
-    });
+    if (!pdfText.trim()) {
+      return NextResponse.json(
+        { error: "This PDF did not return readable text. It may be image-only or empty." },
+        { status: 400 }
+      );
+    }
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -143,10 +162,12 @@ Your guide must:
         },
         {
           role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Build a full study guide from this nursing class PDF.
+          content: `Build a full study guide from this nursing class material.
+
+PDF Content:
+"""
+${pdfText}
+"""
 
 Instructions:
 - lectureTitle: Infer a clear title from the content.
@@ -158,18 +179,9 @@ Instructions:
 - practiceQuestions: Exactly 5 NCLEX-style questions with 4 choices, 1 correct answer (A/B/C/D), and a rationale each.
 - studyPlan: 5-7 specific study actions for the next 3 days.
 - quickReferenceNotes: 8-12 facts to memorize cold before the exam.`,
-            },
-            {
-              type: "file",
-              file: { file_id: uploaded.id },
-            } as never,
-          ],
         },
       ],
     });
-
-    // Clean up the uploaded file
-    await openai.files.delete(uploaded.id).catch(() => {});
 
     const rawContent = completion.choices[0]?.message?.content?.trim() || "";
     if (!rawContent) {
