@@ -49,12 +49,18 @@ function cleanLexiText(text: string) {
     .trim();
 }
 
-function buildSystemPrompt(mode: "pdf" | "image" | "text") {
+function buildSystemPrompt(mode: "pdf" | "image" | "text", studentContext?: { semester?: string | null; level?: string | null }) {
+  const parts = [
+    studentContext?.level ? `Level: ${studentContext.level}` : null,
+    studentContext?.semester ? `Semester: ${studentContext.semester}` : null,
+  ].filter(Boolean);
+  const contextLine = parts.length > 0 ? `\nStudent context: ${parts.join(", ")}. Tailor your depth and vocabulary accordingly.` : "";
+
   if (mode === "pdf") {
     return `
 You are Lexi, a strong nursing study assistant.
 
-Your job is to turn uploaded nursing PDFs into genuinely useful study help.
+Your job is to turn uploaded nursing PDFs into genuinely useful study help.${contextLine}
 
 Rules:
 - Respond in plain text only.
@@ -85,7 +91,7 @@ Keep it readable, organized, and detailed.
 
   if (mode === "image") {
     return `
-You are Lexi, a nursing tutor.
+You are Lexi, a nursing tutor.${contextLine}
 
 Rules:
 - Respond in plain text only.
@@ -97,7 +103,7 @@ Rules:
   }
 
   return `
-You are Lexi, a nursing tutor.
+You are Lexi, a nursing tutor.${contextLine}
 
 Rules:
 - Respond in plain text only.
@@ -106,6 +112,13 @@ Rules:
 - No asterisks.
 - Be clear, practical, and useful.
 `.trim();
+}
+
+async function fetchStudentContext(userId: string | null): Promise<{ semester?: string | null; level?: string | null }> {
+  if (!userId) return {};
+  const { data } = await supabase.from("user_profiles").select("semester_label, education_level").eq("user_id", userId).single();
+  if (!data) return {};
+  return { semester: data.semester_label, level: data.education_level };
 }
 
 async function downloadStoredAsset(path: string) {
@@ -231,6 +244,7 @@ export async function POST(req: Request) {
     }
 
     const title = buildStudyTitle(question, fileName, imageName);
+    const studentContext = await fetchStudentContext(userId);
 
     let conversationId: string | null = incomingConversationId;
 
@@ -267,7 +281,7 @@ export async function POST(req: Request) {
         messages: [
           {
             role: "system",
-            content: buildSystemPrompt("image"),
+            content: buildSystemPrompt("image", studentContext),
           },
           ...historyToChatMessages(history),
           {
@@ -344,7 +358,7 @@ export async function POST(req: Request) {
         messages: [
           {
             role: "system",
-            content: buildSystemPrompt("pdf"),
+            content: buildSystemPrompt("pdf", studentContext),
           },
           ...historyToChatMessages(history),
           {
@@ -377,7 +391,7 @@ ${extractedPdfText}
         messages: [
           {
             role: "system",
-            content: buildSystemPrompt("text"),
+            content: buildSystemPrompt("text", studentContext),
           },
           ...historyToChatMessages(history),
           {

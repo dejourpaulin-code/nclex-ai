@@ -160,6 +160,8 @@ export default function DashboardPage() {
   const [memoryBrain, setMemoryBrain] = useState<MemoryBrain | null>(null);
   const [studyPlan, setStudyPlan] = useState<StudyPlan | null>(null);
   const [studyPlanLoading, setStudyPlanLoading] = useState(false);
+  const [semesterEdit, setSemesterEdit] = useState<string | null>(null);
+  const [semesterSaving, setSemesterSaving] = useState(false);
 
   const [accessLoading, setAccessLoading] = useState(true);
   const [access, setAccess] = useState<AccessResponse | null>(null);
@@ -349,6 +351,29 @@ export default function DashboardPage() {
   const topWeakTopic = weakAreas.length > 0 ? weakAreas[0].topic : null;
   const totalUnlocked = unlocks.length;
   const equippedCount = unlocks.filter((item) => item.equipped).length;
+  
+  const lexiLevel = (() => {
+    if (totalAnswered < 20) return { label: "Novice", color: "text-slate-500" };
+    if (totalAnswered < 75) return { label: "Developing", color: "text-blue-500" };
+    if (totalAnswered < 200) return accuracy >= 72 ? { label: "Competent+", color: "text-cyan-600" } : { label: "Competent", color: "text-cyan-500" };
+    if (totalAnswered < 400) return accuracy >= 78 ? { label: "Proficient", color: "text-emerald-600" } : { label: "Competent+", color: "text-cyan-600" };
+    if (accuracy >= 85) return { label: "NCLEX Ready", color: "text-purple-600" };
+    if (accuracy >= 78) return { label: "Advanced", color: "text-indigo-600" };
+    return { label: "Proficient", color: "text-emerald-600" };
+  })();
+
+  // Sync computed level to DB whenever it changes
+  useEffect(() => {
+    if (loading || !profile) return;
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      fetch("/api/save-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, educationLevel: lexiLevel.label }),
+      }).catch(() => {});
+    });
+  }, [lexiLevel.label, loading, profile]);
 
   const heatmapRows = useMemo(() => {
     return weakAreas.map((area) => {
@@ -676,6 +701,20 @@ export default function DashboardPage() {
     );
   }
 
+  async function saveSemester(value: string) {
+    if (semesterSaving) return;
+    setSemesterSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await fetch("/api/save-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, semesterLabel: value }),
+      }).catch(() => {});
+    }
+    setSemesterSaving(false);
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
       <Navbar />
@@ -972,8 +1011,29 @@ export default function DashboardPage() {
                       <AvatarDisplay avatarId={profile?.avatar_id} scrubs={profile?.equipped_scrubs} hat={profile?.equipped_hat} badge={profile?.equipped_badge} stethoscope={profile?.equipped_stethoscope} size={120} config={resolveAvatarConfig(profile)} />
                     </div>
                     <div className="mt-3 space-y-1 text-xs text-slate-500">
-                      <p>Level: <span className="font-semibold text-slate-800">{profile?.education_level || "Not set"}</span></p>
-                      <p>Semester: <span className="font-semibold text-slate-800">{profile?.semester_label || "Not set"}</span></p>
+                      <p>Lexi Level: <span className={`font-bold ${lexiLevel.color}`}>{lexiLevel.label}</span></p>
+                      <p className="flex items-center gap-1">Semester:
+                        {semesterEdit === null ? (
+                          <button
+                            onClick={() => setSemesterEdit(profile?.semester_label || "")}
+                            className="font-semibold text-slate-800 underline-offset-2 hover:underline cursor-pointer"
+                          >
+                            {profile?.semester_label || "Add semester"}
+                          </button>
+                        ) : (
+                          <input
+                            autoFocus
+                            type="text"
+                            value={semesterEdit}
+                            placeholder="e.g. 2nd semester"
+                            onChange={(e) => setSemesterEdit(e.target.value)}
+                            onBlur={() => { saveSemester(semesterEdit); setSemesterEdit(null); }}
+                            onKeyDown={(e) => { if (e.key === "Enter") { saveSemester(semesterEdit); setSemesterEdit(null); } if (e.key === "Escape") setSemesterEdit(null); }}
+                            disabled={semesterSaving}
+                            className="w-28 rounded border border-blue-300 px-1 py-0.5 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-blue-400"
+                          />
+                        )}
+                      </p>
                       <p>Style: <span className="font-semibold text-slate-800">{profile?.explanation_style || "Not set"}</span></p>
                     </div>
                   </div>
