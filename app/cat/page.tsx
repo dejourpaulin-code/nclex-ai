@@ -215,6 +215,9 @@ export default function CATPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [topic, setTopic] = useState<(typeof TOPICS)[number]>("All Topics");
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [multiTopicMode, setMultiTopicMode] = useState(false);
+  const [catQuestionType, setCatQuestionType] = useState("Mixed");
   const [customTopic, setCustomTopic] = useState("");
   const [customTopicDetails, setCustomTopicDetails] = useState("");
   const [targetCount, setTargetCount] = useState(20);
@@ -386,11 +389,12 @@ export default function CATPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          topic: customTopic.trim() || topic,
+          topic: multiTopicMode && selectedTopics.length > 1 ? selectedTopics[Math.floor(Math.random() * selectedTopics.length)] : (customTopic.trim() || topic),
+          topics: multiTopicMode && selectedTopics.length > 1 ? selectedTopics : [],
           customTopic: customTopic.trim(),
           customTopicDetails: customTopicDetails.trim(),
           difficulty: nextDifficulty,
-          questionType: "Multiple Choice",
+          questionType: catQuestionType,
           questionCount: 1,
         }),
       });
@@ -726,16 +730,52 @@ export default function CATPage() {
                     <div>
                       {catSource === "topics" ? (
                       <>
-                        <label className="mb-1 block text-xs font-medium text-slate-600">Topic Focus</label>
-                        <select
-                          value={topic}
-                          onChange={(e) => setTopic(e.target.value as (typeof TOPICS)[number])}
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-                        >
-                          {TOPICS.map((option) => (
-                            <option key={option}>{option}</option>
-                          ))}
-                        </select>
+                        <div className="mb-1 flex items-center justify-between">
+                          <label className="text-xs font-medium text-slate-600">Topic Focus</label>
+                          <button
+                            type="button"
+                            onClick={() => { setMultiTopicMode((v) => !v); setSelectedTopics([]); }}
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition ${
+                              multiTopicMode
+                                ? "bg-blue-600 text-white"
+                                : "border border-slate-300 bg-white text-slate-500 hover:bg-slate-50"
+                            }`}
+                          >
+                            {multiTopicMode ? "Multi ✓" : "+ Multi"}
+                          </button>
+                        </div>
+                        {multiTopicMode ? (
+                          <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-300 bg-blue-50 p-2 space-y-0.5">
+                            {selectedTopics.length > 0 && (
+                              <p className="mb-1 px-1 text-[10px] font-semibold text-blue-700">{selectedTopics.length} selected</p>
+                            )}
+                            {TOPICS.filter((t) => t !== "All Topics" && t !== "Random Topic").map((opt) => (
+                              <label key={opt} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-xs hover:bg-white">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedTopics.includes(opt)}
+                                  onChange={(e) => {
+                                    setSelectedTopics((prev) =>
+                                      e.target.checked ? [...prev, opt] : prev.filter((t) => t !== opt)
+                                    );
+                                  }}
+                                  className="accent-blue-600"
+                                />
+                                <span className="text-slate-800">{opt}</span>
+                              </label>
+                            ))}
+                          </div>
+                        ) : (
+                          <select
+                            value={topic}
+                            onChange={(e) => setTopic(e.target.value as (typeof TOPICS)[number])}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                          >
+                            {TOPICS.map((option) => (
+                              <option key={option}>{option}</option>
+                            ))}
+                          </select>
+                        )}
                         <div className="mt-3">
                           <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic</label>
                           <input
@@ -770,7 +810,21 @@ export default function CATPage() {
                       </div>
                     )}
                     </div>
-                    <div>
+                                        <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-600">Question Type</label>
+                      <select
+                        value={catQuestionType}
+                        onChange={(e) => setCatQuestionType(e.target.value)}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                      >
+                        <option>Mixed</option>
+                        <option>Multiple Choice</option>
+                        <option>Priority</option>
+                        <option>Delegation</option>
+                        <option>Pharmacology</option>
+                      </select>
+                    </div>
+<div>
                       <label className="mb-1 block text-xs font-medium text-slate-600">Number of Questions</label>
                       <select
                         value={targetCount}
