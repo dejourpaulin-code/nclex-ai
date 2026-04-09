@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing userId." }, { status: 400 });
     }
 
-    await supabase
+    const { error } = await supabase
       .from("user_profiles")
       .update({
         avatar_gender: gender ?? null,
@@ -24,6 +24,11 @@ export async function POST(req: Request) {
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", userId);
+
+    if (error) {
+      console.error("save-avatar-config error:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

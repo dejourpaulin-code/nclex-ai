@@ -149,16 +149,17 @@ function LexiSVG({ size }: { size: number }) {
       <rect x="45.5" y="19" width="5" height="8" rx="1.5" fill="#EF4444"/>
       <rect x="42" y="22" width="12" height="3.5" rx="1.5" fill="#EF4444"/>
 
-      {/* ── Stethoscope ── */}
-      <circle cx="40" cy="74" r="2" fill="#F97316"/>
-      <circle cx="60" cy="74" r="2" fill="#F97316"/>
-      <path d="M40,74 Q35,83 42,90 Q46,95 50,95 Q54,95 58,90 Q65,83 60,74" fill="none" stroke="#F97316" strokeWidth="2.2" strokeLinecap="round"/>
-      <circle cx="50" cy="95" r="4.5" fill="#F97316"/>
-      <circle cx="50" cy="95" r="2.2" fill="#FED7AA"/>
+      {/* ── Stethoscope — on shoulders, arch drapes down chest ── */}
+      <circle cx="37" cy="68" r="2.2" fill="#F97316"/>
+      <circle cx="63" cy="68" r="2.2" fill="#F97316"/>
+      <path d="M37,68 Q35,77 41,84 Q45,88 50,88 Q55,88 59,84 Q65,77 63,68"
+        fill="none" stroke="#F97316" strokeWidth="2.2" strokeLinecap="round"/>
+      <circle cx="50" cy="89" r="4" fill="#F97316"/>
+      <circle cx="50" cy="89" r="2" fill="#FED7AA"/>
 
-      {/* AI badge */}
-      <rect x="42" y="80" width="16" height="9" rx="2.5" fill="#F97316"/>
-      <text x="50" y="87.5" textAnchor="middle" fontSize="4.8" fill="white" fontWeight="bold">AI RN</text>
+      {/* AI badge — left breast pocket */}
+      <rect x="27" y="74" width="16" height="9" rx="2.5" fill="#F97316"/>
+      <text x="35" y="81.5" textAnchor="middle" fontSize="4.5" fill="white" fontWeight="bold">AI RN</text>
     </svg>
   );
 }
@@ -332,34 +333,32 @@ function StudentSVG({
         </g>
       )}
 
-      {/* ── Stethoscope — always visible, defaults to silver ── */}
-      <g>
-        <circle cx="40" cy="74" r="2" fill={stethColor}/>
-        <circle cx="60" cy="74" r="2" fill={stethColor}/>
-        <path d="M40,74 Q35,83 42,90 Q46,95 50,95 Q54,95 58,90 Q65,83 60,74" fill="none" stroke={stethColor} strokeWidth="2.2" strokeLinecap="round"/>
-        <circle cx="50" cy="95" r="4.5" fill={stethColor}/>
-        <circle cx="50" cy="95" r="2.2" fill="white" opacity="0.4"/>
-      </g>
+      {/* ── Stethoscope — earpiece dots on shoulders, arch drapes down chest ── */}
+      <circle cx="37" cy="68" r="2.2" fill={stethColor}/>
+      <circle cx="63" cy="68" r="2.2" fill={stethColor}/>
+      <path d="M37,68 Q35,77 41,84 Q45,88 50,88 Q55,88 59,84 Q65,77 63,68"
+        fill="none" stroke={stethColor} strokeWidth="2.2" strokeLinecap="round"/>
+      <circle cx="50" cy="89" r="4" fill={stethColor}/>
+      <circle cx="50" cy="89" r="2" fill="white" opacity="0.4"/>
 
-      {/* ── Badge — always show student nurse badge; replace with unlocked badge ── */}
+      {/* ── Badge — left breast pocket, below stethoscope arch ── */}
       {!badge || badge === "" ? (
-        /* Default student nurse badge */
-        <g transform="translate(38,72)">
-          <rect width="22" height="13" rx="3" fill="#E2E8F0"/>
-          <rect x="2" y="2" width="18" height="9" rx="2" fill="white"/>
-          <text x="11" y="10" textAnchor="middle" fontSize="4.5" fill="#64748B" fontWeight="bold">SN</text>
+        <g transform="translate(27,74)">
+          <rect width="18" height="10" rx="2.5" fill="#E2E8F0"/>
+          <rect x="1.5" y="1.5" width="15" height="7" rx="1.5" fill="white"/>
+          <text x="9" y="8" textAnchor="middle" fontSize="4" fill="#64748B" fontWeight="bold">SN</text>
         </g>
       ) : badge === "badge-bronze" ? (
-        <g transform="translate(38,72)">
-          <rect width="22" height="13" rx="3" fill="#CD7F32"/>
-          <rect x="2" y="2" width="18" height="9" rx="2" fill="#E8A87C"/>
-          <text x="11" y="10" textAnchor="middle" fontSize="5.5" fill="#7C4A0A" fontWeight="bold">RN</text>
+        <g transform="translate(27,74)">
+          <rect width="18" height="10" rx="2.5" fill="#CD7F32"/>
+          <rect x="1.5" y="1.5" width="15" height="7" rx="1.5" fill="#E8A87C"/>
+          <text x="9" y="8" textAnchor="middle" fontSize="4.5" fill="#7C4A0A" fontWeight="bold">RN</text>
         </g>
       ) : badge === "badge-rn" ? (
-        <g transform="translate(38,72)">
-          <rect width="22" height="13" rx="3" fill="#1D4ED8"/>
-          <rect x="2" y="2" width="18" height="9" rx="2" fill="#3B82F6"/>
-          <text x="11" y="10" textAnchor="middle" fontSize="5.5" fill="white" fontWeight="bold">RN</text>
+        <g transform="translate(27,74)">
+          <rect width="18" height="10" rx="2.5" fill="#1D4ED8"/>
+          <rect x="1.5" y="1.5" width="15" height="7" rx="1.5" fill="#3B82F6"/>
+          <text x="9" y="8" textAnchor="middle" fontSize="4.5" fill="white" fontWeight="bold">RN</text>
         </g>
       ) : null}
     </>
