@@ -56,6 +56,35 @@ const EYE_OPTIONS: { key: AvatarConfig["eyeColor"]; label: string; color: string
 ];
 
 
+type CatalogItem = { key: string; label: string; tier: "starter" | "unlock"; unlockDesc: string | null };
+
+const ITEM_CATALOG: Record<string, CatalogItem[]> = {
+  scrubs: [
+    { key: "scrubs-blue",   label: "Blue Scrubs",   tier: "starter", unlockDesc: null },
+    { key: "scrubs-green",  label: "Green Scrubs",  tier: "unlock",  unlockDesc: "Answer 50 questions" },
+    { key: "scrubs-purple", label: "Purple Scrubs", tier: "unlock",  unlockDesc: "Answer 150 questions" },
+    { key: "scrubs-pink",   label: "Pink Scrubs",   tier: "unlock",  unlockDesc: "Answer 175 questions" },
+    { key: "scrubs-teal",   label: "Teal Scrubs",   tier: "unlock",  unlockDesc: "Answer 225 questions" },
+  ],
+  hat: [
+    { key: "hat-nurse-cap", label: "Nurse Cap",  tier: "starter", unlockDesc: null },
+    { key: "hat-grad-cap",  label: "Grad Cap",   tier: "unlock",  unlockDesc: "Answer 250 questions" },
+  ],
+  badge: [
+    { key: "badge-rn",     label: "RN Candidate", tier: "starter", unlockDesc: null },
+    { key: "badge-bronze", label: "Bronze Badge", tier: "unlock",  unlockDesc: "Answer 10 questions" },
+  ],
+  stethoscope: [
+    { key: "stethoscope-silver", label: "Silver Stethoscope", tier: "starter", unlockDesc: null },
+    { key: "stethoscope-blue",   label: "Blue Stethoscope",   tier: "unlock",  unlockDesc: "25 questions or 70% accuracy" },
+    { key: "stethoscope-orange", label: "Orange Stethoscope", tier: "unlock",  unlockDesc: "Answer 100 questions" },
+    { key: "stethoscope-pink",   label: "Pink Stethoscope",   tier: "unlock",  unlockDesc: "Answer 200 questions" },
+    { key: "stethoscope-gold",   label: "Gold Stethoscope",   tier: "unlock",  unlockDesc: "Answer 275 questions" },
+  ],
+};
+
+const STARTER_ITEM_KEYS = new Set(["scrubs-blue", "hat-nurse-cap", "badge-rn", "stethoscope-silver"]);
+
 export default function ClosetPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -169,16 +198,17 @@ export default function ClosetPage() {
     setMessage("Avatar saved!");
   }
 
-  const hats        = items.filter((i) => i.item_type === "hat");
-  const badges      = items.filter((i) => i.item_type === "badge");
-  const stethoscopes = items.filter((i) => i.item_type === "stethoscope");
-  const scrubs      = items.filter((i) => i.item_type === "scrubs");
-  const totalUnlocked = items.length;
-  const totalEquipped = items.filter((i) => i.equipped).length;
+  const unlockedItemKeys = new Set(items.map((i) => i.item_key));
+  const allCatalogItems = Object.values(ITEM_CATALOG).flat();
+  const totalUnlocked = allCatalogItems.filter((i) => i.tier === "starter" || unlockedItemKeys.has(i.key)).length;
+  const totalEquipped = [profile?.equipped_scrubs, profile?.equipped_hat, profile?.equipped_badge, profile?.equipped_stethoscope].filter(Boolean).length;
 
   const itemTypeCounts = useMemo(() => ({
-    hats: hats.length, badges: badges.length, stethoscopes: stethoscopes.length, scrubs: scrubs.length,
-  }), [hats.length, badges.length, stethoscopes.length, scrubs.length]);
+    hats:         ITEM_CATALOG.hat.filter((i) => i.tier === "starter" || unlockedItemKeys.has(i.key)).length,
+    badges:       ITEM_CATALOG.badge.filter((i) => i.tier === "starter" || unlockedItemKeys.has(i.key)).length,
+    stethoscopes: ITEM_CATALOG.stethoscope.filter((i) => i.tier === "starter" || unlockedItemKeys.has(i.key)).length,
+    scrubs:       ITEM_CATALOG.scrubs.filter((i) => i.tier === "starter" || unlockedItemKeys.has(i.key)).length,
+  }), [unlockedItemKeys]);
 
   const liveConfig: AvatarConfig  = { gender: customGender, skinTone: customSkin, hairColor: customHair, eyeColor: customEye };
   const savedConfig = resolveAvatarConfig(profile);
@@ -368,10 +398,10 @@ export default function ClosetPage() {
             </aside>
 
             <div className="space-y-4">
-              <LockerSection title="Scrub Sets"   items={scrubs}       onEquip={equipItem} />
-              <LockerSection title="Stethoscopes" items={stethoscopes} onEquip={equipItem} />
-              <LockerSection title="Badges"       items={badges}       onEquip={equipItem} />
-              <LockerSection title="Hats"         items={hats}         onEquip={equipItem} />
+              <CatalogSection title="Scrub Sets"   itemType="scrubs"       catalog={ITEM_CATALOG.scrubs}       unlockedKeys={unlockedItemKeys} equippedKey={profile?.equipped_scrubs}       onEquip={equipItem} />
+              <CatalogSection title="Stethoscopes" itemType="stethoscope"  catalog={ITEM_CATALOG.stethoscope}  unlockedKeys={unlockedItemKeys} equippedKey={profile?.equipped_stethoscope} onEquip={equipItem} />
+              <CatalogSection title="Badges"       itemType="badge"        catalog={ITEM_CATALOG.badge}        unlockedKeys={unlockedItemKeys} equippedKey={profile?.equipped_badge}       onEquip={equipItem} />
+              <CatalogSection title="Hats"         itemType="hat"          catalog={ITEM_CATALOG.hat}          unlockedKeys={unlockedItemKeys} equippedKey={profile?.equipped_hat}         onEquip={equipItem} />
             </div>
           </div>
         )}
@@ -394,49 +424,72 @@ function CollectionRow({ label, value, color }: { label: string; value: number; 
   );
 }
 
-function LockerSection({ title, items, onEquip }: {
-  title: string; items: Unlock[]; onEquip: (itemKey: string, itemType: string) => void;
+function CatalogSection({ title, itemType, catalog, unlockedKeys, equippedKey, onEquip }: {
+  title: string;
+  itemType: string;
+  catalog: CatalogItem[];
+  unlockedKeys: Set<string>;
+  equippedKey: string | null | undefined;
+  onEquip: (itemKey: string, itemType: string) => void;
 }) {
+  const available = catalog.filter((i) => i.tier === "starter" || unlockedKeys.has(i.key)).length;
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-sm font-bold">{title}</h2>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{items.length} unlocked</span>
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+          {available}/{catalog.length} unlocked
+        </span>
       </div>
-      {items.length === 0 ? (
-        <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-500">
-          No unlocked {title.toLowerCase()} yet. Keep answering questions to unlock more!
-        </div>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {items.map((item) => (
-            <div key={item.id} className={`rounded-xl border p-3 transition ${
-              item.equipped ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-slate-50 hover:bg-white hover:shadow-sm"
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {catalog.map((item) => {
+          const isEquipped = equippedKey === item.key;
+          const isUnlocked = item.tier === "starter" || unlockedKeys.has(item.key);
+          return (
+            <div key={item.key} className={`rounded-xl border p-3 transition ${
+              isEquipped ? "border-blue-300 bg-blue-50"
+              : isUnlocked ? "border-slate-200 bg-slate-50 hover:bg-white hover:shadow-sm"
+              : "border-slate-100 bg-slate-50 opacity-60"
             }`}>
               <div className="flex items-center justify-between gap-2">
-                <ItemPreview itemKey={item.item_key} itemType={item.item_type} />
-                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  item.equipped ? "bg-emerald-100 text-emerald-700" : "bg-white text-slate-500"
-                }`}>
-                  {item.equipped ? "Equipped" : "Unlocked"}
-                </span>
+                <ItemPreview itemKey={item.key} itemType={itemType} />
+                <div className="flex flex-col items-end gap-1">
+                  {isEquipped && (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">Equipped</span>
+                  )}
+                  {item.tier === "starter" && !isEquipped && (
+                    <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-600">Free</span>
+                  )}
+                  {item.tier === "unlock" && isUnlocked && !isEquipped && (
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">Earned</span>
+                  )}
+                  {item.tier === "unlock" && !isUnlocked && (
+                    <span className="text-base" title={item.unlockDesc ?? undefined}>&#128274;</span>
+                  )}
+                </div>
               </div>
-              <p className="mt-2 text-sm font-semibold text-slate-900">{formatItemName(item.item_key)}</p>
-              <p className="text-xs capitalize text-slate-500">{item.item_type}</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{item.label}</p>
+              {item.tier === "unlock" && !isUnlocked && item.unlockDesc && (
+                <p className="mt-0.5 text-xs text-slate-400">{item.unlockDesc}</p>
+              )}
               <div className="mt-2">
-                {item.equipped ? (
+                {isEquipped ? (
                   <button disabled className="w-full rounded-xl bg-slate-200 py-1.5 text-xs font-semibold text-slate-500">Currently Equipped</button>
-                ) : (
-                  <button onClick={() => onEquip(item.item_key, item.item_type)}
-                    className="w-full rounded-xl bg-orange-500 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-600">
-                    Equip Item
+                ) : isUnlocked ? (
+                  <button
+                    onClick={() => onEquip(item.key, itemType)}
+                    className="w-full rounded-xl bg-orange-500 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-600"
+                  >
+                    Equip
                   </button>
+                ) : (
+                  <button disabled className="w-full rounded-xl border border-slate-200 bg-slate-100 py-1.5 text-xs font-semibold text-slate-400">Locked</button>
                 )}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }

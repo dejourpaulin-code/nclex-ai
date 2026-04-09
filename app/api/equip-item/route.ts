@@ -6,6 +6,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Starter items every student can equip without earning them first
+const STARTER_ITEM_KEYS = new Set(["scrubs-blue", "hat-nurse-cap", "badge-rn", "stethoscope-silver"]);
+
 export async function POST(req: Request) {
   try {
     const { userId, itemKey, itemType } = await req.json();
@@ -17,19 +20,22 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data: ownedItem } = await supabase
-      .from("user_unlocks")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("item_key", itemKey)
-      .eq("item_type", itemType)
-      .maybeSingle();
+    // Starter items bypass the unlock check — everyone can equip them
+    if (!STARTER_ITEM_KEYS.has(itemKey)) {
+      const { data: ownedItem } = await supabase
+        .from("user_unlocks")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("item_key", itemKey)
+        .eq("item_type", itemType)
+        .maybeSingle();
 
-    if (!ownedItem) {
-      return NextResponse.json(
-        { error: "Item is not unlocked for this user." },
-        { status: 400 }
-      );
+      if (!ownedItem) {
+        return NextResponse.json(
+          { error: "Item is not unlocked for this user." },
+          { status: 400 }
+        );
+      }
     }
 
     await supabase

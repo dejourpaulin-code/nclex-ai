@@ -1034,7 +1034,6 @@ export default function DashboardPage() {
                           />
                         )}
                       </p>
-                      <p>Style: <span className="font-semibold text-slate-800">{profile?.explanation_style || "Not set"}</span></p>
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
