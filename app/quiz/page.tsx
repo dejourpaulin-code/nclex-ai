@@ -10,7 +10,8 @@ type QuestionType =
   | "Priority"
   | "Delegation"
   | "Pharmacology"
-  | "Select All That Apply";
+  | "Select All That Apply"
+  | "Mixed";
 
 type QuizMode = "Tutor Mode" | "Exam Mode";
 type AnswerLetter = "A" | "B" | "C" | "D";
@@ -236,6 +237,8 @@ function QuizPageInner() {
 
   const [sessionId, setSessionId] = useState<string>(() => newSessionId());
   const [topic, setTopic] = useState("Cardiovascular - Heart Failure");
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [multiTopicMode, setMultiTopicMode] = useState(false);
   const [customTopic, setCustomTopic] = useState("");
   const [customTopicDetails, setCustomTopicDetails] = useState("");
   const [difficulty, setDifficulty] = useState("Medium");
@@ -627,6 +630,7 @@ function QuizPageInner() {
         },
         body: JSON.stringify({
           topic: effectiveTopic,
+          topics: multiTopicMode && selectedTopics.length > 1 ? selectedTopics : [],
           customTopic: trimmedCustomTopic,
           customTopicDetails: trimmedCustomTopicDetails,
           difficulty,
@@ -1056,16 +1060,52 @@ function QuizPageInner() {
                 {quizSource === "topics" ? (
                   <>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">Topic</label>
-                      <select
-                        value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
-                        className="w-full rounded-xl border border-slate-300 bg-blue-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
-                      >
-                        {TOPIC_OPTIONS.map((option) => (
-                          <option key={option}>{option}</option>
-                        ))}
-                      </select>
+                      <div className="mb-1 flex items-center justify-between">
+                        <label className="text-xs font-medium text-slate-600">Topic</label>
+                        <button
+                          type="button"
+                          onClick={() => { setMultiTopicMode((v) => !v); setSelectedTopics([]); }}
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition ${
+                            multiTopicMode
+                              ? "bg-blue-600 text-white"
+                              : "border border-slate-300 bg-white text-slate-500 hover:bg-slate-50"
+                          }`}
+                        >
+                          {multiTopicMode ? "Multi ✓" : "+ Multi"}
+                        </button>
+                      </div>
+                      {multiTopicMode ? (
+                        <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-300 bg-blue-50 p-2 space-y-0.5">
+                          {selectedTopics.length > 0 && (
+                            <p className="mb-1 px-1 text-[10px] font-semibold text-blue-700">{selectedTopics.length} selected</p>
+                          )}
+                          {TOPIC_OPTIONS.filter((t) => t !== "Use Weak Areas Only" && t !== "Random Topic" && t !== "All Topics").map((opt) => (
+                            <label key={opt} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-xs hover:bg-white">
+                              <input
+                                type="checkbox"
+                                checked={selectedTopics.includes(opt)}
+                                onChange={(e) => {
+                                  setSelectedTopics((prev) =>
+                                    e.target.checked ? [...prev, opt] : prev.filter((t) => t !== opt)
+                                  );
+                                }}
+                                className="accent-blue-600"
+                              />
+                              <span className="text-slate-800">{opt}</span>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <select
+                          value={topic}
+                          onChange={(e) => setTopic(e.target.value)}
+                          className="w-full rounded-xl border border-slate-300 bg-blue-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                        >
+                          {TOPIC_OPTIONS.map((option) => (
+                            <option key={option}>{option}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                     <div>
                       <label className="mb-1 block text-xs font-medium text-slate-600">Custom Topic</label>
@@ -1161,6 +1201,7 @@ function QuizPageInner() {
                       onChange={(e) => setQuestionType(e.target.value as QuestionType)}
                       className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
                     >
+                      <option>Mixed</option>
                       <option>Multiple Choice</option>
                       <option>Priority</option>
                       <option>Delegation</option>

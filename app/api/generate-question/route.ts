@@ -101,6 +101,7 @@ const SUPPORTED_QUESTION_TYPES = [
   "Delegation",
   "Pharmacology",
   "Select All That Apply",
+  "Mixed",
 ] as const;
 
 type AnswerLetter = "A" | "B" | "C" | "D";
@@ -156,7 +157,8 @@ function normalizeQuestionType(value: unknown): SupportedQuestionType {
     value === "Priority" ||
     value === "Delegation" ||
     value === "Pharmacology" ||
-    value === "Select All That Apply"
+    value === "Select All That Apply" ||
+    value === "Mixed"
   ) {
     return value;
   }
@@ -399,6 +401,7 @@ ${questionTypeInstruction}
 
 function buildStandardPrompt(
   topic: string,
+  topics: string[],
   customTopic: string,
   customTopicDetails: string,
   difficulty: string,
@@ -411,7 +414,13 @@ function buildStandardPrompt(
 
   let topicInstruction = "";
 
-  if (topic === "Use Weak Areas Only" && !customTopic) {
+  if (topics.length > 1 && !customTopic) {
+    topicInstruction = `
+- Use ONLY these selected topics: ${topics.join(", ")}
+- Spread the questions across all selected topics as evenly as possible.
+- Include the specific topic for each question in the "topic" field.
+    `.trim();
+  } else if (topic === "Use Weak Areas Only" && !customTopic) {
     const chosenWeakTopics = weakTopics.length > 0 ? weakTopics : [...AVAILABLE_TOPICS];
 
     topicInstruction = `
@@ -473,6 +482,77 @@ ${questionTypeInstruction}
 - Return EXACTLY ${count} questions.
 - Return only data that matches the required schema.
   `.trim();
+}
+
+function buildMixedNonSataPrompt(
+  topic: string,
+  topics: string[],
+  customTopic: string,
+  customTopicDetails: string,
+  difficulty: string,
+  count: number,
+  weakTopics: string[]
+): string {
+  const base = buildStandardPrompt(
+    topic,
+    topics,
+    customTopic,
+    customTopicDetails,
+    difficulty,
+    "Multiple Choice",
+    count,
+    weakTopics
+  );
+  return base.replace(
+    "- Question Type: Multiple Choice\n- Use standard single-best-answer NCLEX multiple-choice format.\n- Every question must have exactly 4 answer choices.\n- Only 1 answer may be correct.\n- Return \"questionType\": \"Multiple Choice\".\n- Return \"correctAnswer\" only.\n- Do not write simple definition recall items only; make them clinically applied.",
+    `- Question Type: Mixed (vary across Multiple Choice, Priority, Delegation, Pharmacology)
+- Each question should use ONE of these types: Multiple Choice, Priority, Delegation, or Pharmacology.
+- Distribute the types roughly evenly — do not use the same type for every question.
+- Every question must have exactly 4 answer choices and exactly 1 correct answer.
+- Return the actual type used in the "questionType" field for each question.
+- Return "correctAnswer" only (no correctAnswers array).
+- Make each question clinically realistic and NCLEX-style.`
+  );
+}
+
+async function generateMixedBatch(
+  topic: string,
+  topics: string[],
+  customTopic: string,
+  customTopicDetails: string,
+  difficulty: string,
+  count: number,
+  weakTopics: string[],
+  fallbackTopic: string
+): Promise<QuestionResponse[]> {
+  const sataCount = Math.max(1, Math.round(count * 0.25));
+  const nonSataCount = Math.max(1, count - sataCount);
+
+  const nonSataPrompt = buildMixedNonSataPrompt(
+    topic, topics, customTopic, customTopicDetails, difficulty, nonSataCount, weakTopics
+  );
+  const sataPrompt = buildStandardPrompt(
+    topic, topics, customTopic, customTopicDetails, difficulty, "Select All That Apply", sataCount, weakTopics
+  );
+
+  const [nonSataResult, sataResult] = await Promise.all([
+    generateQuestionsOnce(nonSataPrompt, "Multiple Choice"),
+    generateQuestionsOnce(sataPrompt, "Select All That Apply"),
+  ]);
+
+  const nonSataNormalized = dedupeQuestions(
+    nonSataResult.parsed
+      .map((item) => normalizeQuestion(item, fallbackTopic, "Multiple Choice"))
+      .filter((item): item is QuestionResponse => item !== null)
+  );
+
+  const sataNormalized = dedupeQuestions(
+    sataResult.parsed
+      .map((item) => normalizeQuestion(item, fallbackTopic, "Select All That Apply"))
+      .filter((item): item is QuestionResponse => item !== null)
+  );
+
+  return shuffleArray(dedupeQuestions([...nonSataNormalized, ...sataNormalized]));
 }
 
 function getQuestionSetSchema(questionType: SupportedQuestionType) {
@@ -726,6 +806,9 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     const topic = isNonEmptyString(body?.topic) ? body.topic.trim() : "Fundamentals";
+    const topics = Array.isArray(body?.topics)
+      ? (body.topics as unknown[]).filter(isNonEmptyString).map((t) => t.trim())
+      : [];
     const customTopic = isNonEmptyString(body?.customTopic) ? body.customTopic.trim() : "";
     const customTopicDetails = isNonEmptyString(body?.customTopicDetails)
       ? body.customTopicDetails.trim()
@@ -747,35 +830,54 @@ export async function POST(req: Request) {
         ? "Fundamentals"
         : topic);
 
-    const prompt =
-      retryQuestions.length > 0
-        ? buildRetryPrompt(retryQuestions, questionCount, difficulty, questionType)
-        : buildStandardPrompt(
-            topic,
-            customTopic,
-            customTopicDetails,
-            difficulty,
-            questionType,
-            questionCount,
-            weakTopics
-          );
-
     const fallbackTopic =
       customTopic ||
       (retryQuestions[0]?.topic && retryQuestions[0].topic.trim()) ||
+      (topics.length > 0 ? topics[0] : "") ||
       finalTopic ||
       "Fundamentals";
+
+    // Handle Mixed question type with two-batch generation
+    if (questionType === "Mixed" && retryQuestions.length === 0) {
+      const mixed = await generateMixedBatch(
+        topic, topics, customTopic, customTopicDetails, difficulty, questionCount, weakTopics, fallbackTopic
+      );
+      if (mixed.length === 0) {
+        return NextResponse.json(
+          { error: "Model returned invalid question objects." },
+          { status: 500 }
+        );
+      }
+      const finalMixed = mixed.slice(0, questionCount).map(rebalanceQuestionAnswers);
+      return NextResponse.json(finalMixed);
+    }
+
+    const effectiveQuestionType = questionType === "Mixed" ? "Multiple Choice" : questionType;
+
+    const prompt =
+      retryQuestions.length > 0
+        ? buildRetryPrompt(retryQuestions, questionCount, difficulty, effectiveQuestionType)
+        : buildStandardPrompt(
+            topic,
+            topics,
+            customTopic,
+            customTopicDetails,
+            difficulty,
+            effectiveQuestionType,
+            questionCount,
+            weakTopics
+          );
 
     let finalRawText = "";
     let normalizedQuestions: QuestionResponse[] = [];
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      const { rawText, parsed } = await generateQuestionsOnce(prompt, questionType);
+      const { rawText, parsed } = await generateQuestionsOnce(prompt, effectiveQuestionType);
       finalRawText = rawText;
 
       normalizedQuestions = dedupeQuestions(
         parsed
-          .map((item: unknown) => normalizeQuestion(item, fallbackTopic, questionType))
+          .map((item: unknown) => normalizeQuestion(item, fallbackTopic, effectiveQuestionType))
           .filter((item): item is QuestionResponse => item !== null)
       );
 
