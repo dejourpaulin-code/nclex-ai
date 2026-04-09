@@ -356,8 +356,11 @@ function buildQuestionTypeInstruction(questionType: SupportedQuestionType): stri
   return `
 - Every question must be Select All That Apply.
 - Every question must have exactly 4 answer choices.
-- Each question must have 2 to 4 correct answers.
-- Never return only 1 correct answer.
+- Each question must have 2 to 4 correct answers — but ONLY if multiple answers are genuinely correct.
+- CRITICAL: Never fabricate extra correct answers to reach the minimum. Every answer marked correct must be independently and clinically accurate.
+- ONLY write SATA for topics where multiple answers are naturally correct by nursing standards: nursing interventions, assessment findings, patient teaching points, signs/symptoms, side effects, precautions, or care priorities.
+- Do NOT write SATA for dosage calculations, drug conversions, single correct identification, or any scenario where only one answer is clinically right.
+- If a concept does not have 2+ genuinely correct answers, rewrite the question around a different aspect of the topic that does.
 - Return "questionType": "Select All That Apply".
 - Return "correctAnswers" as an array like ["A", "C"].
 - Do NOT return "correctAnswer" for SATA questions.
@@ -531,9 +534,11 @@ async function generateMixedBatch(
   const nonSataPrompt = buildMixedNonSataPrompt(
     topic, topics, customTopic, customTopicDetails, difficulty, nonSataCount, weakTopics
   );
-  const sataPrompt = buildStandardPrompt(
+  // For SATA in mixed mode, steer toward multi-answer concepts and away from single-answer ones like dosage calc
+  const sataBasePrompt = buildStandardPrompt(
     topic, topics, customTopic, customTopicDetails, difficulty, "Select All That Apply", sataCount, weakTopics
   );
+  const sataPrompt = sataBasePrompt + "\n- For this mixed set, prefer SATA questions about nursing interventions, patient teaching, assessment findings, side effects, or care priorities. Avoid dosage calculations or identification questions where only one answer is correct.";
 
   const [nonSataResult, sataResult] = await Promise.all([
     generateQuestionsOnce(nonSataPrompt, "Multiple Choice"),
