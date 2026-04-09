@@ -31,6 +31,21 @@ function getLocalDateStr(utcOffsetMinutes?: number): string {
   return now.toISOString().split("T")[0];
 }
 
+// Get the UTC start/end timestamps that bracket the student's local calendar day
+function getLocalDayWindow(utcOffsetMinutes?: number): { start: string; end: string } {
+  const now = new Date();
+  if (typeof utcOffsetMinutes === "number") {
+    const localNow = new Date(now.getTime() + utcOffsetMinutes * 60 * 1000);
+    const localDateStr = localNow.toISOString().split("T")[0];
+    const localMidnightUTC = new Date(`${localDateStr}T00:00:00.000Z`);
+    localMidnightUTC.setTime(localMidnightUTC.getTime() - utcOffsetMinutes * 60 * 1000);
+    const localEndUTC = new Date(localMidnightUTC.getTime() + 24 * 60 * 60 * 1000 - 1);
+    return { start: localMidnightUTC.toISOString(), end: localEndUTC.toISOString() };
+  }
+  const utcToday = now.toISOString().split("T")[0];
+  return { start: `${utcToday}T00:00:00.000Z`, end: `${utcToday}T23:59:59.999Z` };
+}
+
 // Pick 2 generic missions deterministically from date seed
 function pickGenericMissions(dateStr: string, count: number) {
   const seed = dateStr.split("-").reduce((acc, n, idx) => acc + parseInt(n) * (idx + 1) * 13, 0);
@@ -53,10 +68,8 @@ export async function POST(req: NextRequest) {
     // Use local date if the client passes their UTC offset (in minutes, e.g. -300 for EST)
     const today = getLocalDateStr(typeof utcOffset === "number" ? utcOffset : undefined);
 
-    // Use UTC window for DB queries — still covers the whole user's local day within ±14h
-    const utcToday = new Date().toISOString().split("T")[0];
-    const todayStart = `${utcToday}T00:00:00.000Z`;
-    const todayEnd   = `${utcToday}T23:59:59.999Z`;
+    // Use the student's local day window (UTC-adjusted) for DB queries
+    const { start: todayStart, end: todayEnd } = getLocalDayWindow(typeof utcOffset === "number" ? utcOffset : undefined);
 
     // Fetch today's quiz_history and top weak areas in parallel
     const [historyRes, weakRes] = await Promise.all([
