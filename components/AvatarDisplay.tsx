@@ -58,6 +58,11 @@ function LexiSVG({ size }: { size: number }) {
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="50" cy="50" r="50" fill="#EFF6FF" />
 
+      {/* ── Long blonde hair BEHIND everything — drawn first ── */}
+      <path d="M35,28 Q18,52 22,92 Q36,98 50,97 Q64,98 78,92 Q82,52 65,28 Q58,23 50,23 Q42,23 35,28 Z" fill={hairMain}/>
+      <path d="M35,28 Q18,52 22,92 Q29,96 36,94 Q20,55 32,30 Z" fill={hairShadow} opacity="0.35"/>
+      <path d="M65,28 Q82,52 78,92 Q71,96 64,94 Q80,55 68,30 Z" fill={hairShadow} opacity="0.35"/>
+
       {/* ── Body ── */}
       <path d="M27,102 L27,80 C26,73 31,69 37,67 L63,67 C69,69 74,73 73,80 L73,102 Z" fill="#1D4ED8"/>
       <ellipse cx="50" cy="67" rx="22" ry="8" fill="#1D4ED8"/>
@@ -72,17 +77,6 @@ function LexiSVG({ size }: { size: number }) {
       <rect x="73" y="63" width="14" height="21" rx="7" fill="#2563EB"/>
       <ellipse cx="20" cy="85" rx="7" ry="5" fill={skin}/>
       <ellipse cx="80" cy="85" rx="7" ry="5" fill={skin}/>
-
-      {/* ── Long blonde hair BEHIND head ── */}
-      {/* Center back curtain — fills behind neck */}
-      <rect x="38" y="27" width="24" height="68" rx="8" fill={hairMain}/>
-      <rect x="40" y="27" width="20" height="68" rx="6" fill={hairShadow} opacity="0.25"/>
-      {/* Side flows */}
-      <path d="M34,33 Q15,56 20,90" stroke={hairMain} strokeWidth="14" strokeLinecap="round" fill="none"/>
-      <path d="M66,33 Q85,56 80,90" stroke={hairMain} strokeWidth="14" strokeLinecap="round" fill="none"/>
-      {/* Shadow layer */}
-      <path d="M34,33 Q14,58 18,92" stroke={hairShadow} strokeWidth="7" strokeLinecap="round" fill="none" opacity="0.45"/>
-      <path d="M66,33 Q86,58 82,92" stroke={hairShadow} strokeWidth="7" strokeLinecap="round" fill="none" opacity="0.45"/>
 
       {/* ── Neck ── */}
       <rect x="44" y="56" width="12" height="13" rx="5" fill={skinNeck}/>
@@ -179,6 +173,17 @@ function StudentSVG({
 
   return (
     <>
+      {/* ── Back hair drawn FIRST so everything renders on top of it ── */}
+      {gender === "female" && (
+        <>
+          {/* Single filled hair curtain — covers behind head + neck + down to shoulders */}
+          <path d="M35,28 Q18,52 22,92 Q36,98 50,97 Q64,98 78,92 Q82,52 65,28 Q58,23 50,23 Q42,23 35,28 Z" fill={hair.main}/>
+          {/* Shadow depth on edges */}
+          <path d="M35,28 Q18,52 22,92 Q29,96 36,94 Q20,55 32,30 Z" fill={hair.shadow} opacity="0.35"/>
+          <path d="M65,28 Q82,52 78,92 Q71,96 64,94 Q80,55 68,30 Z" fill={hair.shadow} opacity="0.35"/>
+        </>
+      )}
+
       {/* ── Body ── */}
       {gender === "female" ? (
         <>
@@ -208,20 +213,6 @@ function StudentSVG({
       {/* Hands */}
       <ellipse cx="20" cy={gender === "female" ? 85 : 86} rx="7" ry="5" fill={skin.face}/>
       <ellipse cx="80" cy={gender === "female" ? 85 : 86} rx="7" ry="5" fill={skin.face}/>
-
-      {/* ── Long flowing hair behind head — female only ── */}
-      {gender === "female" && (
-        <>
-          {/* Center back curtain — fills behind neck gap */}
-          <rect x="38" y="27" width="24" height="70" rx="8" fill={hair.main}/>
-          <rect x="40" y="27" width="20" height="70" rx="6" fill={hair.shadow} opacity="0.2"/>
-          {/* Side flows */}
-          <path d="M34,33 Q16,56 21,90" stroke={hair.main} strokeWidth="13" strokeLinecap="round" fill="none"/>
-          <path d="M66,33 Q84,56 79,90" stroke={hair.main} strokeWidth="13" strokeLinecap="round" fill="none"/>
-          <path d="M34,33 Q14,58 19,92" stroke={hair.shadow} strokeWidth="6" strokeLinecap="round" fill="none" opacity="0.45"/>
-          <path d="M66,33 Q86,58 81,92" stroke={hair.shadow} strokeWidth="6" strokeLinecap="round" fill="none" opacity="0.45"/>
-        </>
-      )}
 
       {/* ── Neck ── */}
       <rect x="44" y="56" width="12" height="13" rx="5" fill={skin.neck}/>
