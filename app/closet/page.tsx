@@ -4,6 +4,7 @@ import Navbar from "../../components/Navbar";
 import AvatarDisplay, { AvatarConfig } from "../../components/AvatarDisplay";
 import ItemPreview from "../../components/ItemPreview";
 import { supabase } from "../../lib/supabase";
+import { saveAvatarConfigLocal, resolveAvatarConfig } from "../../lib/avatarConfig";
 import { useEffect, useMemo, useState } from "react";
 
 type Unlock = {
@@ -54,14 +55,6 @@ const EYE_OPTIONS: { key: AvatarConfig["eyeColor"]; label: string; color: string
   { key: "gray",  label: "Gray",  color: "#6B7280" },
 ];
 
-function buildConfig(p: Profile | null, overrides?: Partial<AvatarConfig>): AvatarConfig {
-  return {
-    gender:    (overrides?.gender    ?? p?.avatar_gender    ?? "female") as AvatarConfig["gender"],
-    skinTone:  (overrides?.skinTone  ?? p?.avatar_skin_tone ?? "light")  as AvatarConfig["skinTone"],
-    hairColor: (overrides?.hairColor ?? p?.avatar_hair_color ?? "black") as AvatarConfig["hairColor"],
-    eyeColor:  (overrides?.eyeColor  ?? p?.avatar_eye_color ?? "brown")  as AvatarConfig["eyeColor"],
-  };
-}
 
 export default function ClosetPage() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -121,24 +114,32 @@ export default function ClosetPage() {
   async function saveAvatarConfig() {
     if (!userId) return;
     setSavingConfig(true);
-    const res = await fetch("/api/save-avatar-config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, gender: customGender, skinTone: customSkin, hairColor: customHair, eyeColor: customEye }),
-    });
+
+    const config: AvatarConfig = { gender: customGender, skinTone: customSkin, hairColor: customHair, eyeColor: customEye };
+
+    // Always save to localStorage first — guaranteed to work immediately
+    saveAvatarConfigLocal(config);
+
+    // Update local profile state so My Items tab reflects it instantly
+    setProfile((prev) => prev ? {
+      ...prev,
+      avatar_gender: customGender,
+      avatar_skin_tone: customSkin,
+      avatar_hair_color: customHair,
+      avatar_eye_color: customEye,
+    } : prev);
+
+    // Also try to persist to DB (best effort)
+    try {
+      await fetch("/api/save-avatar-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, gender: customGender, skinTone: customSkin, hairColor: customHair, eyeColor: customEye }),
+      });
+    } catch {}
+
     setSavingConfig(false);
-    if (res.ok) {
-      setProfile((prev) => prev ? {
-        ...prev,
-        avatar_gender: customGender,
-        avatar_skin_tone: customSkin,
-        avatar_hair_color: customHair,
-        avatar_eye_color: customEye,
-      } : prev);
-      setMessage("Avatar saved! It will appear across the whole site.");
-    } else {
-      setMessage("Failed to save avatar.");
-    }
+    setMessage("Avatar saved!");
   }
 
   const hats        = items.filter((i) => i.item_type === "hat");
@@ -152,8 +153,8 @@ export default function ClosetPage() {
     hats: hats.length, badges: badges.length, stethoscopes: stethoscopes.length, scrubs: scrubs.length,
   }), [hats.length, badges.length, stethoscopes.length, scrubs.length]);
 
-  const liveConfig: AvatarConfig = { gender: customGender, skinTone: customSkin, hairColor: customHair, eyeColor: customEye };
-  const savedConfig = buildConfig(profile);
+  const liveConfig: AvatarConfig  = { gender: customGender, skinTone: customSkin, hairColor: customHair, eyeColor: customEye };
+  const savedConfig = resolveAvatarConfig(profile);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">

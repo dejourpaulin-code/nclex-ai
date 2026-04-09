@@ -2,6 +2,7 @@
 
 import Navbar from "../../components/Navbar";
 import AvatarDisplay from "../../components/AvatarDisplay";
+import { resolveAvatarConfig } from "../../lib/avatarConfig";
 import { supabase } from "../../lib/supabase";
 import { useEffect, useMemo, useState } from "react";
 
@@ -967,7 +968,7 @@ export default function DashboardPage() {
                   <h2 className="mb-3 text-sm font-bold">Avatar Progress</h2>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
                     <div className="mx-auto flex justify-center">
-                      <AvatarDisplay avatarId={profile?.avatar_id} scrubs={profile?.equipped_scrubs} hat={profile?.equipped_hat} badge={profile?.equipped_badge} stethoscope={profile?.equipped_stethoscope} size={120} config={{ gender: (profile?.avatar_gender as "female"|"male") ?? "female", skinTone: (profile?.avatar_skin_tone as "light"|"medium"|"tan"|"dark") ?? "light", hairColor: (profile?.avatar_hair_color as "black"|"brown"|"blonde"|"red"|"auburn") ?? "black", eyeColor: (profile?.avatar_eye_color as "brown"|"blue"|"green"|"hazel"|"gray") ?? "brown" }} />
+                      <AvatarDisplay avatarId={profile?.avatar_id} scrubs={profile?.equipped_scrubs} hat={profile?.equipped_hat} badge={profile?.equipped_badge} stethoscope={profile?.equipped_stethoscope} size={120} config={resolveAvatarConfig(profile)} />
                     </div>
                     <div className="mt-3 space-y-1 text-xs text-slate-500">
                       <p>Level: <span className="font-semibold text-slate-800">{profile?.education_level || "Not set"}</span></p>
