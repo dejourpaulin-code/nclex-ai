@@ -54,6 +54,9 @@ export default function StudyPage() {
   const [question, setQuestion] = useState("");
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploadedFilePath, setUploadedFilePath] = useState<string | null>(null);
+  const [studyGuideLoading, setStudyGuideLoading] = useState(false);
+  const [studyGuideError, setStudyGuideError] = useState("");
 
   const [accessLoading, setAccessLoading] = useState(true);
   const [access, setAccess] = useState<AccessResponse | null>(null);
@@ -189,6 +192,8 @@ export default function StudyPage() {
     setResponse("");
     setFile(null);
     setImage(null);
+    setUploadedFilePath(null);
+    setStudyGuideError("");
   }
 
   async function uploadToStudyBucket(uploadFile: File, folder: "pdfs" | "images") {
@@ -290,6 +295,144 @@ export default function StudyPage() {
     };
   }, [loading, response]);
 
+  async function generateStudyGuidePDF() {
+    setStudyGuideLoading(true);
+    setStudyGuideError("");
+
+    try {
+      let targetPath = uploadedFilePath;
+
+      if (!targetPath) {
+        if (!file) {
+          setStudyGuideError("Please upload a PDF first.");
+          setStudyGuideLoading(false);
+          return;
+        }
+        targetPath = await uploadToStudyBucket(file, "pdfs");
+        setUploadedFilePath(targetPath);
+      }
+
+      const res = await fetch("/api/study/study-guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filePath: targetPath, userId }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setStudyGuideError(data.error || "Failed to generate study guide.");
+        setStudyGuideLoading(false);
+        return;
+      }
+
+      const d = data as {
+        lectureTitle?: string;
+        sessionOverview?: string;
+        majorTopics?: string[];
+        conceptBreakdowns?: { concept: string; explanation: string; clinicalApplication: string; whyItMatters: string; memoryHook: string }[];
+        professorEmphasisNarrative?: string;
+        examNuggets?: { point: string; whyTestable: string }[];
+        practiceQuestions?: { question: string; choices: { A: string; B: string; C: string; D: string }; correctAnswer: string; rationale: string }[];
+        studyPlan?: string[];
+        quickReferenceNotes?: string[];
+      };
+
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>${d.lectureTitle || file?.name || "Study Guide"}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Georgia, serif; font-size: 13px; line-height: 1.7; color: #1a202c; padding: 48px; max-width: 800px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 900; color: #1e3a5f; margin-bottom: 6px; }
+  .subtitle { font-size: 12px; color: #64748b; margin-bottom: 32px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
+  h2 { font-size: 16px; font-weight: 800; color: #1e3a5f; margin: 28px 0 10px; text-transform: uppercase; letter-spacing: 0.08em; border-left: 4px solid #f97316; padding-left: 10px; }
+  h3 { font-size: 14px; font-weight: 700; color: #1e3a5f; margin: 16px 0 6px; }
+  p { margin-bottom: 10px; }
+  ul { padding-left: 20px; margin-bottom: 10px; }
+  li { margin-bottom: 5px; }
+  .concept-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; background: #f8fafc; page-break-inside: avoid; }
+  .concept-card h3 { margin-top: 0; color: #f97316; }
+  .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #94a3b8; margin-top: 8px; margin-bottom: 2px; }
+  .nugget { display: flex; gap: 10px; margin-bottom: 10px; padding: 10px 12px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; page-break-inside: avoid; }
+  .nugget-num { font-weight: 900; color: #f97316; min-width: 22px; }
+  .question-card { border: 1px solid #dbeafe; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; background: #eff6ff; page-break-inside: avoid; }
+  .choice { padding: 4px 0; }
+  .correct { font-weight: 700; color: #059669; }
+  .rationale { margin-top: 8px; font-size: 12px; color: #475569; background: #f1f5f9; padding: 8px 10px; border-radius: 6px; }
+  .topics { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .topic-tag { background: #dbeafe; color: #1e40af; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .study-plan li { padding: 4px 0; }
+  .ref-note { padding: 3px 0; font-size: 12px; }
+  .memory { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 6px 10px; margin-top: 6px; font-size: 12px; color: #166534; }
+  .emphasis { background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  @media print { body { padding: 28px; } .concept-card, .question-card { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<h1>${d.lectureTitle || file?.name || "Study Guide"}</h1>
+<div class="subtitle">Generated by NCLEXAI &mdash; Lexi Study Guide &bull; ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</div>
+
+<h2>Overview</h2>
+<p>${d.sessionOverview || ""}</p>
+
+<h2>Topics Covered</h2>
+<div class="topics">${(d.majorTopics || []).map((t: string) => `<span class="topic-tag">${t}</span>`).join("")}</div>
+
+<h2>Concept Breakdowns</h2>
+${(d.conceptBreakdowns || []).map((cv: { concept: string; explanation: string; clinicalApplication: string; whyItMatters: string; memoryHook: string }) => `
+<div class="concept-card">
+  <h3>${cv.concept}</h3>
+  <div class="label">Explanation</div>
+  <p>${cv.explanation}</p>
+  <div class="label">Clinical Application</div>
+  <p>${cv.clinicalApplication}</p>
+  <div class="label">Why It Matters on the NCLEX</div>
+  <p>${cv.whyItMatters}</p>
+  <div class="memory">&#128161; Memory Hook: ${cv.memoryHook}</div>
+</div>`).join("")}
+
+<h2>Key Emphasis Points</h2>
+<div class="emphasis"><p>${d.professorEmphasisNarrative || ""}</p></div>
+
+<h2>Exam Nuggets</h2>
+${(d.examNuggets || []).map((n: { point: string; whyTestable: string }, i: number) => `
+<div class="nugget">
+  <div class="nugget-num">${i + 1}.</div>
+  <div><strong>${n.point}</strong><br><span style="font-size:12px;color:#92400e">${n.whyTestable}</span></div>
+</div>`).join("")}
+
+<h2>Practice Questions</h2>
+${(d.practiceQuestions || []).map((q: { question: string; choices: { A: string; B: string; C: string; D: string }; correctAnswer: string; rationale: string }, i: number) => `
+<div class="question-card">
+  <p><strong>${i + 1}. ${q.question}</strong></p>
+  ${(["A","B","C","D"] as const).map((l) => `<div class="choice ${q.correctAnswer === l ? "correct" : ""}">${l}. ${q.choices[l]}${q.correctAnswer === l ? " &#10003;" : ""}</div>`).join("")}
+  <div class="rationale"><strong>Rationale:</strong> ${q.rationale}</div>
+</div>`).join("")}
+
+<h2>3-Day Study Plan</h2>
+<ul class="study-plan">${(d.studyPlan || []).map((s: string) => `<li>${s}</li>`).join("")}</ul>
+
+<h2>Quick Reference Notes</h2>
+${(d.quickReferenceNotes || []).map((n: string) => `<div class="ref-note">&#8226; ${n}</div>`).join("")}
+</body>
+</html>`;
+
+      const win = window.open("", "_blank");
+      if (win) {
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        win.print();
+      }
+    } catch (err: unknown) {
+      setStudyGuideError(err instanceof Error ? err.message : "Failed to generate study guide.");
+    }
+
+    setStudyGuideLoading(false);
+  }
+
   async function askLexi() {
     if (!file && !image && !question.trim()) {
       setResponse("Please upload a file or image, or ask Lexi a question.");
@@ -325,6 +468,7 @@ export default function StudyPage() {
         }
 
         const uploadedPdfPath = await uploadToStudyBucket(file, "pdfs");
+        setUploadedFilePath(uploadedPdfPath);
         formData.append("filePath", uploadedPdfPath);
         formData.append("fileName", file.name);
         formData.append("fileType", file.type || "application/pdf");
@@ -649,6 +793,15 @@ export default function StudyPage() {
                 {file && (
                   <p className="mt-2 truncate text-xs text-slate-500">{file.name}</p>
                 )}
+                {file && (
+                  <button
+                    onClick={() => void generateStudyGuidePDF()}
+                    disabled={studyGuideLoading}
+                    className="mt-3 w-full rounded-xl bg-blue-900 py-2 text-xs font-semibold text-white transition hover:bg-blue-800 disabled:opacity-50"
+                  >
+                    {studyGuideLoading ? "Generating..." : "Generate Study Guide PDF"}
+                  </button>
+                )}
               </div>
 
               {/* Image upload */}
@@ -752,6 +905,15 @@ export default function StudyPage() {
 
               {!!response && !loading && (
                 <div className="mt-3 flex flex-wrap gap-2">
+                  {uploadedFilePath && (
+                    <button
+                      onClick={() => void generateStudyGuidePDF()}
+                      disabled={studyGuideLoading}
+                      className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-900 transition hover:bg-blue-100 disabled:opacity-50"
+                    >
+                      {studyGuideLoading ? "Generating PDF..." : "Download Study Guide PDF"}
+                    </button>
+                  )}
                   <button
                     onClick={() => setQuestion("Lexi, turn your last response into a cleaner study guide.")}
                     className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
@@ -771,6 +933,9 @@ export default function StudyPage() {
                     Simplify further
                   </button>
                 </div>
+              )}
+              {studyGuideError && (
+                <p className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{studyGuideError}</p>
               )}
             </div>
 
