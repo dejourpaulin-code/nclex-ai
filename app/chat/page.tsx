@@ -22,6 +22,7 @@ type Profile = {
   avatar_gender?: string | null;
   avatar_skin_tone?: string | null;
   avatar_hair_color?: string | null;
+  avatar_eye_color?: string | null;
 };
 
 type Unlock = {
@@ -314,7 +315,7 @@ export default function ChatPage() {
                     badge={profile?.equipped_badge}
                     stethoscope={profile?.equipped_stethoscope}
                     size={44}
-                    config={{ gender: (profile?.avatar_gender as "female"|"male") ?? "female", skinTone: (profile?.avatar_skin_tone as "light"|"medium"|"tan"|"dark") ?? "light", hairColor: (profile?.avatar_hair_color as "black"|"brown"|"blonde"|"red"|"auburn") ?? "black" }}
+                    config={{ gender: (profile?.avatar_gender as "female"|"male") ?? "female", skinTone: (profile?.avatar_skin_tone as "light"|"medium"|"tan"|"dark") ?? "light", hairColor: (profile?.avatar_hair_color as "black"|"brown"|"blonde"|"red"|"auburn") ?? "black", eyeColor: (profile?.avatar_eye_color as "brown"|"blue"|"green"|"hazel"|"gray") ?? "brown" }}
                   />
                   <div>
                     <p className="text-sm font-bold text-slate-900">You</p>
@@ -412,7 +413,7 @@ export default function ChatPage() {
                         badge={profile?.equipped_badge}
                         stethoscope={profile?.equipped_stethoscope}
                         size={36}
-                        config={{ gender: (profile?.avatar_gender as "female"|"male") ?? "female", skinTone: (profile?.avatar_skin_tone as "light"|"medium"|"tan"|"dark") ?? "light", hairColor: (profile?.avatar_hair_color as "black"|"brown"|"blonde"|"red"|"auburn") ?? "black" }}
+                        config={{ gender: (profile?.avatar_gender as "female"|"male") ?? "female", skinTone: (profile?.avatar_skin_tone as "light"|"medium"|"tan"|"dark") ?? "light", hairColor: (profile?.avatar_hair_color as "black"|"brown"|"blonde"|"red"|"auburn") ?? "black", eyeColor: (profile?.avatar_eye_color as "brown"|"blue"|"green"|"hazel"|"gray") ?? "brown" }}
                       />
                     )}
                   </div>

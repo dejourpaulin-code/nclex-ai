@@ -61,13 +61,18 @@ export default function OnboardingPage() {
     }
 
     const starterUnlocks = [
-      { user_id: user.id, item_key: "starter-badge", item_type: "badge" },
-      { user_id: user.id, item_key: "starter-stethoscope", item_type: "stethoscope" },
+      { user_id: user.id, item_key: "scrubs-blue",        item_type: "scrubs",      unlocked: true, equipped: true },
+      { user_id: user.id, item_key: "stethoscope-silver", item_type: "stethoscope", unlocked: true, equipped: true },
     ];
 
     await supabase.from("user_unlocks").upsert(starterUnlocks, {
       onConflict: "user_id,item_key",
     });
+
+    await supabase.from("user_profiles").update({
+      equipped_scrubs: "scrubs-blue",
+      equipped_stethoscope: "stethoscope-silver",
+    }).eq("user_id", user.id);
 
     window.location.href = "/dashboard";
   }

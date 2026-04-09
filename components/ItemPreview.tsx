@@ -18,6 +18,8 @@ function ScrubsPreview({ itemKey }: { itemKey: string }) {
     "scrubs-blue":   { body: "#3B82F6", collar: "#1D4ED8", dark: "#1E40AF" },
     "scrubs-green":  { body: "#22C55E", collar: "#15803D", dark: "#166534" },
     "scrubs-purple": { body: "#A855F7", collar: "#7E22CE", dark: "#6B21A8" },
+    "scrubs-pink":   { body: "#EC4899", collar: "#BE185D", dark: "#9D174D" },
+    "scrubs-teal":   { body: "#14B8A6", collar: "#0F766E", dark: "#0D9488" },
   };
   const c = colors[itemKey] || colors["scrubs-blue"];
   return (
@@ -82,11 +84,13 @@ function BadgePreview({ itemKey }: { itemKey: string }) {
 
 function StethoscopePreview({ itemKey }: { itemKey: string }) {
   const colors: Record<string, string> = {
+    "stethoscope-silver": "#94A3B8",
     "stethoscope-blue":   "#3B82F6",
     "stethoscope-orange": "#F97316",
     "stethoscope-pink":   "#EC4899",
+    "stethoscope-gold":   "#D4A017",
   };
-  const color = colors[itemKey] || "#64748B";
+  const color = colors[itemKey] || "#94A3B8";
   return (
     <g>
       {/* Earpieces */}

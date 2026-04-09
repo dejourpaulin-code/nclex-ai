@@ -8,7 +8,7 @@ const supabase = createClient(
 
 export async function POST(req: Request) {
   try {
-    const { userId, gender, skinTone, hairColor } = await req.json();
+    const { userId, gender, skinTone, hairColor, eyeColor } = await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId." }, { status: 400 });
@@ -20,6 +20,7 @@ export async function POST(req: Request) {
         avatar_gender: gender ?? null,
         avatar_skin_tone: skinTone ?? null,
         avatar_hair_color: hairColor ?? null,
+        avatar_eye_color: eyeColor ?? null,
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", userId);

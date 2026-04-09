@@ -4,6 +4,7 @@ export type AvatarConfig = {
   gender?: "female" | "male";
   skinTone?: "light" | "medium" | "tan" | "dark";
   hairColor?: "black" | "brown" | "blonde" | "red" | "auburn";
+  eyeColor?: "brown" | "blue" | "green" | "hazel" | "gray";
 };
 
 type AvatarDisplayProps = {
@@ -38,27 +39,46 @@ const HAIR_COLORS: Record<string, { main: string; shadow: string; hi: string; br
   auburn: { main: "#7B3F00", shadow: "#5C2E00", hi: "#9B5510", brow: "#6A3400" },
 };
 
+const EYE_COLORS: Record<string, string> = {
+  brown: "#7B4A2A",
+  blue:  "#3B82F6",
+  green: "#16A34A",
+  hazel: "#9B7020",
+  gray:  "#6B7280",
+};
+
 const SCRUBS_COLORS: Record<string, { body: string; collar: string; dark: string }> = {
   "scrubs-blue":   { body: "#3B82F6", collar: "#1D4ED8", dark: "#1E40AF" },
   "scrubs-green":  { body: "#22C55E", collar: "#15803D", dark: "#166534" },
   "scrubs-purple": { body: "#A855F7", collar: "#7E22CE", dark: "#6B21A8" },
+  "scrubs-pink":   { body: "#EC4899", collar: "#BE185D", dark: "#9D174D" },
+  "scrubs-teal":   { body: "#14B8A6", collar: "#0F766E", dark: "#0D9488" },
+};
+
+const STETH_COLORS: Record<string, string> = {
+  "stethoscope-silver": "#94A3B8",
+  "stethoscope-blue":   "#3B82F6",
+  "stethoscope-orange": "#F97316",
+  "stethoscope-pink":   "#EC4899",
+  "stethoscope-gold":   "#D4A017",
 };
 
 // ─── LEXI ──────────────────────────────────────────────────────────────────
 function LexiSVG({ size }: { size: number }) {
-  const hairMain = "#C8920A";
-  const hairHi   = "#EEC040";
+  const hairMain   = "#C8920A";
+  const hairHi     = "#EEC040";
   const hairShadow = "#9A7008";
-  const skin     = "#FFE4C4";
-  const skinNeck = "#F5D0A0";
+  const skin       = "#FFE4C4";
+  const skinNeck   = "#F5D0A0";
   const skinShadow = "#DDB080";
-  const lip      = "#E8706A";
+  const lip        = "#E8706A";
+  const irisColor  = "#16A34A"; // green eyes
 
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="50" cy="50" r="50" fill="#EFF6FF" />
 
-      {/* ── Long blonde hair BEHIND everything — drawn first ── */}
+      {/* ── Hair behind — drawn first ── */}
       <path d="M35,28 Q18,52 22,92 Q36,98 50,97 Q64,98 78,92 Q82,52 65,28 Q58,23 50,23 Q42,23 35,28 Z" fill={hairMain}/>
       <path d="M35,28 Q18,52 22,92 Q29,96 36,94 Q20,55 32,30 Z" fill={hairShadow} opacity="0.35"/>
       <path d="M65,28 Q82,52 78,92 Q71,96 64,94 Q80,55 68,30 Z" fill={hairShadow} opacity="0.35"/>
@@ -66,9 +86,7 @@ function LexiSVG({ size }: { size: number }) {
       {/* ── Body ── */}
       <path d="M27,102 L27,80 C26,73 31,69 37,67 L63,67 C69,69 74,73 73,80 L73,102 Z" fill="#1D4ED8"/>
       <ellipse cx="50" cy="67" rx="22" ry="8" fill="#1D4ED8"/>
-      {/* V collar */}
       <path d="M44,67 L50,77 L56,67 Z" fill="white" opacity="0.85"/>
-      {/* Chest curve hints */}
       <ellipse cx="44" cy="73" rx="5.5" ry="3" fill="#1640B0" opacity="0.35"/>
       <ellipse cx="56" cy="73" rx="5.5" ry="3" fill="#1640B0" opacity="0.35"/>
 
@@ -88,35 +106,31 @@ function LexiSVG({ size }: { size: number }) {
       <ellipse cx="36.5" cy="47" rx="6.5" ry="4" fill="#FFB3C6" opacity="0.5"/>
       <ellipse cx="63.5" cy="47" rx="6.5" ry="4" fill="#FFB3C6" opacity="0.5"/>
 
-      {/* ── Hair on top ── */}
+      {/* ── Hair top ── */}
       <path d="M50,20 C35,20 31,28 31,36 C34,31 41,29 50,29 C59,29 66,31 69,36 C69,28 65,20 50,20 Z" fill={hairMain}/>
       <path d="M31,36 C29,41 31,47 33,49 C31,43 32,38 31,36 Z" fill={hairMain}/>
       <path d="M69,36 C71,41 69,47 67,49 C69,43 68,38 69,36 Z" fill={hairMain}/>
-      {/* Highlight streaks */}
-      <path d="M37,23 Q50,19 63,23" stroke={hairHi} strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.65"/>
-      <path d="M40,27 Q50,24 60,27" stroke={hairHi} strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.4"/>
+      {/* Bun */}
+      <circle cx="50" cy="19" r="8.5" fill={hairMain}/>
+      <rect x="47" y="13" width="6" height="10" rx="3" fill={hairMain}/>
+      <circle cx="50" cy="18.5" r="3.5" fill="#F97316"/>
+      <path d="M37,23 Q50,19 63,23" stroke={hairHi} strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.6"/>
 
       {/* ── Eyebrows ── */}
       <path d="M36.5,33 C38,31 41.5,30.5 44.5,32" stroke={hairShadow} strokeWidth="2" strokeLinecap="round" fill="none"/>
       <path d="M55.5,32 C58.5,30.5 62,31 63.5,33" stroke={hairShadow} strokeWidth="2" strokeLinecap="round" fill="none"/>
 
       {/* ── Eyes ── */}
-      {/* Whites */}
       <ellipse cx="42" cy="40" rx="5.8" ry="5" fill="white"/>
       <ellipse cx="58" cy="40" rx="5.8" ry="5" fill="white"/>
-      {/* Iris — blue */}
-      <circle cx="42" cy="40.5" r="3.8" fill="#4299E1"/>
-      <circle cx="58" cy="40.5" r="3.8" fill="#4299E1"/>
-      {/* Pupil */}
+      <circle cx="42" cy="40.5" r="3.8" fill={irisColor}/>
+      <circle cx="58" cy="40.5" r="3.8" fill={irisColor}/>
       <circle cx="42" cy="40.5" r="2" fill="#0F172A"/>
       <circle cx="58" cy="40.5" r="2" fill="#0F172A"/>
-      {/* Catchlight */}
       <circle cx="43.8" cy="38.8" r="1.4" fill="white"/>
       <circle cx="59.8" cy="38.8" r="1.4" fill="white"/>
-      {/* Upper lash arch */}
       <path d="M36.2,38.8 Q42,34 47.8,38.8" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" fill="none"/>
       <path d="M52.2,38.8 Q58,34 63.8,38.8" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" fill="none"/>
-      {/* Lower lash subtle */}
       <path d="M37,42.5 Q42,44.8 47,43" stroke="#555" strokeWidth="0.8" strokeLinecap="round" fill="none" opacity="0.35"/>
       <path d="M53,43 Q58,44.8 63,42.5" stroke="#555" strokeWidth="0.8" strokeLinecap="round" fill="none" opacity="0.35"/>
 
@@ -126,11 +140,8 @@ function LexiSVG({ size }: { size: number }) {
       <ellipse cx="52.8" cy="49" rx="1.2" ry="0.9" fill={skinShadow} opacity="0.4"/>
 
       {/* ── Lips ── */}
-      {/* Cupid's bow */}
       <path d="M43.5,53.5 Q47,51.8 50,52.2 Q53,51.8 56.5,53.5" stroke={lip} strokeWidth="1.3" fill="none" strokeLinecap="round"/>
-      {/* Lower lip */}
       <path d="M43.5,53.5 Q50,60 56.5,53.5" fill={lip} opacity="0.85"/>
-      {/* Shine */}
       <path d="M47,57 Q50,58.5 53,57" stroke="white" strokeWidth="0.9" strokeLinecap="round" fill="none" opacity="0.5"/>
 
       {/* ── Nurse cap ── */}
@@ -154,31 +165,23 @@ function LexiSVG({ size }: { size: number }) {
 
 // ─── STUDENT AVATAR ────────────────────────────────────────────────────────
 function StudentSVG({
-  skin, hair, scrubsStyle, hat, badge, stethoscope, gender,
+  skin, hair, scrubsStyle, stethColor, hat, badge, gender, irisColor,
 }: {
   skin: { face: string; neck: string; shadow: string; lip: string };
   hair: { main: string; shadow: string; hi: string; brow: string };
   scrubsStyle: { body: string; collar: string; dark: string };
+  stethColor: string;
   hat: string | null;
   badge: string | null;
-  stethoscope: string | null;
   gender: "female" | "male";
+  irisColor: string;
 }) {
-  const stethColors: Record<string, string> = {
-    "stethoscope-blue":   "#3B82F6",
-    "stethoscope-orange": "#F97316",
-    "stethoscope-pink":   "#EC4899",
-  };
-  const stethColor = stethoscope ? (stethColors[stethoscope] ?? "#64748B") : null;
-
   return (
     <>
-      {/* ── Back hair drawn FIRST so everything renders on top of it ── */}
+      {/* ── Back hair — drawn FIRST ── */}
       {gender === "female" && (
         <>
-          {/* Single filled hair curtain — covers behind head + neck + down to shoulders */}
           <path d="M35,28 Q18,52 22,92 Q36,98 50,97 Q64,98 78,92 Q82,52 65,28 Q58,23 50,23 Q42,23 35,28 Z" fill={hair.main}/>
-          {/* Shadow depth on edges */}
           <path d="M35,28 Q18,52 22,92 Q29,96 36,94 Q20,55 32,30 Z" fill={hair.shadow} opacity="0.35"/>
           <path d="M65,28 Q82,52 78,92 Q71,96 64,94 Q80,55 68,30 Z" fill={hair.shadow} opacity="0.35"/>
         </>
@@ -187,24 +190,19 @@ function StudentSVG({
       {/* ── Body ── */}
       {gender === "female" ? (
         <>
-          {/* Hourglass scrubs */}
           <path d="M28,102 L28,80 C27,73 32,69 37,67 L63,67 C68,69 73,73 72,80 L72,102 Z" fill={scrubsStyle.body}/>
           <ellipse cx="50" cy="67" rx="22" ry="8" fill={scrubsStyle.body}/>
           <path d="M44,67 L50,77 L56,67 Z" fill={scrubsStyle.collar}/>
-          {/* Chest hints */}
           <ellipse cx="44" cy="73" rx="5" ry="3" fill={scrubsStyle.dark} opacity="0.3"/>
           <ellipse cx="56" cy="73" rx="5" ry="3" fill={scrubsStyle.dark} opacity="0.3"/>
-          {/* Arms — slimmer */}
           <rect x="14" y="63" width="13" height="21" rx="6.5" fill={scrubsStyle.body}/>
           <rect x="73" y="63" width="13" height="21" rx="6.5" fill={scrubsStyle.body}/>
         </>
       ) : (
         <>
-          {/* Broader boxy scrubs */}
           <path d="M22,102 L22,78 C21,72 27,67 34,66 L66,66 C73,67 79,72 78,78 L78,102 Z" fill={scrubsStyle.body}/>
           <ellipse cx="50" cy="66" rx="26" ry="9" fill={scrubsStyle.body}/>
           <path d="M43,66 L50,76 L57,66 Z" fill={scrubsStyle.collar}/>
-          {/* Arms — broader */}
           <rect x="11" y="62" width="15" height="23" rx="7" fill={scrubsStyle.body}/>
           <rect x="74" y="62" width="15" height="23" rx="7" fill={scrubsStyle.body}/>
         </>
@@ -238,23 +236,18 @@ function StudentSVG({
           <path d="M50,20 C36,20 32,28 32,36 C35,31 41,29 50,29 C59,29 65,31 68,36 C68,28 64,20 50,20 Z" fill={hair.main}/>
           <path d="M32,36 C30,41 31,47 33,49 C31,43 32,38 32,36 Z" fill={hair.main}/>
           <path d="M68,36 C70,41 69,47 67,49 C69,43 68,38 68,36 Z" fill={hair.main}/>
-          {/* Bun */}
           <circle cx="50" cy="19" r="8.5" fill={hair.main}/>
           <rect x="47" y="13" width="6" height="10" rx="3" fill={hair.main}/>
-          {/* Hair tie */}
           <circle cx="50" cy="18.5" r="3.5" fill="#F97316"/>
-          {/* Sheen */}
           <path d="M37,23 Q50,18 63,23" stroke={hair.hi} strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.55"/>
         </>
       ) : (
         <>
-          {/* Short tapered male hair */}
-          <path d="M50,22 C36,22 30,28 30,36 C33,31 40,29 50,29 C60,29 67,31 70,36 C70,28 64,22 50,22 Z" fill={hair.main}/>
-          <path d="M30,36 C28,42 30,48 33,50 C31,44 31,39 30,36 Z" fill={hair.main}/>
-          <path d="M70,36 C72,42 70,48 67,50 C69,44 69,39 70,36 Z" fill={hair.main}/>
-          {/* Fade at sides */}
-          <path d="M30,38 Q28,46 31,52" stroke={hair.shadow} strokeWidth="4" strokeLinecap="round" fill="none" opacity="0.3"/>
-          <path d="M70,38 Q72,46 69,52" stroke={hair.shadow} strokeWidth="4" strokeLinecap="round" fill="none" opacity="0.3"/>
+          {/* Short clean male hair — no fade blobs */}
+          <path d="M50,22 C36,22 30,29 30,37 C33,32 40,30 50,30 C60,30 67,32 70,37 C70,29 64,22 50,22 Z" fill={hair.main}/>
+          {/* Side hair pieces — clean, no circles */}
+          <path d="M30,37 C29,40 30,44 31,47 C30,42 30,39 30,37 Z" fill={hair.main}/>
+          <path d="M70,37 C71,40 70,44 69,47 C70,42 70,39 70,37 Z" fill={hair.main}/>
         </>
       )}
 
@@ -276,16 +269,14 @@ function StudentSVG({
         <>
           <ellipse cx="42" cy="40" rx="5.8" ry="5" fill="white"/>
           <ellipse cx="58" cy="40" rx="5.8" ry="5" fill="white"/>
-          <circle cx="42" cy="40.5" r="3.7" fill="#2D6FA8"/>
-          <circle cx="58" cy="40.5" r="3.7" fill="#2D6FA8"/>
+          <circle cx="42" cy="40.5" r="3.7" fill={irisColor}/>
+          <circle cx="58" cy="40.5" r="3.7" fill={irisColor}/>
           <circle cx="42" cy="40.5" r="2" fill="#0F172A"/>
           <circle cx="58" cy="40.5" r="2" fill="#0F172A"/>
           <circle cx="43.8" cy="38.8" r="1.4" fill="white"/>
           <circle cx="59.8" cy="38.8" r="1.4" fill="white"/>
-          {/* Lash arch */}
           <path d="M36.2,38.8 Q42,34.2 47.8,38.8" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" fill="none"/>
           <path d="M52.2,38.8 Q58,34.2 63.8,38.8" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" fill="none"/>
-          {/* Lower lashes faint */}
           <path d="M37,43 Q42,45 47,43.2" stroke="#555" strokeWidth="0.7" strokeLinecap="round" fill="none" opacity="0.3"/>
           <path d="M53,43.2 Q58,45 63,43" stroke="#555" strokeWidth="0.7" strokeLinecap="round" fill="none" opacity="0.3"/>
         </>
@@ -293,8 +284,8 @@ function StudentSVG({
         <>
           <ellipse cx="42" cy="41" rx="5.2" ry="4.5" fill="white"/>
           <ellipse cx="58" cy="41" rx="5.2" ry="4.5" fill="white"/>
-          <circle cx="42" cy="41.5" r="3.2" fill="#2D4A7A"/>
-          <circle cx="58" cy="41.5" r="3.2" fill="#2D4A7A"/>
+          <circle cx="42" cy="41.5" r="3.2" fill={irisColor}/>
+          <circle cx="58" cy="41.5" r="3.2" fill={irisColor}/>
           <circle cx="42" cy="41.5" r="1.7" fill="#0F172A"/>
           <circle cx="58" cy="41.5" r="1.7" fill="#0F172A"/>
           <circle cx="43.5" cy="39.8" r="1.2" fill="white"/>
@@ -313,7 +304,7 @@ function StudentSVG({
         </>
       )}
 
-      {/* ── Lips / mouth ── */}
+      {/* ── Mouth ── */}
       {gender === "female" ? (
         <>
           <path d="M43.5,53.5 Q47,51.8 50,52.2 Q53,51.8 56.5,53.5" stroke={skin.lip} strokeWidth="1.3" fill="none" strokeLinecap="round"/>
@@ -341,32 +332,36 @@ function StudentSVG({
         </g>
       )}
 
-      {/* ── Stethoscope ── */}
-      {stethColor && (
-        <g>
-          <circle cx="40" cy="74" r="2" fill={stethColor}/>
-          <circle cx="60" cy="74" r="2" fill={stethColor}/>
-          <path d="M40,74 Q35,83 42,90 Q46,95 50,95 Q54,95 58,90 Q65,83 60,74" fill="none" stroke={stethColor} strokeWidth="2.2" strokeLinecap="round"/>
-          <circle cx="50" cy="95" r="4.5" fill={stethColor}/>
-          <circle cx="50" cy="95" r="2.2" fill="white" opacity="0.4"/>
-        </g>
-      )}
+      {/* ── Stethoscope — always visible, defaults to silver ── */}
+      <g>
+        <circle cx="40" cy="74" r="2" fill={stethColor}/>
+        <circle cx="60" cy="74" r="2" fill={stethColor}/>
+        <path d="M40,74 Q35,83 42,90 Q46,95 50,95 Q54,95 58,90 Q65,83 60,74" fill="none" stroke={stethColor} strokeWidth="2.2" strokeLinecap="round"/>
+        <circle cx="50" cy="95" r="4.5" fill={stethColor}/>
+        <circle cx="50" cy="95" r="2.2" fill="white" opacity="0.4"/>
+      </g>
 
-      {/* ── Badge ── */}
-      {badge === "badge-bronze" && (
+      {/* ── Badge — always show student nurse badge; replace with unlocked badge ── */}
+      {!badge || badge === "" ? (
+        /* Default student nurse badge */
+        <g transform="translate(38,72)">
+          <rect width="22" height="13" rx="3" fill="#E2E8F0"/>
+          <rect x="2" y="2" width="18" height="9" rx="2" fill="white"/>
+          <text x="11" y="10" textAnchor="middle" fontSize="4.5" fill="#64748B" fontWeight="bold">SN</text>
+        </g>
+      ) : badge === "badge-bronze" ? (
         <g transform="translate(38,72)">
           <rect width="22" height="13" rx="3" fill="#CD7F32"/>
           <rect x="2" y="2" width="18" height="9" rx="2" fill="#E8A87C"/>
           <text x="11" y="10" textAnchor="middle" fontSize="5.5" fill="#7C4A0A" fontWeight="bold">RN</text>
         </g>
-      )}
-      {badge === "badge-rn" && (
+      ) : badge === "badge-rn" ? (
         <g transform="translate(38,72)">
           <rect width="22" height="13" rx="3" fill="#1D4ED8"/>
           <rect x="2" y="2" width="18" height="9" rx="2" fill="#3B82F6"/>
           <text x="11" y="10" textAnchor="middle" fontSize="5.5" fill="white" fontWeight="bold">RN</text>
         </g>
-      )}
+      ) : null}
     </>
   );
 }
@@ -393,12 +388,15 @@ export default function AvatarDisplay({
     );
   }
 
-  const skinKey     = config?.skinTone   ?? SKIN_FROM_AVATAR[avatarId || ""] ?? "light";
-  const hairKey     = config?.hairColor  ?? "black";
-  const gender      = config?.gender     ?? "female";
-  const skin        = SKIN_TONES[skinKey]       ?? SKIN_TONES.light;
-  const hair        = HAIR_COLORS[hairKey]      ?? HAIR_COLORS.black;
+  const skinKey     = config?.skinTone  ?? SKIN_FROM_AVATAR[avatarId || ""] ?? "light";
+  const hairKey     = config?.hairColor ?? "black";
+  const eyeKey      = config?.eyeColor  ?? "brown";
+  const gender      = config?.gender    ?? "female";
+  const skin        = SKIN_TONES[skinKey]        ?? SKIN_TONES.light;
+  const hair        = HAIR_COLORS[hairKey]       ?? HAIR_COLORS.black;
+  const irisColor   = EYE_COLORS[eyeKey]         ?? EYE_COLORS.brown;
   const scrubsStyle = SCRUBS_COLORS[scrubs || ""] ?? SCRUBS_COLORS["scrubs-blue"];
+  const stethColor  = STETH_COLORS[stethoscope || ""] ?? STETH_COLORS["stethoscope-silver"];
 
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -407,10 +405,11 @@ export default function AvatarDisplay({
         skin={skin}
         hair={hair}
         scrubsStyle={scrubsStyle}
+        stethColor={stethColor}
         hat={hat ?? null}
         badge={badge ?? null}
-        stethoscope={stethoscope ?? null}
         gender={gender}
+        irisColor={irisColor}
       />
     </svg>
   );
