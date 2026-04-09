@@ -87,10 +87,31 @@ export default function ClosetPage() {
     if (profileRes.data) {
       const p = profileRes.data as Profile;
       setProfile(p);
-      setCustomGender((p.avatar_gender as "female" | "male") ?? "female");
-      setCustomSkin((p.avatar_skin_tone as AvatarConfig["skinTone"]) ?? "light");
-      setCustomHair((p.avatar_hair_color as AvatarConfig["hairColor"]) ?? "black");
-      setCustomEye((p.avatar_eye_color as AvatarConfig["eyeColor"]) ?? "brown");
+
+      // If DB has no avatar config but localStorage does, use localStorage values
+      // and immediately sync them back to DB so they persist across devices
+      const { loadAvatarConfigLocal } = await import("../../lib/avatarConfig");
+      const local = loadAvatarConfigLocal();
+      const dbMissing = !p.avatar_gender && !p.avatar_skin_tone && !p.avatar_hair_color;
+
+      const resolvedGender = (dbMissing && local?.gender ? local.gender : p.avatar_gender as "female" | "male") ?? "female";
+      const resolvedSkin   = (dbMissing && local?.skinTone ? local.skinTone : p.avatar_skin_tone as AvatarConfig["skinTone"]) ?? "light";
+      const resolvedHair   = (dbMissing && local?.hairColor ? local.hairColor : p.avatar_hair_color as AvatarConfig["hairColor"]) ?? "black";
+      const resolvedEye    = (dbMissing && local?.eyeColor ? local.eyeColor : p.avatar_eye_color as AvatarConfig["eyeColor"]) ?? "brown";
+
+      setCustomGender(resolvedGender);
+      setCustomSkin(resolvedSkin);
+      setCustomHair(resolvedHair);
+      setCustomEye(resolvedEye);
+
+      // Sync localStorage values to DB if DB was empty
+      if (dbMissing && local) {
+        fetch("/api/save-avatar-config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id, gender: resolvedGender, skinTone: resolvedSkin, hairColor: resolvedHair, eyeColor: resolvedEye }),
+        }).catch(() => {});
+      }
     }
 
     setItems((unlockRes.data || []) as Unlock[]);
@@ -129,14 +150,20 @@ export default function ClosetPage() {
       avatar_eye_color: customEye,
     } : prev);
 
-    // Also try to persist to DB (best effort)
+    // Persist to DB
     try {
-      await fetch("/api/save-avatar-config", {
+      const dbRes = await fetch("/api/save-avatar-config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, gender: customGender, skinTone: customSkin, hairColor: customHair, eyeColor: customEye }),
       });
-    } catch {}
+      if (!dbRes.ok) {
+        const errData = await dbRes.json().catch(() => ({}));
+        console.error("Avatar DB save failed:", errData);
+      }
+    } catch (e) {
+      console.error("Avatar save network error:", e);
+    }
 
     setSavingConfig(false);
     setMessage("Avatar saved!");

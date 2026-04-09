@@ -262,6 +262,7 @@ export default function DashboardPage() {
             },
             body: JSON.stringify({
               userId: user.id,
+              utcOffset: -new Date().getTimezoneOffset(),
             }),
           }),
         ]);

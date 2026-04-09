@@ -14,16 +14,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing userId." }, { status: 400 });
     }
 
+    // Always upsert — handles both new rows and existing ones, works regardless of column state
     const { error } = await supabase
       .from("user_profiles")
-      .update({
+      .upsert({
+        user_id: userId,
         avatar_gender: gender ?? null,
         avatar_skin_tone: skinTone ?? null,
         avatar_hair_color: hairColor ?? null,
         avatar_eye_color: eyeColor ?? null,
         updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", userId);
+      }, { onConflict: "user_id" });
 
     if (error) {
       console.error("save-avatar-config error:", error);
