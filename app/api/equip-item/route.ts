@@ -7,7 +7,7 @@ const supabase = createClient(
 );
 
 // Starter items every student can equip without earning them first
-const STARTER_ITEM_KEYS = new Set(["scrubs-blue", "hat-nurse-cap", "badge-rn", "stethoscope-silver"]);
+const STARTER_ITEM_KEYS = new Set(["scrubs-orange", "hat-nurse-cap", "badge-blue", "stethoscope-blue"]);
 
 export async function POST(req: Request) {
   try {

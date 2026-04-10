@@ -16,6 +16,7 @@ export default function ItemPreview({ itemKey, itemType, size = 52 }: Props) {
 function ScrubsPreview({ itemKey }: { itemKey: string }) {
   const colors: Record<string, { body: string; collar: string; dark: string }> = {
     "scrubs-blue":   { body: "#3B82F6", collar: "#1D4ED8", dark: "#1E40AF" },
+    "scrubs-orange": { body: "#F97316", collar: "#EA6C00", dark: "#C25A00" },
     "scrubs-green":  { body: "#22C55E", collar: "#15803D", dark: "#166534" },
     "scrubs-purple": { body: "#A855F7", collar: "#7E22CE", dark: "#6B21A8" },
     "scrubs-pink":   { body: "#EC4899", collar: "#BE185D", dark: "#9D174D" },
@@ -59,25 +60,20 @@ function HatPreview({ itemKey }: { itemKey: string }) {
 }
 
 function BadgePreview({ itemKey }: { itemKey: string }) {
-  if (itemKey === "badge-bronze") {
-    return (
-      <g>
-        <rect x="8" y="10" width="36" height="24" rx="5" fill="#CD7F32" />
-        <rect x="11" y="13" width="30" height="18" rx="3" fill="#E8A87C" />
-        <text x="26" y="27" textAnchor="middle" fontSize="10" fill="#7C4A0A" fontWeight="bold">RN</text>
-        <rect x="22" y="34" width="8" height="8" rx="1" fill="#CD7F32" />
-        <rect x="10" y="40" width="32" height="4" rx="2" fill="#B8860B" />
-      </g>
-    );
-  }
-  // badge-rn
+  const BADGE_COLORS: Record<string, { bg: string; inner: string; text: string; clip: string }> = {
+    "badge-blue":   { bg: "#1D4ED8", inner: "#3B82F6", text: "white",   clip: "#1E40AF" },
+    "badge-green":  { bg: "#15803D", inner: "#22C55E", text: "white",   clip: "#166534" },
+    "badge-purple": { bg: "#7E22CE", inner: "#A855F7", text: "white",   clip: "#6B21A8" },
+    "badge-gold":   { bg: "#B45309", inner: "#D4A017", text: "#7C4A0A", clip: "#92400E" },
+  };
+  const bc = BADGE_COLORS[itemKey] ?? BADGE_COLORS["badge-blue"];
   return (
     <g>
-      <rect x="8" y="10" width="36" height="24" rx="5" fill="#1D4ED8" />
-      <rect x="11" y="13" width="30" height="18" rx="3" fill="#3B82F6" />
-      <text x="26" y="27" textAnchor="middle" fontSize="10" fill="white" fontWeight="bold">RN</text>
-      <rect x="22" y="34" width="8" height="8" rx="1" fill="#1D4ED8" />
-      <rect x="10" y="40" width="32" height="4" rx="2" fill="#1E40AF" />
+      <rect x="8" y="10" width="36" height="24" rx="5" fill={bc.bg} />
+      <rect x="11" y="13" width="30" height="18" rx="3" fill={bc.inner} />
+      <text x="26" y="27" textAnchor="middle" fontSize="10" fill={bc.text} fontWeight="bold">SN</text>
+      <rect x="22" y="34" width="8" height="8" rx="1" fill={bc.bg} />
+      <rect x="10" y="40" width="32" height="4" rx="2" fill={bc.clip} />
     </g>
   );
 }

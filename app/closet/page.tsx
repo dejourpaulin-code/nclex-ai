@@ -60,30 +60,33 @@ type CatalogItem = { key: string; label: string; tier: "starter" | "unlock"; unl
 
 const ITEM_CATALOG: Record<string, CatalogItem[]> = {
   scrubs: [
-    { key: "scrubs-blue",   label: "Blue Scrubs",   tier: "starter", unlockDesc: null },
-    { key: "scrubs-green",  label: "Green Scrubs",  tier: "unlock",  unlockDesc: "Answer 50 questions" },
-    { key: "scrubs-purple", label: "Purple Scrubs", tier: "unlock",  unlockDesc: "Answer 150 questions" },
-    { key: "scrubs-pink",   label: "Pink Scrubs",   tier: "unlock",  unlockDesc: "Answer 175 questions" },
-    { key: "scrubs-teal",   label: "Teal Scrubs",   tier: "unlock",  unlockDesc: "Answer 225 questions" },
+    { key: "scrubs-orange", label: "Orange Scrubs", tier: "starter", unlockDesc: null },
+    { key: "scrubs-blue",   label: "Blue Scrubs",   tier: "unlock",  unlockDesc: "Answer 50 questions" },
+    { key: "scrubs-green",  label: "Green Scrubs",  tier: "unlock",  unlockDesc: "Answer 150 questions" },
+    { key: "scrubs-purple", label: "Purple Scrubs", tier: "unlock",  unlockDesc: "Answer 175 questions" },
+    { key: "scrubs-pink",   label: "Pink Scrubs",   tier: "unlock",  unlockDesc: "Answer 225 questions" },
+    { key: "scrubs-teal",   label: "Teal Scrubs",   tier: "unlock",  unlockDesc: "Answer 300 questions" },
   ],
   hat: [
-    { key: "hat-nurse-cap", label: "Nurse Cap",  tier: "starter", unlockDesc: null },
-    { key: "hat-grad-cap",  label: "Grad Cap",   tier: "unlock",  unlockDesc: "Answer 250 questions" },
+    { key: "hat-nurse-cap", label: "Nurse Cap", tier: "starter", unlockDesc: null },
+    { key: "hat-grad-cap",  label: "Grad Cap",  tier: "unlock",  unlockDesc: "Answer 250 questions" },
   ],
   badge: [
-    { key: "badge-rn",     label: "RN Candidate", tier: "starter", unlockDesc: null },
-    { key: "badge-bronze", label: "Bronze Badge", tier: "unlock",  unlockDesc: "Answer 10 questions" },
+    { key: "badge-blue",   label: "Blue Badge",   tier: "starter", unlockDesc: null },
+    { key: "badge-green",  label: "Green Badge",  tier: "unlock",  unlockDesc: "Answer 10 questions" },
+    { key: "badge-purple", label: "Purple Badge", tier: "unlock",  unlockDesc: "Answer 100 questions" },
+    { key: "badge-gold",   label: "Gold Badge",   tier: "unlock",  unlockDesc: "Answer 350 questions or 90% accuracy" },
   ],
   stethoscope: [
-    { key: "stethoscope-silver", label: "Silver Stethoscope", tier: "starter", unlockDesc: null },
-    { key: "stethoscope-blue",   label: "Blue Stethoscope",   tier: "unlock",  unlockDesc: "25 questions or 70% accuracy" },
-    { key: "stethoscope-orange", label: "Orange Stethoscope", tier: "unlock",  unlockDesc: "Answer 100 questions" },
-    { key: "stethoscope-pink",   label: "Pink Stethoscope",   tier: "unlock",  unlockDesc: "Answer 200 questions" },
+    { key: "stethoscope-blue",   label: "Blue Stethoscope",   tier: "starter", unlockDesc: null },
+    { key: "stethoscope-silver", label: "Silver Stethoscope", tier: "unlock",  unlockDesc: "Answer 25 questions" },
+    { key: "stethoscope-orange", label: "Orange Stethoscope", tier: "unlock",  unlockDesc: "Answer 25 questions" },
+    { key: "stethoscope-pink",   label: "Pink Stethoscope",   tier: "unlock",  unlockDesc: "Answer 200 questions or 70% accuracy" },
     { key: "stethoscope-gold",   label: "Gold Stethoscope",   tier: "unlock",  unlockDesc: "Answer 275 questions" },
   ],
 };
 
-const STARTER_ITEM_KEYS = new Set(["scrubs-blue", "hat-nurse-cap", "badge-rn", "stethoscope-silver"]);
+const STARTER_ITEM_KEYS = new Set(["scrubs-orange", "hat-nurse-cap", "badge-blue", "stethoscope-blue"]);
 
 export default function ClosetPage() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -158,6 +161,20 @@ export default function ClosetPage() {
     const data = await res.json();
     if (!res.ok) { setMessage(data.error || "Failed to equip item."); return; }
     setMessage("Item equipped!");
+    await loadCloset();
+  }
+
+  async function unequipItem(itemType: string) {
+    if (!userId) return;
+    setMessage("Removing...");
+    const res = await fetch("/api/unequip-item", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, itemType }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setMessage(data.error || "Failed to remove item."); return; }
+    setMessage("Item removed!");
     await loadCloset();
   }
 
@@ -398,10 +415,10 @@ export default function ClosetPage() {
             </aside>
 
             <div className="space-y-4">
-              <CatalogSection title="Scrub Sets"   itemType="scrubs"       catalog={ITEM_CATALOG.scrubs}       unlockedKeys={unlockedItemKeys} equippedKey={profile?.equipped_scrubs}       onEquip={equipItem} />
-              <CatalogSection title="Stethoscopes" itemType="stethoscope"  catalog={ITEM_CATALOG.stethoscope}  unlockedKeys={unlockedItemKeys} equippedKey={profile?.equipped_stethoscope} onEquip={equipItem} />
-              <CatalogSection title="Badges"       itemType="badge"        catalog={ITEM_CATALOG.badge}        unlockedKeys={unlockedItemKeys} equippedKey={profile?.equipped_badge}       onEquip={equipItem} />
-              <CatalogSection title="Hats"         itemType="hat"          catalog={ITEM_CATALOG.hat}          unlockedKeys={unlockedItemKeys} equippedKey={profile?.equipped_hat}         onEquip={equipItem} />
+              <CatalogSection title="Scrub Sets"   itemType="scrubs"       catalog={ITEM_CATALOG.scrubs}       unlockedKeys={unlockedItemKeys} equippedKey={profile?.equipped_scrubs}       onEquip={equipItem} onUnequip={unequipItem} />
+              <CatalogSection title="Stethoscopes" itemType="stethoscope"  catalog={ITEM_CATALOG.stethoscope}  unlockedKeys={unlockedItemKeys} equippedKey={profile?.equipped_stethoscope} onEquip={equipItem} onUnequip={unequipItem} />
+              <CatalogSection title="Badges"       itemType="badge"        catalog={ITEM_CATALOG.badge}        unlockedKeys={unlockedItemKeys} equippedKey={profile?.equipped_badge}       onEquip={equipItem} onUnequip={unequipItem} />
+              <CatalogSection title="Hats"         itemType="hat"          catalog={ITEM_CATALOG.hat}          unlockedKeys={unlockedItemKeys} equippedKey={profile?.equipped_hat}         onEquip={equipItem} onUnequip={unequipItem} />
             </div>
           </div>
         )}
@@ -424,13 +441,14 @@ function CollectionRow({ label, value, color }: { label: string; value: number; 
   );
 }
 
-function CatalogSection({ title, itemType, catalog, unlockedKeys, equippedKey, onEquip }: {
+function CatalogSection({ title, itemType, catalog, unlockedKeys, equippedKey, onEquip, onUnequip }: {
   title: string;
   itemType: string;
   catalog: CatalogItem[];
   unlockedKeys: Set<string>;
   equippedKey: string | null | undefined;
   onEquip: (itemKey: string, itemType: string) => void;
+  onUnequip: (itemType: string) => void;
 }) {
   const available = catalog.filter((i) => i.tier === "starter" || unlockedKeys.has(i.key)).length;
   return (
@@ -474,7 +492,12 @@ function CatalogSection({ title, itemType, catalog, unlockedKeys, equippedKey, o
               )}
               <div className="mt-2">
                 {isEquipped ? (
-                  <button disabled className="w-full rounded-xl bg-slate-200 py-1.5 text-xs font-semibold text-slate-500">Currently Equipped</button>
+                  <button
+                    onClick={() => onUnequip(itemType)}
+                    className="w-full rounded-xl border border-slate-300 bg-white py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Unequip
+                  </button>
                 ) : isUnlocked ? (
                   <button
                     onClick={() => onEquip(item.key, itemType)}

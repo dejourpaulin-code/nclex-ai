@@ -49,6 +49,7 @@ const EYE_COLORS: Record<string, string> = {
 
 const SCRUBS_COLORS: Record<string, { body: string; collar: string; dark: string }> = {
   "scrubs-blue":   { body: "#3B82F6", collar: "#1D4ED8", dark: "#1E40AF" },
+  "scrubs-orange": { body: "#F97316", collar: "#EA6C00", dark: "#C25A00" },
   "scrubs-green":  { body: "#22C55E", collar: "#15803D", dark: "#166534" },
   "scrubs-purple": { body: "#A855F7", collar: "#7E22CE", dark: "#6B21A8" },
   "scrubs-pink":   { body: "#EC4899", collar: "#BE185D", dark: "#9D174D" },
@@ -348,18 +349,23 @@ function StudentSVG({
           <rect x="1.5" y="1.5" width="15" height="7" rx="1.5" fill="white"/>
           <text x="9" y="8" textAnchor="middle" fontSize="4" fill="#64748B" fontWeight="bold">SN</text>
         </g>
-      ) : badge === "badge-bronze" ? (
-        <g transform="translate(27,74)">
-          <rect width="18" height="10" rx="2.5" fill="#CD7F32"/>
-          <rect x="1.5" y="1.5" width="15" height="7" rx="1.5" fill="#E8A87C"/>
-          <text x="9" y="8" textAnchor="middle" fontSize="4.5" fill="#7C4A0A" fontWeight="bold">RN</text>
-        </g>
-      ) : badge === "badge-rn" ? (
-        <g transform="translate(27,74)">
-          <rect width="18" height="10" rx="2.5" fill="#1D4ED8"/>
-          <rect x="1.5" y="1.5" width="15" height="7" rx="1.5" fill="#3B82F6"/>
-          <text x="9" y="8" textAnchor="middle" fontSize="4.5" fill="white" fontWeight="bold">RN</text>
-        </g>
+      ) : badge ? (
+        (() => {
+          const BADGE_COLORS: Record<string, { bg: string; inner: string; text: string }> = {
+            "badge-blue":   { bg: "#1D4ED8", inner: "#3B82F6", text: "white" },
+            "badge-green":  { bg: "#15803D", inner: "#22C55E", text: "white" },
+            "badge-purple": { bg: "#7E22CE", inner: "#A855F7", text: "white" },
+            "badge-gold":   { bg: "#B45309", inner: "#D4A017", text: "#7C4A0A" },
+          };
+          const bc = BADGE_COLORS[badge] ?? BADGE_COLORS["badge-blue"];
+          return (
+            <g transform="translate(27,74)">
+              <rect width="18" height="10" rx="2.5" fill={bc.bg}/>
+              <rect x="1.5" y="1.5" width="15" height="7" rx="1.5" fill={bc.inner}/>
+              <text x="9" y="8" textAnchor="middle" fontSize="4.5" fill={bc.text} fontWeight="bold">SN</text>
+            </g>
+          );
+        })()
       ) : null}
     </>
   );
