@@ -273,6 +273,19 @@ export default function DashboardPage() {
 
       setWeakAreas(weakAreasRes.data || []);
       setHistory(historyRes.data || []);
+      // Fire check-unlocks retroactively so any earned items are awarded based on history
+      void fetch("/api/check-unlocks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      }).then((r) => r.json()).then((d) => {
+        if (d.newUnlocks?.length > 0) {
+          // Refresh unlocks if any new ones were just awarded
+          supabase.from("user_unlocks").select("*").eq("user_id", user.id)
+            .order("unlocked_at", { ascending: false })
+            .then(({ data }) => { if (data) setUnlocks(data); });
+        }
+      }).catch(() => {});
       setUnlocks(unlockRes.data || []);
       setProfile(profileRes.data || null);
       setMissions(missionData.missions || []);
@@ -349,8 +362,10 @@ export default function DashboardPage() {
   }, [history]);
 
   const topWeakTopic = weakAreas.length > 0 ? weakAreas[0].topic : null;
-  const totalUnlocked = unlocks.length;
-  const equippedCount = unlocks.filter((item) => item.equipped).length;
+  const DASH_STARTER_KEYS = new Set(["scrubs-orange", "hat-nurse-cap", "badge-blue", "stethoscope-blue"]);
+  const earnedKeys = new Set(unlocks.map((i) => i.item_key));
+  const totalUnlocked = DASH_STARTER_KEYS.size + unlocks.filter((i) => !DASH_STARTER_KEYS.has(i.item_key)).length;
+  const equippedCount = [profile?.equipped_scrubs, profile?.equipped_hat, profile?.equipped_badge, profile?.equipped_stethoscope].filter(Boolean).length;
   
   const lexiLevel = (() => {
     if (totalAnswered < 20) return { label: "Novice", color: "text-slate-500" };

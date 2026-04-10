@@ -48,20 +48,49 @@ const EYE_COLORS: Record<string, string> = {
 };
 
 const SCRUBS_COLORS: Record<string, { body: string; collar: string; dark: string }> = {
-  "scrubs-blue":   { body: "#3B82F6", collar: "#1D4ED8", dark: "#1E40AF" },
-  "scrubs-orange": { body: "#F97316", collar: "#EA6C00", dark: "#C25A00" },
-  "scrubs-green":  { body: "#22C55E", collar: "#15803D", dark: "#166534" },
-  "scrubs-purple": { body: "#A855F7", collar: "#7E22CE", dark: "#6B21A8" },
-  "scrubs-pink":   { body: "#EC4899", collar: "#BE185D", dark: "#9D174D" },
-  "scrubs-teal":   { body: "#14B8A6", collar: "#0F766E", dark: "#0D9488" },
+  "scrubs-orange":   { body: "#F97316", collar: "#EA6C00", dark: "#C25A00" },
+  "scrubs-navy":     { body: "#1E3A5F", collar: "#162B47", dark: "#0F1E33" },
+  "scrubs-blue":     { body: "#3B82F6", collar: "#1D4ED8", dark: "#1E40AF" },
+  "scrubs-red":      { body: "#EF4444", collar: "#B91C1C", dark: "#991B1B" },
+  "scrubs-gray":     { body: "#6B7280", collar: "#4B5563", dark: "#374151" },
+  "scrubs-maroon":   { body: "#9B2335", collar: "#7A1A28", dark: "#5C1220" },
+  "scrubs-green":    { body: "#22C55E", collar: "#15803D", dark: "#166534" },
+  "scrubs-purple":   { body: "#A855F7", collar: "#7E22CE", dark: "#6B21A8" },
+  "scrubs-black":    { body: "#1F2937", collar: "#111827", dark: "#0A0F1A" },
+  "scrubs-pink":     { body: "#EC4899", collar: "#BE185D", dark: "#9D174D" },
+  "scrubs-white":    { body: "#F1F5F9", collar: "#CBD5E1", dark: "#94A3B8" },
+  "scrubs-teal":     { body: "#14B8A6", collar: "#0F766E", dark: "#0D9488" },
+  "scrubs-coral":    { body: "#FB7185", collar: "#E11D48", dark: "#BE123C" },
+  "scrubs-lavender": { body: "#C4B5FD", collar: "#7C3AED", dark: "#6D28D9" },
+  "scrubs-mint":     { body: "#6EE7B7", collar: "#059669", dark: "#047857" },
+  "scrubs-burgundy": { body: "#7C2D3B", collar: "#5C2028", dark: "#3F1520" },
+  "scrubs-olive":    { body: "#65A30D", collar: "#3F6212", dark: "#2D4A0A" },
+  "scrubs-yellow":   { body: "#EAB308", collar: "#A16207", dark: "#854D0E" },
+  "scrubs-crimson":  { body: "#DC2626", collar: "#991B1B", dark: "#7F1D1D" },
+  "scrubs-sky":      { body: "#38BDF8", collar: "#0284C7", dark: "#0369A1" },
+  "scrubs-indigo":   { body: "#6366F1", collar: "#4338CA", dark: "#3730A3" },
+  "scrubs-rose":     { body: "#F43F5E", collar: "#BE123C", dark: "#9F1239" },
+  "scrubs-lime":     { body: "#84CC16", collar: "#4D7C0F", dark: "#3F6212" },
+  "scrubs-amber":    { body: "#F59E0B", collar: "#B45309", dark: "#92400E" },
+  "scrubs-gold":     { body: "#D4A017", collar: "#A07010", dark: "#7A5500" },
 };
 
 const STETH_COLORS: Record<string, string> = {
-  "stethoscope-silver": "#94A3B8",
-  "stethoscope-blue":   "#3B82F6",
-  "stethoscope-orange": "#F97316",
-  "stethoscope-pink":   "#EC4899",
-  "stethoscope-gold":   "#D4A017",
+  "stethoscope-blue":      "#3B82F6",
+  "stethoscope-silver":    "#94A3B8",
+  "stethoscope-orange":    "#F97316",
+  "stethoscope-red":       "#EF4444",
+  "stethoscope-green":     "#22C55E",
+  "stethoscope-purple":    "#A855F7",
+  "stethoscope-teal":      "#14B8A6",
+  "stethoscope-black":     "#1F2937",
+  "stethoscope-pink":      "#EC4899",
+  "stethoscope-navy":      "#1E3A5F",
+  "stethoscope-white":     "#F1F5F9",
+  "stethoscope-coral":     "#FB7185",
+  "stethoscope-gold":      "#D4A017",
+  "stethoscope-rose-gold": "#E8A598",
+  "stethoscope-crimson":   "#DC2626",
 };
 
 // ─── LEXI ──────────────────────────────────────────────────────────────────
@@ -333,6 +362,110 @@ function StudentSVG({
           <circle cx="80" cy="37" r="2.5" fill="#F97316"/>
         </g>
       )}
+      {hat === "hat-surgical-cap" && (
+        <g>
+          <ellipse cx="50" cy="22" rx="20" ry="10" fill="#3B82F6"/>
+          <rect x="30" y="22" width="40" height="7" rx="0" fill="#3B82F6"/>
+          <rect x="30" y="27" width="40" height="3" rx="2" fill="#1D4ED8"/>
+          <circle cx="38" cy="18" r="2" fill="#60A5FA"/>
+          <circle cx="50" cy="15" r="2" fill="#60A5FA"/>
+          <circle cx="62" cy="18" r="2" fill="#60A5FA"/>
+        </g>
+      )}
+      {hat === "hat-scrub-cap-teal" && (
+        <g>
+          <ellipse cx="50" cy="22" rx="20" ry="10" fill="#14B8A6"/>
+          <rect x="30" y="22" width="40" height="7" rx="0" fill="#14B8A6"/>
+          <rect x="30" y="27" width="40" height="3" rx="2" fill="#0F766E"/>
+          <circle cx="38" cy="18" r="1.8" fill="#5EEAD4"/>
+          <circle cx="50" cy="15" r="1.8" fill="#5EEAD4"/>
+          <circle cx="62" cy="18" r="1.8" fill="#5EEAD4"/>
+        </g>
+      )}
+      {hat === "hat-scrub-cap-purple" && (
+        <g>
+          <ellipse cx="50" cy="22" rx="20" ry="10" fill="#A855F7"/>
+          <rect x="30" y="22" width="40" height="7" rx="0" fill="#A855F7"/>
+          <rect x="30" y="27" width="40" height="3" rx="2" fill="#7E22CE"/>
+          <circle cx="38" cy="18" r="1.8" fill="#D8B4FE"/>
+          <circle cx="50" cy="15" r="1.8" fill="#D8B4FE"/>
+          <circle cx="62" cy="18" r="1.8" fill="#D8B4FE"/>
+        </g>
+      )}
+      {hat === "hat-scrub-cap-pink" && (
+        <g>
+          <ellipse cx="50" cy="22" rx="20" ry="10" fill="#EC4899"/>
+          <rect x="30" y="22" width="40" height="7" rx="0" fill="#EC4899"/>
+          <rect x="30" y="27" width="40" height="3" rx="2" fill="#BE185D"/>
+          <circle cx="38" cy="18" r="1.8" fill="#FBCFE8"/>
+          <circle cx="50" cy="15" r="1.8" fill="#FBCFE8"/>
+          <circle cx="62" cy="18" r="1.8" fill="#FBCFE8"/>
+        </g>
+      )}
+      {hat === "hat-beanie" && (
+        <g>
+          <ellipse cx="50" cy="24" rx="21" ry="12" fill="#F97316"/>
+          <rect x="29" y="26" width="42" height="5" rx="2.5" fill="#C25A00"/>
+          <ellipse cx="50" cy="14" rx="5" ry="5" fill="#F97316"/>
+          <circle cx="50" cy="14" r="3" fill="#FDBA74"/>
+        </g>
+      )}
+      {hat === "hat-beret" && (
+        <g>
+          <ellipse cx="50" cy="20" rx="22" ry="9" fill="#7E22CE"/>
+          <ellipse cx="50" cy="19" rx="14" ry="7" fill="#9333EA"/>
+          <circle cx="62" cy="17" r="3" fill="#7E22CE"/>
+          <rect x="44" y="26" width="12" height="3" rx="1.5" fill="#6B21A8"/>
+        </g>
+      )}
+      {hat === "hat-crown" && (
+        <g>
+          <polygon points="30,28 37,14 44,24 50,10 56,24 63,14 70,28" fill="#D4A017" stroke="#B45309" strokeWidth="1"/>
+          <rect x="30" y="27" width="40" height="6" rx="2" fill="#D4A017"/>
+          <circle cx="50" cy="12" r="3" fill="#EF4444"/>
+          <circle cx="37" cy="16" r="2.2" fill="#3B82F6"/>
+          <circle cx="63" cy="16" r="2.2" fill="#3B82F6"/>
+          <circle cx="37" cy="30" r="1.5" fill="#F59E0B"/>
+          <circle cx="50" cy="30" r="1.5" fill="#F59E0B"/>
+          <circle cx="63" cy="30" r="1.5" fill="#F59E0B"/>
+        </g>
+      )}
+      {hat === "hat-halo" && (
+        <g>
+          <ellipse cx="50" cy="16" rx="16" ry="4" fill="none" stroke="#D4A017" strokeWidth="3"/>
+          <ellipse cx="50" cy="16" rx="16" ry="4" fill="none" stroke="#FDE68A" strokeWidth="1.5" opacity="0.7"/>
+        </g>
+      )}
+      {hat === "hat-flower-crown" && (
+        <g>
+          <circle cx="35" cy="22" r="4" fill="#EC4899"/>
+          <circle cx="35" cy="22" r="2" fill="#FDE68A"/>
+          <circle cx="43" cy="16" r="4" fill="#F97316"/>
+          <circle cx="43" cy="16" r="2" fill="#FDE68A"/>
+          <circle cx="50" cy="14" r="4.5" fill="#A855F7"/>
+          <circle cx="50" cy="14" r="2.2" fill="#FDE68A"/>
+          <circle cx="57" cy="16" r="4" fill="#22C55E"/>
+          <circle cx="57" cy="16" r="2" fill="#FDE68A"/>
+          <circle cx="65" cy="22" r="4" fill="#3B82F6"/>
+          <circle cx="65" cy="22" r="2" fill="#FDE68A"/>
+          <path d="M31,24 Q50,30 69,24" fill="none" stroke="#65A30D" strokeWidth="2"/>
+        </g>
+      )}
+      {hat === "hat-cat-ears" && (
+        <g>
+          <polygon points="30,28 33,12 40,26" fill="#EC4899"/>
+          <polygon points="32,26 35,15 39,25" fill="#FBCFE8"/>
+          <polygon points="60,26 67,12 70,28" fill="#EC4899"/>
+          <polygon points="61,25 65,15 68,26" fill="#FBCFE8"/>
+        </g>
+      )}
+      {hat === "hat-santa" && (
+        <g>
+          <path d="M32,28 Q38,10 55,6 L62,28" fill="#DC2626"/>
+          <rect x="30" y="26" width="38" height="5" rx="2.5" fill="white"/>
+          <circle cx="55" cy="7" r="4" fill="white"/>
+        </g>
+      )}
 
       {/* ── Stethoscope — earpiece dots on shoulders, arch drapes down chest ── */}
       <circle cx="37" cy="68" r="2.2" fill={stethColor}/>
@@ -352,10 +485,21 @@ function StudentSVG({
       ) : badge ? (
         (() => {
           const BADGE_COLORS: Record<string, { bg: string; inner: string; text: string }> = {
-            "badge-blue":   { bg: "#1D4ED8", inner: "#3B82F6", text: "white" },
-            "badge-green":  { bg: "#15803D", inner: "#22C55E", text: "white" },
-            "badge-purple": { bg: "#7E22CE", inner: "#A855F7", text: "white" },
-            "badge-gold":   { bg: "#B45309", inner: "#D4A017", text: "#7C4A0A" },
+            "badge-blue":     { bg: "#1D4ED8", inner: "#3B82F6", text: "white"   },
+            "badge-green":    { bg: "#15803D", inner: "#22C55E", text: "white"   },
+            "badge-purple":   { bg: "#7E22CE", inner: "#A855F7", text: "white"   },
+            "badge-red":      { bg: "#991B1B", inner: "#EF4444", text: "white"   },
+            "badge-teal":     { bg: "#0F766E", inner: "#14B8A6", text: "white"   },
+            "badge-orange":   { bg: "#C2410C", inner: "#F97316", text: "white"   },
+            "badge-black":    { bg: "#111827", inner: "#374151", text: "white"   },
+            "badge-silver":   { bg: "#64748B", inner: "#94A3B8", text: "white"   },
+            "badge-maroon":   { bg: "#7C2D3B", inner: "#B45563", text: "white"   },
+            "badge-gold":     { bg: "#B45309", inner: "#D4A017", text: "#7C4A0A" },
+            "badge-navy":     { bg: "#1E3A5F", inner: "#2563EB", text: "white"   },
+            "badge-pink":     { bg: "#9D174D", inner: "#EC4899", text: "white"   },
+            "badge-emerald":  { bg: "#065F46", inner: "#10B981", text: "white"   },
+            "badge-crimson":  { bg: "#7F1D1D", inner: "#DC2626", text: "white"   },
+            "badge-platinum": { bg: "#374151", inner: "#D1D5DB", text: "#1F2937" },
           };
           const bc = BADGE_COLORS[badge] ?? BADGE_COLORS["badge-blue"];
           return (
