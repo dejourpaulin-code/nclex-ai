@@ -741,8 +741,8 @@ export default function DashboardPage() {
             <div className="mb-1 inline-flex items-center rounded-full border border-blue-200 bg-blue-100 px-3 py-0.5 text-xs font-medium text-blue-800">
               Personal study dashboard
             </div>
-            <h1 className="text-2xl font-black tracking-tight">Dashboard</h1>
-            <p className="mt-0.5 text-sm text-slate-500">Track progress, see weak areas, and let Lexi coach your next move.</p>
+            <h1 className="text-2xl font-black tracking-tight">Every gap you close today is a point you keep on exam day.</h1>
+            <p className="mt-0.5 text-sm text-slate-500">Here is exactly where you stand and what to fix next.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <a href="/drill" className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">⚡ 3 Min Drill</a>
