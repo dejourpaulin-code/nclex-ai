@@ -96,11 +96,23 @@ async function grantItem(userId: string, itemKey: string, itemType: string) {
 
   if (existing) return null;
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("user_unlocks")
-    .insert({ user_id: userId, item_key: itemKey, item_type: itemType, unlocked: true, equipped: false })
+    .insert({
+      user_id: userId,
+      item_key: itemKey,
+      item_type: itemType,
+      unlocked: true,
+      equipped: false,
+      unlocked_at: new Date().toISOString(),
+    })
     .select("*")
     .single();
+
+  if (error) {
+    console.error(`grantItem failed for ${itemKey}:`, error.message, error.details);
+    return null;
+  }
 
   return data;
 }
@@ -110,10 +122,15 @@ export async function POST(req: Request) {
     const { userId } = await req.json();
     if (!userId) return NextResponse.json({ newUnlocks: [] });
 
-    const { data: historyRows } = await supabase
+    const { data: historyRows, error: historyError } = await supabase
       .from("quiz_history")
       .select("is_correct")
       .eq("user_id", userId);
+
+    if (historyError) {
+      console.error("check-unlocks: failed to fetch quiz_history:", historyError.message);
+      return NextResponse.json({ newUnlocks: [] });
+    }
 
     const rows = historyRows ?? [];
     const totalAnswered = rows.length;
