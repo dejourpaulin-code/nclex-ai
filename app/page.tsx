@@ -421,7 +421,7 @@ export default function Home() {
             <Reveal>
               <div>
                 <h1 className="max-w-4xl text-5xl font-black leading-[1.03] tracking-tight md:text-6xl xl:text-7xl">
-                  The AI study system built for nursing students who need to pass,
+                  The study system built for nursing students who need to pass,
                   <span className="text-orange-400"> not just practice.</span>
                 </h1>
 
@@ -852,12 +852,12 @@ export default function Home() {
                 </div>
 
                 <a
-                  href="/lecture/live-full"
+                  href="/pricing"
                   className="block rounded-2xl bg-orange-500 px-8 py-4 text-center text-lg font-bold text-white shadow-lg transition hover:bg-orange-400"
                 >
-                  Try Live Lecture Mode Free
+                  Unlock Live Lecture Mode
                 </a>
-                <p className="text-center text-xs text-slate-500">No payment required to try it — open in any browser</p>
+                <p className="text-center text-xs text-slate-500">Available on Core and above — starts at $30/mo</p>
               </div>
             </Reveal>
           </div>
