@@ -421,8 +421,8 @@ export default function Home() {
             <Reveal>
               <div>
                 <h1 className="max-w-4xl text-5xl font-black leading-[1.03] tracking-tight md:text-6xl xl:text-7xl">
-                  The study system built for nursing students who need to pass,
-                  <span className="text-orange-400"> not just practice.</span>
+                  Stop studying harder.
+                  <span className="text-orange-400"> Start closing the gaps that are actually costing you.</span>
                 </h1>
 
                 <p className="mt-6 max-w-2xl text-lg leading-8 text-blue-100 md:text-xl">
