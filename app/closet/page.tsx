@@ -197,7 +197,24 @@ export default function ClosetPage() {
       }
     }
 
-    setItems((unlockRes.data || []) as Unlock[]);
+    try {
+      const checkRes = await fetch("/api/check-unlocks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const checkData = await checkRes.json();
+      if (checkData.newUnlocks?.length > 0) {
+        const { data: freshUnlocks } = await supabase
+          .from("user_unlocks").select("*").eq("user_id", user.id)
+          .order("unlocked_at", { ascending: true });
+        setItems((freshUnlocks || []) as Unlock[]);
+      } else {
+        setItems((unlockRes.data || []) as Unlock[]);
+      }
+    } catch {
+      setItems((unlockRes.data || []) as Unlock[]);
+    }
     setLoading(false);
   }
 
