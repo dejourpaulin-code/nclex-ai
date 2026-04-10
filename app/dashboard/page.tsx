@@ -986,32 +986,6 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
-
-                {/* Unlocked Gear */}
-                <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
-                  <h2 className="mb-3 text-sm font-bold">Unlocked Gear</h2>
-                  {unlocks.length === 0 ? (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-400">No unlocks yet. Answer more questions to start collecting gear.</div>
-                  ) : (
-                    <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-                      {unlocks.map((item) => (
-                        <div key={item.id} className={`rounded-xl border p-3 ${item.equipped ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white"}`}>
-                          <div className="flex items-center justify-between">
-                            <div className="text-2xl">{itemVisual(item.item_key, item.item_type)}</div>
-                            {item.equipped ? (
-                              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Equipped</span>
-                            ) : (
-                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Unlocked</span>
-                            )}
-                          </div>
-                          <p className="mt-2 text-xs font-semibold text-slate-800">{item.item_key}</p>
-                          <p className="text-[10px] text-slate-400">{item.item_type}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
               </div>
 
               {/* Right sticky sidebar */}
@@ -1100,13 +1074,96 @@ export default function DashboardPage() {
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                   <h2 className="mb-3 text-sm font-bold">Next Unlock Targets</h2>
                   <div className="space-y-2">
-                    {[
-                      "10 questions → Bronze Badge",
-                      "25 questions → Nurse Cap",
-                      "20 correct → Orange Stethoscope",
-                    ].map((t) => (
-                      <div key={t} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">{t}</div>
-                    ))}
+                    {(() => {
+                      const ALL_MILESTONES: { type: "q" | "acc" | "streak"; threshold: number; label: string; item: string }[] = [
+                        { type: "q",   threshold:  10,  item: "Green Badge",           label: "questions" },
+                        { type: "q",   threshold:  15,  item: "Surgical Cap",          label: "questions" },
+                        { type: "q",   threshold:  25,  item: "Navy Scrubs",           label: "questions" },
+                        { type: "q",   threshold:  25,  item: "Silver Stethoscope",    label: "questions" },
+                        { type: "q",   threshold:  30,  item: "Red Badge",             label: "questions" },
+                        { type: "q",   threshold:  35,  item: "Teal Scrub Cap",        label: "questions" },
+                        { type: "q",   threshold:  40,  item: "Orange Stethoscope",    label: "questions" },
+                        { type: "q",   threshold:  50,  item: "Blue Scrubs",           label: "questions" },
+                        { type: "q",   threshold:  55,  item: "Purple Scrub Cap",      label: "questions" },
+                        { type: "q",   threshold:  60,  item: "Red Stethoscope",       label: "questions" },
+                        { type: "q",   threshold:  60,  item: "Teal Badge",            label: "questions" },
+                        { type: "q",   threshold:  75,  item: "Red Scrubs",            label: "questions" },
+                        { type: "q",   threshold:  80,  item: "Orange Badge",          label: "questions" },
+                        { type: "q",   threshold:  90,  item: "Green Stethoscope",     label: "questions" },
+                        { type: "q",   threshold:  90,  item: "Pink Scrub Cap",        label: "questions" },
+                        { type: "q",   threshold: 100,  item: "Gray Scrubs",           label: "questions" },
+                        { type: "q",   threshold: 100,  item: "Purple Badge",          label: "questions" },
+                        { type: "q",   threshold: 120,  item: "Purple Stethoscope",    label: "questions" },
+                        { type: "q",   threshold: 120,  item: "Cozy Beanie",           label: "questions" },
+                        { type: "q",   threshold: 125,  item: "Maroon Scrubs",         label: "questions" },
+                        { type: "q",   threshold: 150,  item: "Black Badge",           label: "questions" },
+                        { type: "q",   threshold: 150,  item: "Green Scrubs",          label: "questions" },
+                        { type: "q",   threshold: 160,  item: "Teal Stethoscope",      label: "questions" },
+                        { type: "q",   threshold: 160,  item: "Beret",                 label: "questions" },
+                        { type: "q",   threshold: 175,  item: "Purple Scrubs",         label: "questions" },
+                        { type: "q",   threshold: 200,  item: "Black Scrubs",          label: "questions" },
+                        { type: "q",   threshold: 200,  item: "Silver Badge",          label: "questions" },
+                        { type: "q",   threshold: 210,  item: "Black Stethoscope",     label: "questions" },
+                        { type: "q",   threshold: 225,  item: "Pink Scrubs",           label: "questions" },
+                        { type: "q",   threshold: 250,  item: "White Scrubs",          label: "questions" },
+                        { type: "q",   threshold: 250,  item: "Graduation Cap",        label: "questions" },
+                        { type: "q",   threshold: 260,  item: "Navy Stethoscope",      label: "questions" },
+                        { type: "q",   threshold: 300,  item: "Teal Scrubs",           label: "questions" },
+                        { type: "q",   threshold: 300,  item: "Maroon Badge",          label: "questions" },
+                        { type: "q",   threshold: 320,  item: "White Stethoscope",     label: "questions" },
+                        { type: "q",   threshold: 350,  item: "Coral Scrubs",          label: "questions" },
+                        { type: "q",   threshold: 350,  item: "Gold Badge",            label: "questions" },
+                        { type: "q",   threshold: 380,  item: "Coral Stethoscope",     label: "questions" },
+                        { type: "q",   threshold: 400,  item: "Lavender Scrubs",       label: "questions" },
+                        { type: "q",   threshold: 400,  item: "Navy Badge",            label: "questions" },
+                        { type: "q",   threshold: 440,  item: "Crimson Stethoscope",   label: "questions" },
+                        { type: "q",   threshold: 450,  item: "Mint Scrubs",           label: "questions" },
+                        { type: "q",   threshold: 450,  item: "Pink Badge",            label: "questions" },
+                        { type: "q",   threshold: 500,  item: "Burgundy Scrubs",       label: "questions" },
+                        { type: "q",   threshold: 500,  item: "Emerald Badge",         label: "questions" },
+                        { type: "q",   threshold: 500,  item: "Gold Stethoscope",      label: "questions" },
+                        { type: "q",   threshold: 500,  item: "Crown",                 label: "questions" },
+                        { type: "acc", threshold:  70,  item: "Pink Stethoscope",      label: "% accuracy" },
+                        { type: "acc", threshold:  75,  item: "Crimson Badge",         label: "% accuracy" },
+                        { type: "acc", threshold:  80,  item: "Rose Gold Stethoscope", label: "% accuracy" },
+                        { type: "acc", threshold:  80,  item: "Flower Crown",          label: "% accuracy" },
+                        { type: "acc", threshold:  90,  item: "Halo",                  label: "% accuracy" },
+                        { type: "acc", threshold:  95,  item: "Gold Scrubs",           label: "% accuracy" },
+                        { type: "acc", threshold:  95,  item: "Platinum Badge",        label: "% accuracy" },
+                      ];
+                      const nextTargets = ALL_MILESTONES
+                        .filter((m) => {
+                          if (m.type === "q") return totalAnswered < m.threshold;
+                          if (m.type === "acc") return accuracy < m.threshold;
+                          return false;
+                        })
+                        .sort((a, b) => {
+                          const aGap = a.type === "q" ? a.threshold - totalAnswered : a.threshold - accuracy;
+                          const bGap = b.type === "q" ? b.threshold - totalAnswered : b.threshold - accuracy;
+                          return aGap - bGap;
+                        })
+                        .slice(0, 4);
+                      if (nextTargets.length === 0) return (
+                        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 font-semibold">All current targets unlocked!</div>
+                      );
+                      return nextTargets.map((t) => {
+                        const current = t.type === "q" ? totalAnswered : accuracy;
+                        const pct = Math.min(Math.round((current / t.threshold) * 100), 99);
+                        const gap = t.threshold - current;
+                        return (
+                          <div key={t.item + t.threshold} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold">{t.item}</span>
+                              <span className="text-slate-400">{gap} {t.label} away</span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-slate-200">
+                              <div className="h-1.5 rounded-full bg-orange-400" style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()
+                  }
                   </div>
                 </div>
 
