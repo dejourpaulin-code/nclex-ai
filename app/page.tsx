@@ -12,6 +12,8 @@ const testimonials = [
     role: "Med-Surg + Fundamentals",
     stars: 5,
     outcome: "Went from 68% to 84% accuracy in 3 weeks",
+    initials: "AR",
+    avatarColor: "bg-orange-500",
   },
   {
     quote:
@@ -20,6 +22,8 @@ const testimonials = [
     role: "NCLEX-style Practice",
     stars: 5,
     outcome: "Identified 4 blind spots in first session",
+    initials: "MT",
+    avatarColor: "bg-blue-500",
   },
   {
     quote:
@@ -28,6 +32,8 @@ const testimonials = [
     role: "Daily Review Workflow",
     stars: 5,
     outcome: "Cut study time by 40 minutes per day",
+    initials: "PS",
+    avatarColor: "bg-emerald-500",
   },
   {
     quote:
@@ -36,6 +42,8 @@ const testimonials = [
     role: "Pediatrics + OB",
     stars: 5,
     outcome: "Passed med-surg on first attempt",
+    initials: "JM",
+    avatarColor: "bg-purple-500",
   },
   {
     quote:
@@ -44,6 +52,8 @@ const testimonials = [
     role: "Fundamentals + Pharmacology",
     stars: 5,
     outcome: "Raised pharm score from 58% to 79%",
+    initials: "DK",
+    avatarColor: "bg-pink-500",
   },
   {
     quote:
@@ -52,6 +62,8 @@ const testimonials = [
     role: "Med-Surg II",
     stars: 5,
     outcome: "Passed second exam after targeting 2 weak areas",
+    initials: "TB",
+    avatarColor: "bg-indigo-500",
   },
   {
     quote:
@@ -60,6 +72,8 @@ const testimonials = [
     role: "Live Lecture Mode",
     stars: 5,
     outcome: "Never misses a testable lecture moment now",
+    initials: "SA",
+    avatarColor: "bg-teal-500",
   },
   {
     quote:
@@ -68,6 +82,8 @@ const testimonials = [
     role: "Exit Exam Prep",
     stars: 5,
     outcome: "Cleared exit exam on first attempt",
+    initials: "CW",
+    avatarColor: "bg-amber-500",
   },
 ];
 
@@ -294,6 +310,8 @@ const lectureTestimonials = [
     name: "Maya L.",
     role: "Pharmacology + Fundamentals",
     outcome: "Never misses a professor connection anymore",
+    initials: "ML",
+    avatarColor: "bg-violet-500",
   },
   {
     quote:
@@ -301,6 +319,8 @@ const lectureTestimonials = [
     name: "Kayla T.",
     role: "Med-Surg II",
     outcome: "Full transcript + study guide from every class",
+    initials: "KT",
+    avatarColor: "bg-rose-500",
   },
   {
     quote:
@@ -308,6 +328,8 @@ const lectureTestimonials = [
     name: "Devon R.",
     role: "BSN Program",
     outcome: "Studies directly from what professor emphasized",
+    initials: "DR",
+    avatarColor: "bg-cyan-500",
   },
 ];
 
@@ -545,13 +567,13 @@ export default function Home() {
       {/* ─── TRUST STRIP ─── */}
       <section className="border-b border-slate-200 bg-slate-50">
         <div className="mx-auto max-w-[1500px] px-6 py-6 xl:px-10">
-          <div className="flex flex-wrap items-center justify-center gap-8 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-10 text-center">
             {[
-              ["500+", "Nursing students"],
-              ["50,000+", "Questions answered"],
-              ["★★★★★", "Average rating"],
+              ["★★★★★", "Rated 5/5 by students"],
               ["48-hr", "Money-back guarantee"],
-              ["0", "Setup required"],
+              ["$0", "Setup cost"],
+              ["Live", "Lecture transcription"],
+              ["AI-powered", "Adaptive coaching"],
             ].map(([value, label]) => (
               <div key={String(label)}>
                 <p className="text-xl font-black text-slate-900">{value}</p>
@@ -616,6 +638,57 @@ export default function Home() {
             </p>
           </div>
         </Reveal>
+      </section>
+
+      {/* ─── FOUNDER STORY ─── */}
+      <section className="border-y border-slate-200 bg-white py-20">
+        <div className="mx-auto max-w-[1100px] px-6">
+          <Reveal>
+            <div className="grid gap-12 xl:grid-cols-[auto_1fr] xl:items-center">
+              {/* Avatar */}
+              <div className="flex justify-center xl:justify-start">
+                <div className="relative">
+                  <div className="flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-blue-900 to-orange-500 text-3xl font-black text-white shadow-xl">
+                    SN
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 rounded-full border-2 border-white bg-emerald-500 px-2 py-0.5 text-[10px] font-black text-white">
+                    Founder
+                  </div>
+                </div>
+              </div>
+
+              {/* Story */}
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-orange-600">Why this exists</p>
+                <h2 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">
+                  I built this because I needed it.
+                </h2>
+                <div className="mt-5 space-y-4 text-lg leading-8 text-slate-600">
+                  <p>
+                    I am a nursing student. I was using the same tools every other student uses — question banks, flashcards, rereading slides at midnight — and I kept hitting the same wall. I knew the material. But I could not figure out which specific gaps were actually costing me points.
+                  </p>
+                  <p>
+                    So I built NCLEXAI during my own program. Lexi is the tutor I wished I had. The weak-area tracking is the feedback I never got. The live lecture mode is what I built after missing a critical emphasis point on an exam that I sat through but did not capture.
+                  </p>
+                  <p className="font-semibold text-slate-800">
+                    This is not a software company trying to enter the education market. It is a nursing student who got tired of studying without direction and built something better.
+                  </p>
+                </div>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <div className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800">
+                    Built inside nursing school
+                  </div>
+                  <div className="rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700">
+                    Designed around real exam pressure
+                  </div>
+                  <div className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
+                    Updated every semester
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </div>
       </section>
 
       {/* ─── FEATURES ─── */}
@@ -805,9 +878,14 @@ export default function Home() {
                   <div className="mt-5 rounded-2xl border border-orange-400/20 bg-orange-500/10 px-4 py-2">
                     <p className="text-xs font-semibold text-orange-300">{item.outcome}</p>
                   </div>
-                  <div className="mt-4">
-                    <p className="font-bold text-white">{item.name}</p>
-                    <p className="text-xs text-slate-400">{item.role}</p>
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black text-white ${item.avatarColor}`}>
+                      {item.initials}
+                    </div>
+                    <div>
+                      <p className="font-bold text-white">{item.name}</p>
+                      <p className="text-xs text-slate-400">{item.role}</p>
+                    </div>
                   </div>
                 </div>
               </Reveal>
@@ -939,9 +1017,14 @@ export default function Home() {
                   <div className="mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-2">
                     <p className="text-xs font-semibold text-emerald-300">{item.outcome}</p>
                   </div>
-                  <div className="mt-4">
-                    <p className="font-bold text-white">{item.name}</p>
-                    <p className="text-xs text-slate-400">{item.role}</p>
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black text-white ${item.avatarColor}`}>
+                      {item.initials}
+                    </div>
+                    <div>
+                      <p className="font-bold text-white">{item.name}</p>
+                      <p className="text-xs text-slate-400">{item.role}</p>
+                    </div>
                   </div>
                 </div>
               </Reveal>

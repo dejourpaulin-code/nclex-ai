@@ -189,6 +189,17 @@ export default function PricingPage() {
             the wrong material. Most students choose Semester Access because it
             removes monthly friction and gets full access immediately.
           </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm">
+            <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 font-semibold text-emerald-700">
+              <span className="text-base">🛡️</span> 48-hour money-back guarantee
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 font-semibold text-blue-700">
+              <span className="text-base">⚡</span> Instant access after checkout
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 font-semibold text-orange-700">
+              <span className="text-base">🎓</span> Built by a nursing student
+            </div>
+          </div>
         </div>
 
         <div className="mt-12 grid gap-6 xl:grid-cols-5">
@@ -279,32 +290,62 @@ export default function PricingPage() {
           })}
         </div>
 
-        <div className="mt-10 rounded-[32px] border border-slate-200 bg-white p-8 shadow-xl">
-          <h3 className="text-2xl font-bold">Which plan unlocks what?</h3>
+        <div className="mt-10 overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl">
+          <div className="border-b border-slate-200 p-8">
+            <h3 className="text-2xl font-bold">Which plan unlocks what?</h3>
+            <p className="mt-2 text-sm text-slate-500">Every feature, every tier — no surprises.</p>
+          </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-3xl border border-orange-100 bg-orange-50 p-5">
-              <p className="text-lg font-bold text-slate-900">Starter</p>
-              <p className="mt-2 text-sm leading-7 text-slate-700">
-                Basic quiz generation, limited Lexi explanations, and tutor mode access.
-              </p>
-            </div>
+          {/* Matrix */}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="px-6 py-4 text-left font-semibold text-slate-500">Feature</th>
+                  <th className="px-4 py-4 text-center font-bold text-slate-700">Starter<br /><span className="text-xs font-normal text-slate-400">$19/mo</span></th>
+                  <th className="px-4 py-4 text-center font-bold text-blue-700">Core<br /><span className="text-xs font-normal text-slate-400">$30/mo</span></th>
+                  <th className="px-4 py-4 text-center font-bold text-orange-600">Semester<br /><span className="text-xs font-normal text-slate-400">$129 once</span></th>
+                  <th className="px-4 py-4 text-center font-bold text-purple-700">3-Semester<br /><span className="text-xs font-normal text-slate-400">$199 once</span></th>
+                  <th className="px-4 py-4 text-center font-bold text-emerald-700">Full Program<br /><span className="text-xs font-normal text-slate-400">$249 once</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["Quiz generation", true, true, true, true, true],
+                  ["Lexi AI tutor", true, true, true, true, true],
+                  ["Tutor mode", true, true, true, true, true],
+                  ["Quiz history", true, true, true, true, true],
+                  ["Study assistant (PDF/image)", true, true, true, true, true],
+                  ["Weak-area tracking", true, true, true, true, true],
+                  ["Lecture upload", true, true, true, true, true],
+                  ["Dashboard", true, true, true, true, true],
+                  ["Avatar + locker", true, true, true, true, true],
+                  ["Exam mode", false, true, true, true, true],
+                  ["Advanced weak-area analysis", false, true, true, true, true],
+                  ["Advanced dashboard", false, true, true, true, true],
+                  ["Live lecture mode", false, true, true, true, true],
+                  ["CAT-style exam practice", false, true, true, true, true],
+                  ["No monthly renewals", false, false, true, true, true],
+                ].map(([feature, ...tiers], i) => (
+                  <tr key={String(feature)} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
+                    <td className="px-6 py-3.5 font-medium text-slate-700">{feature}</td>
+                    {tiers.map((has, ti) => (
+                      <td key={ti} className="px-4 py-3.5 text-center text-base">
+                        {has
+                          ? <span className="font-bold text-emerald-500">✓</span>
+                          : <span className="text-slate-300">—</span>}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-            <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5">
-              <p className="text-lg font-bold text-slate-900">Core</p>
-              <p className="mt-2 text-sm leading-7 text-slate-700">
-                Full adaptive quizzes, weak-area targeting, full Lexi coaching,
-                tutor + exam modes, and study assistant access.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-5">
-              <p className="text-lg font-bold text-slate-900">One-Time Access Plans</p>
-              <p className="mt-2 text-sm leading-7 text-slate-700">
-                Semester, 3-Semester, and Full Program options give you Core-level
-                access without monthly renewals.
-              </p>
-            </div>
+          <div className="border-t border-slate-200 bg-orange-50 p-6 text-center">
+            <p className="text-sm font-semibold text-orange-700">
+              Most students choose <strong>Semester Access</strong> — full Core features with no monthly billing.
+            </p>
           </div>
         </div>
       </section>
