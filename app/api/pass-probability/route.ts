@@ -45,8 +45,7 @@ export async function POST(req: NextRequest) {
         .from("quiz_history")
         .select("topic, difficulty, is_correct, created_at")
         .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(120),
+        .order("created_at", { ascending: false }),
 
       supabaseAdmin
         .from("user_weak_areas")

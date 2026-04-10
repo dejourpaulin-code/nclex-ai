@@ -242,8 +242,7 @@ export default function DashboardPage() {
             .from("quiz_history")
             .select("id, topic, difficulty, is_correct, created_at")
             .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(50),
+            .order("created_at", { ascending: false }),
 
           supabase
             .from("user_unlocks")
