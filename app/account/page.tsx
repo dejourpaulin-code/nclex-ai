@@ -33,6 +33,10 @@ export default function AccountPage() {
   const [access, setAccess] = useState<UserAccessRow | null>(null);
   const [error, setError] = useState("");
   const [portalLoading, setPortalLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     async function loadAccount() {
@@ -119,6 +123,29 @@ export default function AccountPage() {
   }
   }
 
+  async function deleteAccount() {
+    if (deleteConfirmText !== "DELETE") return;
+    setDeleteLoading(true);
+    setDeleteError("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) { setDeleteError("You must be logged in."); setDeleteLoading(false); return; }
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      const result = await res.json();
+      if (!res.ok) { setDeleteError(result.error || "Failed to delete account."); setDeleteLoading(false); return; }
+      await supabase.auth.signOut();
+      window.location.href = "/";
+    } catch {
+      setDeleteError("Failed to connect to the server.");
+    }
+    setDeleteLoading(false);
+  }
+
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
       <Navbar />
@@ -195,6 +222,50 @@ export default function AccountPage() {
               <p className="mt-3 text-xs leading-6 text-slate-500">
                 Use Manage Billing to cancel, update payment methods, or review invoices through Stripe.
               </p>
+            </div>
+            {/* Close Account */}
+            <div className="rounded-2xl border border-red-100 bg-white p-5 shadow-sm">
+              <h2 className="mb-1 text-base font-bold text-red-700">Close Account</h2>
+              <p className="mb-4 text-xs leading-5 text-slate-500">
+                Permanently deletes your account and all associated data. This cannot be undone. If you have an active subscription, cancel it through Manage Billing first.
+              </p>
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                >
+                  Close my account
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-slate-800">Type <span className="font-black text-red-600">DELETE</span> to confirm:</p>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder="Type DELETE"
+                    className="w-full rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm outline-none focus:border-red-400"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={deleteAccount}
+                      disabled={deleteLoading || deleteConfirmText !== "DELETE"}
+                      className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {deleteLoading ? "Deleting..." : "Yes, delete my account"}
+                    </button>
+                    <button
+                      onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(""); setDeleteError(""); }}
+                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  {deleteError && (
+                    <p className="text-xs text-red-600">{deleteError}</p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -16,6 +16,10 @@ function LoginPageContent() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   async function claimPurchasedAccess(userId: string) {
     if (!sessionId) return;
@@ -90,6 +94,21 @@ function LoginPageContent() {
     setLoading(false);
   }
 
+  async function handleReset() {
+    setResetLoading(true);
+    setResetMessage("");
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) { setResetMessage(error.message); }
+      else { setResetMessage("Check your email for a password reset link."); }
+    } catch {
+      setResetMessage("Something went wrong.");
+    }
+    setResetLoading(false);
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50 text-slate-900">
       <Navbar />
@@ -148,6 +167,18 @@ function LoginPageContent() {
               />
             </div>
 
+            {mode === "login" && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => setShowReset(true)}
+                  className="text-xs font-semibold text-blue-600 transition hover:text-blue-800"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
+
             <button
               onClick={handleSubmit}
               disabled={loading}
@@ -179,6 +210,40 @@ function LoginPageContent() {
           </div>
         </div>
       </section>
+
+    {showReset && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+        <div className="w-full max-w-md rounded-3xl border border-blue-100 bg-white p-8 shadow-2xl">
+          <h2 className="text-xl font-black">Reset your password</h2>
+          <p className="mt-2 text-sm text-slate-600">Enter your email and we'll send you a reset link.</p>
+          <div className="mt-5 space-y-4">
+            <input
+              type="email"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+              placeholder="student@email.com"
+              className="w-full rounded-2xl border border-slate-300 bg-blue-50 p-3 outline-none transition focus:border-blue-500"
+            />
+            <button
+              onClick={handleReset}
+              disabled={resetLoading || !resetEmail}
+              className="w-full rounded-2xl bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
+            >
+              {resetLoading ? "Sending..." : "Send reset link"}
+            </button>
+            <button
+              onClick={() => { setShowReset(false); setResetMessage(""); }}
+              className="w-full rounded-2xl border border-slate-300 bg-white py-3 font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            {resetMessage && (
+              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-slate-700">{resetMessage}</div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
     </main>
   );
 }
