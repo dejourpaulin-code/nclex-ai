@@ -711,7 +711,6 @@ export default function LiveFullLecturePage() {
   const enqueueAudioChunk = useCallback(
     (blob: Blob) => {
       if (!blob || blob.size === 0) return;
-      if (activeTranscriptionsRef.current > 0) return;
       const chunkId = nextChunkIdRef.current;
       nextChunkIdRef.current += 1;
       activeTranscriptionsRef.current += 1;
