@@ -5,19 +5,23 @@ export const runtime = "nodejs";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+type ConvMessage = { role: "nurse" | "doctor" | "student"; text: string };
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { mode, scenario, studentResponse } = body;
+    const { mode, scenario, conversationHistory } = body;
 
-    if (!mode || !scenario || !studentResponse?.trim()) {
+    if (!mode || !scenario || !Array.isArray(conversationHistory) || conversationHistory.length === 0) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
 
     const prompt =
       mode === "give"
-        ? buildGiveGradingPrompt(scenario, studentResponse)
-        : buildReceiveGradingPrompt(scenario, studentResponse);
+        ? buildGiveGradingPrompt(scenario, conversationHistory)
+        : mode === "receive"
+        ? buildReceiveGradingPrompt(scenario, conversationHistory)
+        : buildIsbarGradingPrompt(scenario, conversationHistory);
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -30,80 +34,78 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error("Handoff grade error:", error);
-    return NextResponse.json({ error: "Failed to grade response." }, { status: 500 });
+    return NextResponse.json({ error: "Failed to grade." }, { status: 500 });
   }
 }
 
-function buildGiveGradingPrompt(scenario: unknown, studentResponse: string): string {
-  return `
-You are an expert clinical nursing educator grading a nursing student's nurse-to-nurse SBAR handoff report.
+function formatHistory(history: ConvMessage[]): string {
+  return history
+    .map((m) => `[${m.role.toUpperCase()}]: ${m.text}`)
+    .join("\n\n");
+}
 
-PATIENT CHART (the scenario the student was given):
+function buildGiveGradingPrompt(scenario: unknown, history: ConvMessage[]): string {
+  return `
+You are an expert clinical nursing educator grading a student's nurse-to-nurse handoff interaction.
+
+PATIENT CHART:
 ${JSON.stringify(scenario, null, 2)}
 
-STUDENT'S HANDOFF REPORT (what they submitted):
-"${studentResponse}"
+FULL CONVERSATION (what was actually said):
+${formatHistory(history)}
 
-Grade the student's report on 5 dimensions. Be honest, specific, and educational. Reference actual content from their report. Return ONLY valid JSON:
-
+Grade the student's performance across the full interaction. Return ONLY valid JSON:
 {
-  "overallScore": number (0-100, calculated as sum of dimension scores),
+  "overallScore": number (0-100),
   "grade": "A, B, C, D, or F",
   "dimensions": {
     "keyFacts": {
       "score": number (0-25),
       "max": 25,
-      "feedback": "2-3 sentence specific feedback: what key facts they included vs missed (patient ID, diagnosis, vitals, meds, recent events, pending items)"
+      "feedback": "2-3 sentences: which key facts did they include vs miss across all their turns (patient ID, diagnosis, vitals, meds, recent events, pending items)"
     },
     "organization": {
       "score": number (0-20),
       "max": 20,
-      "feedback": "2-3 sentence feedback on SBAR structure, logical flow, whether the incoming nurse can follow it easily"
+      "feedback": "2-3 sentences: SBAR structure, logical flow — could the nurse follow their report?"
     },
     "safetyCritical": {
       "score": number (0-25),
       "max": 25,
-      "feedback": "2-3 sentence feedback specifically on whether they mentioned the criticalAlert and safetyNotes. If they missed the critical alert, say so directly and why it matters."
+      "feedback": "2-3 sentences: did they mention the criticalAlert and safety notes? If missed, say it directly and why it matters."
     },
-    "conciseness": {
+    "responseToQuestions": {
       "score": number (0-15),
       "max": 15,
-      "feedback": "1-2 sentence feedback: did they ramble, include low-value info, or was it appropriately focused?"
+      "feedback": "1-2 sentences: how well did they answer the nurse's follow-up questions? Confident, complete, correct?"
     },
-    "clinicalUsability": {
+    "clinicalTone": {
       "score": number (0-15),
       "max": 15,
-      "feedback": "1-2 sentence feedback: could the incoming nurse take over care with this report? What would leave them unprepared?"
+      "feedback": "1-2 sentences: did they sound like a prepared nurse or a panicked student? Confident, organized, professional?"
     }
   },
-  "criticalMisses": ["array of 1-4 most important things omitted from their report — lead with patient safety items"],
-  "strengths": ["array of 1-3 things they did well, be specific"],
-  "coachingNote": "2-3 sentence clinical coaching message — write it like a preceptor talking to a student. Focus on what matters most to improve and why it matters at the bedside.",
-  "modelReportSnippet": "A brief 2-4 sentence example showing how the critical safety section should have sounded. Just that section, not the entire report."
+  "criticalMisses": ["array of 1-4 most important omissions — lead with safety items"],
+  "strengths": ["array of 1-3 specific things they did well"],
+  "coachingNote": "2-3 sentences written like a clinical preceptor. What to improve and why it matters at the bedside.",
+  "modelSnippet": "2-4 sentences showing how the critical safety section should have sounded in their report"
 }
 
-Grading guidance:
-- Missing the criticalAlert is a major deduction (safetyCritical score ≤ 10/25)
-- If the report is completely disorganized but has the key facts, organization gets a low score but keyFacts gets appropriate credit
-- If they got everything right, give them an A — don't penalize for stylistic differences
-- Grade letter: 90-100=A, 80-89=B, 70-79=C, 60-69=D, below 60=F
+Grading: 90-100=A, 80-89=B, 70-79=C, 60-69=D, <60=F. Missing the criticalAlert = safetyCritical ≤ 10/25.
   `.trim();
 }
 
-function buildReceiveGradingPrompt(scenario: unknown, studentResponse: string): string {
+function buildReceiveGradingPrompt(scenario: unknown, history: ConvMessage[]): string {
   return `
-You are an expert clinical nursing educator grading a nursing student's "receiving report" exercise.
+You are an expert clinical nursing educator grading a student who received a nurse-to-nurse handoff and then interacted with the nurse.
 
-The student read a nurse handoff report and wrote notes about what matters and what follow-up questions they would ask.
-
-FULL SCENARIO (includes the report text and the answer key):
+SCENARIO (includes the answerKey):
 ${JSON.stringify(scenario, null, 2)}
 
-STUDENT'S NOTES (what they wrote):
-"${studentResponse}"
+FULL CONVERSATION:
+${formatHistory(history)}
 
-Grade on 4 dimensions. Be specific, reference what they wrote vs the answerKey. Return ONLY valid JSON:
-
+Grade the student's interaction. Return ONLY valid JSON:
 {
   "overallScore": number (0-100),
   "grade": "A, B, C, D, or F",
@@ -111,34 +113,87 @@ Grade on 4 dimensions. Be specific, reference what they wrote vs the answerKey. 
     "criticalCapture": {
       "score": number (0-30),
       "max": 30,
-      "feedback": "2-3 sentence feedback: which critical findings from answerKey.criticalFindings did they capture? What did they miss? Be specific."
+      "feedback": "2-3 sentences: which critical findings did they demonstrate they caught? What did they miss from answerKey.criticalFindings?"
+    },
+    "followUpQuestions": {
+      "score": number (0-30),
+      "max": 30,
+      "feedback": "2-3 sentences: what questions did they ask the nurse? Were they the right questions? Compare to answerKey.essentialFollowUpQuestions."
     },
     "prioritization": {
       "score": number (0-25),
       "max": 25,
-      "feedback": "2-3 sentence feedback: did they correctly identify what to do first? Compare their priorities to answerKey.shouldHavePrioritized."
-    },
-    "followUpQuestions": {
-      "score": number (0-25),
-      "max": 25,
-      "feedback": "2-3 sentence feedback: what good follow-up questions did they ask? What essential questions from answerKey.essentialFollowUpQuestions did they miss?"
+      "feedback": "2-3 sentences: did their questions and responses reflect the right clinical priorities? Compare to answerKey.shouldHavePrioritized."
     },
     "signalToNoise": {
-      "score": number (0-20),
-      "max": 20,
-      "feedback": "1-2 sentence feedback: did they filter out the filler (answerKey.unnecessaryInfo) and focus on high-value info? Or did they write down everything?"
+      "score": number (0-15),
+      "max": 15,
+      "feedback": "1-2 sentences: did they focus on high-value info or get distracted by answerKey.unnecessaryInfo?"
     }
   },
-  "criticalMisses": ["array of important items from the report they failed to catch — prioritize patient safety items"],
-  "correctlyCaptured": ["array of specific things they got right — be encouraging but accurate"],
-  "followUpQuestionsShouldHaveAsked": ["array of the key questions from answerKey.essentialFollowUpQuestions they didn't ask"],
-  "coachingNote": "2-3 sentences written like a preceptor coaching a student — what a confident nurse does when receiving report, and what this student should practice.",
-  "modelPriorities": ["array of top 3-4 things the incoming nurse should do first based on this report"]
+  "criticalMisses": ["items from answerKey.criticalFindings they showed no awareness of"],
+  "correctlyCaptured": ["specific things they demonstrated they understood from the report"],
+  "questionsShouldHaveAsked": ["important follow-up questions from answerKey they never asked"],
+  "coachingNote": "2-3 sentences: what a confident nurse does when receiving report, and what this student should practice.",
+  "modelPriorities": ["top 3-4 things the incoming nurse should do first for this patient"]
 }
 
-Grading guidance:
-- Failing to catch any criticalFindings from the answerKey = major deduction in criticalCapture
-- Writing everything down without prioritizing = lower signalToNoise score
-- Grade letter: 90-100=A, 80-89=B, 70-79=C, 60-69=D, below 60=F
+Grading: 90-100=A, 80-89=B, 70-79=C, 60-69=D, <60=F.
+  `.trim();
+}
+
+function buildIsbarGradingPrompt(scenario: unknown, history: ConvMessage[]): string {
+  return `
+You are an expert clinical nursing educator grading a nursing student's ISBAR physician call.
+
+PATIENT SCENARIO:
+${JSON.stringify(scenario, null, 2)}
+
+FULL CONVERSATION:
+${formatHistory(history)}
+
+Grade the student's ISBAR call and interaction with the physician. Return ONLY valid JSON:
+{
+  "overallScore": number (0-100),
+  "grade": "A, B, C, D, or F",
+  "dimensions": {
+    "identification": {
+      "score": number (0-15),
+      "max": 15,
+      "feedback": "1-2 sentences: did they identify themselves (name, unit), the patient, and room number?"
+    },
+    "situation": {
+      "score": number (0-20),
+      "max": 20,
+      "feedback": "2 sentences: did they clearly state what is happening RIGHT NOW — the urgent finding, with specific data?"
+    },
+    "background": {
+      "score": number (0-15),
+      "max": 15,
+      "feedback": "1-2 sentences: did they give relevant history, admission reason, meds, and recent context without overloading the physician?"
+    },
+    "assessment": {
+      "score": number (0-20),
+      "max": 20,
+      "feedback": "2 sentences: did they give their clinical assessment — what they THINK is happening? This is the nurse's judgment, not just data."
+    },
+    "recommendation": {
+      "score": number (0-20),
+      "max": 20,
+      "feedback": "2 sentences: did they make a clear recommendation — what they need from the physician? Compare to scenario.expectedRecommendation."
+    },
+    "responseToPhysician": {
+      "score": number (0-10),
+      "max": 10,
+      "feedback": "1-2 sentences: how confidently and accurately did they respond to the physician's questions?"
+    }
+  },
+  "criticalMisses": ["array of most important missing ISBAR elements — especially missing assessment or recommendation"],
+  "strengths": ["array of 1-3 specific things they did well"],
+  "coachingNote": "2-3 sentences written like a clinical preceptor. What separates a confident ISBAR from a shaky one.",
+  "modelIsbarSnippet": "A 4-6 sentence example showing how the Situation + Assessment + Recommendation should have sounded for this specific patient"
+}
+
+Grading: 90-100=A, 80-89=B, 70-79=C, 60-69=D, <60=F. No assessment or recommendation = major deduction.
   `.trim();
 }

@@ -8,13 +8,15 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const mode: "give" | "receive" = body.mode ?? "give";
+    const mode: "give" | "receive" | "isbar" = body.mode ?? "give";
     const difficulty: string = body.difficulty ?? "intermediate";
 
     const prompt =
       mode === "give"
-        ? buildGiveScenarioPrompt(difficulty)
-        : buildReceiveScenarioPrompt(difficulty);
+        ? buildGivePrompt(difficulty)
+        : mode === "receive"
+        ? buildReceivePrompt(difficulty)
+        : buildIsbarPrompt(difficulty);
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -31,77 +33,120 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function buildGiveScenarioPrompt(difficulty: string): string {
+function buildGivePrompt(difficulty: string): string {
   return `
-You are generating a realistic nursing patient chart for a clinical handoff simulation exercise for nursing students.
-
-Generate a JSON object for a patient chart that a student will use to practice giving nurse-to-nurse SBAR handoff.
+Generate a realistic nursing patient chart for a Give Report simulation. A nursing student will read this chart and then speak their SBAR handoff to a charge nurse.
 
 Difficulty: ${difficulty}
-- beginner: straightforward diagnosis, stable vitals, 1-2 safety items, easy to organize
-- intermediate: some instability, multiple pending items, 1 critical safety alert buried in the chart
-- advanced: complex multi-system, unstable trends, multiple critical items, prioritization required
+- beginner: stable patient, simple diagnosis, 1 safety item
+- intermediate: some instability this shift, multiple pending items, 1 critical safety alert
+- advanced: complex multi-system, unstable trends, multiple critical items
 
-Return ONLY valid JSON with this exact structure:
+Return ONLY valid JSON:
 {
   "difficulty": "${difficulty}",
-  "setting": "string (e.g. Med-Surg, ICU, Step-Down, ED)",
-  "context": "string (e.g. End of 12-hour day shift, 7pm handoff to night nurse)",
+  "setting": "string (e.g. Med-Surg, Step-Down, ICU, ED)",
+  "context": "string (e.g. End of 12-hour day shift, 7pm to 7am handoff)",
   "patient": {
     "name": "First Last Initial (e.g. Maria G.)",
     "age": number,
     "sex": "male or female",
-    "room": "string (e.g. 412A)",
+    "room": "string",
     "code": "Full Code or DNR/DNI",
     "allergies": "string or None known",
     "admittingDiagnosis": "string",
     "daysInHospital": number
   },
   "vitals": {
-    "BP": "string (e.g. 148/92 mmHg)",
-    "HR": "string (e.g. 98 bpm)",
-    "RR": "string (e.g. 22 breaths/min)",
-    "SpO2": "string (e.g. 91% on 2L NC)",
-    "Temp": "string (e.g. 37.8°C / 100.0°F)",
-    "Pain": "string (e.g. 3/10 chest tightness)"
+    "BP": "string",
+    "HR": "string",
+    "RR": "string",
+    "SpO2": "string",
+    "Temp": "string",
+    "Pain": "string"
   },
-  "currentMeds": ["array of 3-6 medication strings with dose and route"],
-  "recentEvents": "2-3 sentence paragraph describing what happened this shift — clinical events, interventions, patient response. Include at least one intervention and its outcome.",
-  "pendingItems": ["array of 2-4 pending orders, labs, or consults"],
-  "criticalAlert": "string — ONE critical safety finding the incoming nurse MUST know (allergy conflict with a pending order, recent vital deterioration trend, DNR/code status conflict, fall that occurred, missed medication, critical lab result). Make it specific and clinically important.",
-  "safetyNotes": "string — fall risk score, isolation precautions, restraints, IV access status, etc"
+  "currentMeds": ["3-6 meds with dose and route"],
+  "recentEvents": "2-3 sentence paragraph of what happened this shift including at least one intervention and outcome",
+  "pendingItems": ["2-4 pending orders, labs, or consults"],
+  "criticalAlert": "ONE specific critical safety finding the student must include in report — something that creates a real patient risk if omitted",
+  "safetyNotes": "fall risk, isolation, IV access, restraints, etc",
+  "nurseGreeting": "A short, natural, casual line from the incoming charge nurse to open the handoff (e.g. 'Hey, I'm Brianna — your night relief. Ready for report on 412 whenever you are.' Keep it under 20 words and make it sound real.)"
 }
 
-Make it clinically realistic, varied in diagnosis (use different conditions: cardiac, respiratory, renal, neuro, post-op, etc), and educationally rich. The criticalAlert must be something that, if omitted in handoff, would create a genuine patient safety risk.
+Use varied diagnoses across sessions (cardiac, respiratory, neuro, post-op, renal, etc). Make criticalAlert genuinely patient-safety critical.
   `.trim();
 }
 
-function buildReceiveScenarioPrompt(difficulty: string): string {
+function buildReceivePrompt(difficulty: string): string {
   return `
-You are generating a realistic nurse-to-nurse handoff report for a clinical simulation exercise where nursing students practice RECEIVING report.
-
-Generate a handoff report that sounds natural (like a real nurse speaking at end of shift) but is intentionally imperfect — it has buried important info, some filler, unclear prioritization — so students have to work to identify what matters.
+Generate a realistic nurse-to-nurse SBAR-style handoff that a student will LISTEN TO and then respond to. The report should sound like a real nurse speaking at end of shift — not perfectly structured, slightly rushed, with some natural tangents.
 
 Difficulty: ${difficulty}
-- beginner: clear case, mild disorganization, 1-2 things to catch, obvious follow-up questions
-- intermediate: moderate complexity, some safety info mentioned briefly in passing, some unnecessary filler, 2-3 things to catch
-- advanced: complex or deteriorating patient, safety items buried, poor organization, multiple things to catch, many follow-up questions needed
+- beginner: clear case, minor disorganization, 1-2 things to catch
+- intermediate: moderate complexity, 1-2 safety items mentioned briefly in passing, some filler
+- advanced: complex or changing patient, multiple safety items buried in casual speech, poor organization
 
 Return ONLY valid JSON:
 {
   "difficulty": "${difficulty}",
-  "setting": "string (e.g. Med-Surg, ICU, Step-Down)",
-  "context": "string (e.g. 7am shift change, night nurse giving report to day nurse)",
-  "patientSummary": "One sentence: who is this patient and what are they here for",
-  "reportText": "string — the full spoken-style handoff (4-8 paragraphs, natural informal speech, some run-ons and tangents, NOT perfectly organized SBAR — sounds like a tired nurse at shift change)",
+  "setting": "string",
+  "context": "string (e.g. Night nurse giving 7am report to day nurse)",
+  "patientSummary": "One sentence: who is the patient and why are they here",
+  "reportText": "string — the full spoken handoff (4-8 paragraphs, natural informal speech, run-on sentences allowed, sounds like a tired nurse — NOT a perfect SBAR template). Must contain at least 1-2 safety-critical pieces of information buried in casual speech.",
   "answerKey": {
-    "criticalFindings": ["array of 2-4 the most important safety or clinical items that are buried in the report — things the student must flag"],
-    "shouldHavePrioritized": ["array of 3-4 items the incoming nurse must act on or monitor first this shift"],
-    "essentialFollowUpQuestions": ["array of 3-5 questions the incoming nurse should ask after receiving this report"],
-    "unnecessaryInfo": ["array of 2-3 filler items from the report that are low clinical value for the incoming nurse"]
+    "criticalFindings": ["2-4 most important safety or clinical items buried in the report"],
+    "shouldHavePrioritized": ["3-4 items the day nurse should act on first"],
+    "essentialFollowUpQuestions": ["3-5 questions a good nurse would ask after receiving this report"],
+    "unnecessaryInfo": ["2-3 things the night nurse said that are low clinical value"]
   }
 }
 
-The reportText must sound like a real nurse talking — rushed, informal, with tangents about personal things or unrelated details mixed in. Do not make it perfectly structured. Include the critical findings but bury them (e.g., mention an allergy issue in passing, or slip in a worsening lab value at the end of a sentence about something else).
+The reportText should NOT be written like an SBAR template. Write it like someone actually talking — "So, room 408, she came in two days ago for..." with tangents, incomplete sentences, and critical info mixed with filler.
+  `.trim();
+}
+
+function buildIsbarPrompt(difficulty: string): string {
+  return `
+Generate a patient scenario for an ISBAR-to-physician simulation. A nursing student will read the chart, then call and speak their ISBAR to an attending physician.
+
+ISBAR = Identification, Situation, Background, Assessment, Recommendation
+
+Difficulty: ${difficulty}
+- beginner: clear clinical concern, obvious recommendation (e.g. new fever, hypotension response needed)
+- intermediate: moderately urgent situation requiring clinical judgment (e.g. new dysrhythmia, worsening SpO2)
+- advanced: complex or time-sensitive situation, multiple factors to synthesize, physician will ask probing questions
+
+Return ONLY valid JSON:
+{
+  "difficulty": "${difficulty}",
+  "setting": "string (e.g. Med-Surg, Step-Down, ICU)",
+  "context": "During your shift, a change in this patient requires you to call the attending physician",
+  "patient": {
+    "name": "First Last Initial",
+    "age": number,
+    "sex": "male or female",
+    "room": "string",
+    "code": "Full Code or DNR/DNI",
+    "allergies": "string",
+    "admittingDiagnosis": "string"
+  },
+  "situation": "string — what just happened or changed that requires the call (be specific with vitals or symptoms)",
+  "background": "string — relevant history, reason for admission, recent events, current meds",
+  "currentVitals": {
+    "BP": "string",
+    "HR": "string",
+    "RR": "string",
+    "SpO2": "string",
+    "Temp": "string"
+  },
+  "recentLabs": ["2-4 relevant lab values with units and reference ranges"],
+  "relevantMeds": ["3-5 current meds relevant to the situation"],
+  "nursingActionsTaken": "string — what the nurse has already done before calling",
+  "expectedRecommendation": "string — the clinically appropriate recommendation the student should make to the physician",
+  "doctorName": "Dr. [Last Name] (e.g. Dr. Okafor)",
+  "doctorGreeting": "string — how the doctor answers the phone (e.g. 'Dr. Okafor speaking.' — keep it under 8 words, realistic)"
+}
+
+Use varied urgent but manageable clinical situations: new chest pain, SpO2 decline, rate/rhythm change, hypotension, acute mental status change, sepsis signs, post-op bleeding, etc.
   `.trim();
 }
