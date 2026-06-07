@@ -361,6 +361,8 @@ function buildQuestionTypeInstruction(questionType: SupportedQuestionType): stri
 - ONLY write SATA for topics where multiple answers are naturally correct by nursing standards: nursing interventions, assessment findings, patient teaching points, signs/symptoms, side effects, precautions, or care priorities.
 - Do NOT write SATA for dosage calculations, drug conversions, single correct identification, or any scenario where only one answer is clinically right.
 - If a concept does not have 2+ genuinely correct answers, rewrite the question around a different aspect of the topic that does.
+- STRICT CONSISTENCY RULE: The letters in "correctAnswers" must EXACTLY match what your rationale defends — no more, no less. If "correctAnswers" is ["A","C"], your rationale must defend ONLY A and C as correct, and explain why B and D are wrong. NEVER mention a letter as correct in the rationale that is not in "correctAnswers". NEVER include a letter in "correctAnswers" that your rationale does not explicitly defend.
+- Before finalizing each question, re-read your rationale and verify every letter you mention as correct is in "correctAnswers", and every letter in "correctAnswers" is defended in the rationale.
 - Return "questionType": "Select All That Apply".
 - Return "correctAnswers" as an array like ["A", "C"].
 - Do NOT return "correctAnswer" for SATA questions.
