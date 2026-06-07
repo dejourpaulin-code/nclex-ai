@@ -26,7 +26,6 @@ function getInputExtension(type: string, originalName?: string) {
   if (lowerType.includes("x-m4a") || lowerType.includes("m4a")) return "m4a";
   if (lowerType.includes("mp4")) return "mp4";
 
-  // Default to webm — most browser MediaRecorder output
   return "webm";
 }
 
@@ -38,27 +37,41 @@ function cleanTranscriptText(text: string) {
     .trim();
 }
 
-async function transcribeWithModel(
-  filePath: string,
-  model: "gpt-4o-transcribe" | "whisper-1",
-  recentContext: string,
-  sessionTitle: string
-) {
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function transcribeWithRetry(filePath: string, recentContext: string, sessionTitle: string) {
   const prompt = [
     "This is a live nursing classroom lecture. Transcribe with accurate clinical spelling.",
     sessionTitle ? `Lecture title: ${sessionTitle}.` : "",
     recentContext ? `Recent context: ${recentContext.slice(-600)}` : "",
-    "Clinical vocabulary: tachycardia, bradycardia, dysrhythmia, arrhythmia, myocardial infarction, angina, atrial fibrillation, ventricular fibrillation, pulmonary embolism, deep vein thrombosis, heart failure, hypertension, hypotension, COPD, pneumonia, asthma, pneumothorax, anaphylaxis, sepsis, DKA, diabetic ketoacidosis, hypoglycemia, hyperglycemia, Addison's disease, Cushing's syndrome, hypothyroidism, hyperthyroidism, Graves' disease, pyelonephritis, glomerulonephritis, urinary tract infection, hepatitis, cirrhosis, pancreatitis, stroke, TIA, multiple sclerosis, Parkinson's disease, heparin, warfarin, metformin, insulin, digoxin, furosemide, lisinopril, metoprolol, atorvastatin, prednisone, albuterol, morphine, IV bolus, nasogastric tube, Foley catheter, tracheostomy, intubation, SpO2, CBC, BMP, ABG, creatinine, potassium, sodium, SBAR, NPO, PRN, STAT, NCLEX, priority, assessment, intervention.",
+    "Clinical vocabulary: tachycardia, bradycardia, dysrhythmia, arrhythmia, myocardial infarction, angina, atrial fibrillation, ventricular fibrillation, pulmonary embolism, deep vein thrombosis, heart failure, hypertension, hypotension, COPD, pneumonia, asthma, pneumothorax, anaphylaxis, sepsis, DKA, diabetic ketoacidosis, hypoglycemia, hyperglycemia, hypothyroidism, hyperthyroidism, heparin, warfarin, metformin, insulin, digoxin, furosemide, lisinopril, metoprolol, atorvastatin, prednisone, albuterol, morphine, IV bolus, nasogastric tube, Foley catheter, tracheostomy, intubation, SpO2, CBC, BMP, ABG, creatinine, potassium, sodium, SBAR, NPO, PRN, STAT, NCLEX, priority, assessment, intervention.",
     "Keep transcription faithful to speech. Correct obvious phonetic substitutions using clinical context.",
   ]
     .filter(Boolean)
     .join(" ");
 
-  return openai.audio.transcriptions.create({
-    file: fs.createReadStream(filePath),
-    model,
-    prompt,
-  });
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const result = await openai.audio.transcriptions.create({
+        file: fs.createReadStream(filePath),
+        model: "whisper-1",
+        prompt,
+      });
+      return result.text || "";
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+      if (status === 429 && attempt < maxAttempts) {
+        // Rate limited — wait with exponential backoff then retry
+        await sleep(attempt * 2000);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error("Transcription failed after retries.");
 }
 
 export async function POST(req: NextRequest) {
@@ -89,71 +102,26 @@ export async function POST(req: NextRequest) {
 
     const inputStats = fs.statSync(inputPath);
 
-    console.log("LIVE TRANSCRIBE INPUT:", {
-      name: audio.name,
-      type: audio.type,
-      size: audio.size,
-      savedPath: inputPath,
-      savedSize: inputStats.size,
-    });
-
     if (inputStats.size < 1000) {
       return NextResponse.json(
-        {
-          error: "Audio chunk too small or corrupted.",
-          debug: { fileName: audio.name, mimeType: audio.type, inputExt, inputSize: inputStats.size },
-        },
+        { error: "Audio chunk too small or corrupted.", debug: { inputSize: inputStats.size } },
         { status: 400 }
       );
     }
 
-    // Try gpt-4o-transcribe first
-    try {
-      const result = await transcribeWithModel(inputPath, "gpt-4o-transcribe", recentContext, sessionTitle);
-      const cleanedText = cleanTranscriptText(result.text || "");
-
-      console.log("TRANSCRIPTION SUCCESS (gpt-4o-transcribe):", {
-        textLength: cleanedText.length,
-        preview: cleanedText.slice(0, 120),
-      });
-
-      return NextResponse.json({
-        text: cleanedText,
-        debug: { model: "gpt-4o-transcribe", fileName: audio.name, mimeType: audio.type, inputExt, inputSize: inputStats.size },
-      });
-    } catch (primaryError) {
-      console.warn("gpt-4o-transcribe failed, falling back to whisper-1:", primaryError);
-    }
-
-    // Fallback to whisper-1
-    const fallbackResult = await transcribeWithModel(inputPath, "whisper-1", recentContext, sessionTitle);
-    const cleanedText = cleanTranscriptText(fallbackResult.text || "");
-
-    console.log("TRANSCRIPTION SUCCESS (whisper-1 fallback):", {
-      textLength: cleanedText.length,
-      preview: cleanedText.slice(0, 120),
-    });
+    const text = await transcribeWithRetry(inputPath, recentContext, sessionTitle);
+    const cleanedText = cleanTranscriptText(text);
 
     return NextResponse.json({
       text: cleanedText,
-      debug: { model: "whisper-1", fileName: audio.name, mimeType: audio.type, inputExt, inputSize: inputStats.size },
+      debug: { model: "whisper-1", inputExt, inputSize: inputStats.size },
     });
   } catch (error) {
     console.error("TRANSCRIBE ROUTE ERROR:", error);
-
-    const message =
-      error instanceof Error ? error.message : "Server transcription error.";
-
+    const message = error instanceof Error ? error.message : "Server transcription error.";
     return NextResponse.json({ error: message }, { status: 500 });
   } finally {
-    try {
-      if (inputPath && fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
-    } catch {}
-
-    try {
-      if (tempDir && fs.existsSync(tempDir)) {
-        fs.rmSync(tempDir, { recursive: true, force: true });
-      }
-    } catch {}
+    try { if (inputPath && fs.existsSync(inputPath)) fs.unlinkSync(inputPath); } catch {}
+    try { if (tempDir && fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
   }
 }

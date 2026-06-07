@@ -94,7 +94,7 @@ type RecorderMimeInfo = {
   extension: string;
 };
 
-const TRANSCRIBE_INTERVAL_MS = 10000;
+const TRANSCRIBE_INTERVAL_MS = 20000;
 const ANALYZE_INTERVAL_MS = 12000;
 const MIN_ANALYZE_CHARS = 140;
 
