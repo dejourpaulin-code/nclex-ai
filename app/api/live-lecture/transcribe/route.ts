@@ -30,48 +30,7 @@ function getInputExtension(type: string, originalName?: string) {
 }
 
 function cleanTranscriptText(text: string) {
-  return text
-    .replace(/\s+/g, " ")
-    .replace(/\buh\b/gi, "uh")
-    .replace(/\bum\b/gi, "um")
-    .trim();
-}
-
-async function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function transcribeWithRetry(filePath: string, recentContext: string, sessionTitle: string) {
-  const prompt = [
-    "This is a live nursing classroom lecture. Transcribe with accurate clinical spelling.",
-    sessionTitle ? `Lecture title: ${sessionTitle}.` : "",
-    recentContext ? `Recent context: ${recentContext.slice(-600)}` : "",
-    "Clinical vocabulary: tachycardia, bradycardia, dysrhythmia, arrhythmia, myocardial infarction, angina, atrial fibrillation, ventricular fibrillation, pulmonary embolism, deep vein thrombosis, heart failure, hypertension, hypotension, COPD, pneumonia, asthma, pneumothorax, anaphylaxis, sepsis, DKA, diabetic ketoacidosis, hypoglycemia, hyperglycemia, hypothyroidism, hyperthyroidism, heparin, warfarin, metformin, insulin, digoxin, furosemide, lisinopril, metoprolol, atorvastatin, prednisone, albuterol, morphine, IV bolus, nasogastric tube, Foley catheter, tracheostomy, intubation, SpO2, CBC, BMP, ABG, creatinine, potassium, sodium, SBAR, NPO, PRN, STAT, NCLEX, priority, assessment, intervention.",
-    "Keep transcription faithful to speech. Correct obvious phonetic substitutions using clinical context.",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const maxAttempts = 3;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const result = await openai.audio.transcriptions.create({
-        file: fs.createReadStream(filePath),
-        model: "whisper-1",
-        prompt,
-      });
-      return result.text || "";
-    } catch (err: unknown) {
-      const status = (err as { status?: number })?.status;
-      if (status === 429 && attempt < maxAttempts) {
-        // Rate limited — wait with exponential backoff then retry
-        await sleep(attempt * 2000);
-        continue;
-      }
-      throw err;
-    }
-  }
-  throw new Error("Transcription failed after retries.");
+  return text.replace(/\s+/g, " ").trim();
 }
 
 export async function POST(req: NextRequest) {
@@ -93,7 +52,6 @@ export async function POST(req: NextRequest) {
     }
 
     const inputExt = getInputExtension(audio.type || "", audio.name);
-
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "lexi-live-"));
     inputPath = path.join(tempDir, `input.${inputExt}`);
 
@@ -104,18 +62,36 @@ export async function POST(req: NextRequest) {
 
     if (inputStats.size < 1000) {
       return NextResponse.json(
-        { error: "Audio chunk too small or corrupted.", debug: { inputSize: inputStats.size } },
+        { error: "Audio chunk too small.", debug: { inputSize: inputStats.size } },
         { status: 400 }
       );
     }
 
-    const text = await transcribeWithRetry(inputPath, recentContext, sessionTitle);
-    const cleanedText = cleanTranscriptText(text);
+    const prompt = [
+      "This is a live nursing classroom lecture. Transcribe with accurate clinical spelling.",
+      sessionTitle ? `Lecture title: ${sessionTitle}.` : "",
+      recentContext ? `Recent context: ${recentContext.slice(-600)}` : "",
+      "Clinical vocabulary: tachycardia, bradycardia, dysrhythmia, myocardial infarction, angina, atrial fibrillation, ventricular fibrillation, pulmonary embolism, heart failure, hypertension, hypotension, COPD, pneumonia, asthma, anaphylaxis, sepsis, DKA, hypoglycemia, hyperglycemia, hypothyroidism, hyperthyroidism, heparin, warfarin, metformin, insulin, digoxin, furosemide, lisinopril, metoprolol, atorvastatin, prednisone, albuterol, morphine, SpO2, CBC, BMP, ABG, SBAR, NPO, PRN, STAT, NCLEX.",
+    ]
+      .filter(Boolean)
+      .join(" ");
 
-    return NextResponse.json({
-      text: cleanedText,
-      debug: { model: "whisper-1", inputExt, inputSize: inputStats.size },
-    });
+    try {
+      const result = await openai.audio.transcriptions.create({
+        file: fs.createReadStream(inputPath),
+        model: "whisper-1",
+        prompt,
+      });
+      return NextResponse.json({ text: cleanTranscriptText(result.text || "") });
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+      if (status === 429) {
+        // Rate limited — return empty text so the chunk is silently skipped
+        console.warn("TRANSCRIBE: OpenAI 429 rate limit, skipping chunk");
+        return NextResponse.json({ text: "", skipped: true });
+      }
+      throw err;
+    }
   } catch (error) {
     console.error("TRANSCRIBE ROUTE ERROR:", error);
     const message = error instanceof Error ? error.message : "Server transcription error.";
