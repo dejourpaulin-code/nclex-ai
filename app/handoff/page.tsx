@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Navbar from "../../components/Navbar";
 
 type Mode = "give" | "receive" | "isbar";
@@ -24,6 +24,7 @@ type ConvMessage = {
   role: "nurse" | "doctor" | "student";
   text: string;
   audioUrl?: string;
+  hideText?: boolean; // used for receive-mode report — audio only, no visible text
 };
 
 type DimensionResult = { score: number; max: number; feedback: string };
@@ -105,24 +106,44 @@ export default function HandoffPage() {
   const [conversation, setConversation] = useState<ConvMessage[]>([]);
   const [gradeResult, setGradeResult] = useState<GradeResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
-  const [currentAudioUrl, setCurrentAudioUrl] = useState<string | null>(null);
   const [showAnswerKey, setShowAnswerKey] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const onEndRef = useRef<(() => void) | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const convRef = useRef<ConvMessage[]>([]);
   convRef.current = conversation;
 
-  // --- helpers ---
+  // Keep handleRecordingComplete in a ref so startRecording never has stale closure issues
+  const handleRecordingCompleteRef = useRef<(blob: Blob) => Promise<void>>(async () => {});
 
-  function appendMessage(msg: ConvMessage) {
-    setConversation((prev) => [...prev, msg]);
+  // Unlock AudioContext for iOS/Safari autoplay — must be called in a synchronous user gesture
+  function unlockAudio() {
+    try {
+      type AnyWindow = Window & { webkitAudioContext?: typeof AudioContext };
+      const Ctx = window.AudioContext ?? (window as AnyWindow).webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const buf = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+      ctx.close();
+    } catch {}
   }
 
+  // Safe speak: deduplicates onEnd, stores callback in ref for skip button
   async function speakText(text: string, onEnd: () => void): Promise<string | null> {
+    let called = false;
+    function safeEnd() {
+      if (!called) { called = true; onEndRef.current = null; onEnd(); }
+    }
+    onEndRef.current = safeEnd;
+
     try {
       const persona = mode === "isbar" ? "doctor" : "nurse";
       const res = await fetch("/api/handoff/tts", {
@@ -133,31 +154,25 @@ export default function HandoffPage() {
       if (!res.ok) throw new Error("TTS failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      setCurrentAudioUrl(url);
 
       const audio = new Audio(url);
       audioRef.current = audio;
-      audio.onended = () => {
-        onEnd();
-      };
-      audio.onerror = () => onEnd();
-      audio.play().catch(() => onEnd());
+      audio.onended = safeEnd;
+      audio.onerror = safeEnd;
+      audio.play().catch(safeEnd);
       return url;
     } catch {
-      onEnd();
+      safeEnd();
       return null;
     }
   }
 
-  async function generateInitialPersonaMessage(): Promise<string> {
-    if (mode === "receive") {
-      return (scenario?.reportText as string) || "";
-    }
-    if (mode === "give") {
-      return (scenario?.nurseGreeting as string) || "Ready for report whenever you are.";
-    }
-    // isbar
-    return (scenario?.doctorGreeting as string) || "Dr. speaking.";
+  // Skip button — fires the onEnd callback immediately and pauses audio
+  function skipSpeaking() {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    const cb = onEndRef.current;
+    onEndRef.current = null;
+    if (cb) cb();
   }
 
   // --- scenario generation ---
@@ -185,28 +200,39 @@ export default function HandoffPage() {
     }
   }
 
-  // --- start conversation ---
+  // --- start conversation (called synchronously from button click to keep audio unlock in same gesture) ---
 
   async function startConversation() {
+    unlockAudio(); // must be synchronous within the user gesture
     setPhase("intro_loading");
     setConversation([]);
     setGradeResult(null);
     setShowAnswerKey(false);
 
-    const initialText = await generateInitialPersonaMessage();
+    let initialText = "";
+    if (mode === "receive") {
+      initialText = (scenario?.reportText as string) || "";
+    } else if (mode === "give") {
+      initialText = (scenario?.nurseGreeting as string) || "Ready for your report whenever you are.";
+    } else {
+      initialText = (scenario?.doctorGreeting as string) || "Dr. speaking.";
+    }
+
     if (!initialText) { setPhase("student_turn"); return; }
 
     const role: "nurse" | "doctor" = mode === "isbar" ? "doctor" : "nurse";
+    // In receive mode we hide the text — student must listen only
+    const hideText = mode === "receive";
+
     setPhase("intro_speaking");
-    const url = await speakText(initialText, () => {
-      setPhase("student_turn");
-    });
-    appendMessage({ role, text: initialText, audioUrl: url || undefined });
+    const url = await speakText(initialText, () => setPhase("student_turn"));
+    setConversation([{ role, text: initialText, audioUrl: url || undefined, hideText }]);
   }
 
   // --- recording ---
 
   const startRecording = useCallback(async () => {
+    unlockAudio();
     setErrorMsg("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -218,7 +244,8 @@ export default function HandoffPage() {
         if (timerRef.current) clearInterval(timerRef.current);
         setRecordingSeconds(0);
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        await handleRecordingComplete(blob);
+        // Always use the ref so we never capture a stale closure
+        await handleRecordingCompleteRef.current(blob);
       };
       mr.start(250);
       mediaRecorderRef.current = mr;
@@ -228,7 +255,8 @@ export default function HandoffPage() {
     } catch {
       setErrorMsg("Microphone access denied. Please allow mic access and try again.");
     }
-  }, [mode, scenario, conversation]); // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function stopRecording() {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
@@ -237,6 +265,7 @@ export default function HandoffPage() {
     if (timerRef.current) clearInterval(timerRef.current);
   }
 
+  // Defined as a regular function (re-created each render) and assigned to ref so startRecording always calls latest
   async function handleRecordingComplete(blob: Blob) {
     setPhase("transcribing");
     try {
@@ -255,7 +284,7 @@ export default function HandoffPage() {
 
       const text: string = transcribeData.text?.trim();
       if (!text) {
-        setErrorMsg("Nothing was transcribed. Please speak clearly and try again.");
+        setErrorMsg("Nothing was captured. Speak clearly and try again.");
         setPhase("student_turn");
         return;
       }
@@ -263,18 +292,13 @@ export default function HandoffPage() {
       const studentMsg: ConvMessage = { role: "student", text };
       setConversation((prev) => [...prev, studentMsg]);
 
-      // get persona response
       setPhase("thinking");
+      // Use the snapshot of history BEFORE the student message (we pass studentMessage separately)
       const currentHistory = [...convRef.current];
       const chatRes = await fetch("/api/handoff/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mode,
-          scenario,
-          history: currentHistory,
-          studentMessage: text,
-        }),
+        body: JSON.stringify({ mode, scenario, history: currentHistory, studentMessage: text }),
       });
       const chatData = await chatRes.json();
 
@@ -285,22 +309,26 @@ export default function HandoffPage() {
       }
 
       const personaRole: "nurse" | "doctor" = mode === "isbar" ? "doctor" : "nurse";
-      const personaMsg: ConvMessage = { role: personaRole, text: chatData.response };
 
       if (chatData.isComplete) {
         setPhase("persona_speaking");
         const url = await speakText(chatData.response, () => setPhase("complete"));
-        setConversation((prev) => [...prev, { ...personaMsg, audioUrl: url || undefined }]);
+        setConversation((prev) => [...prev, { role: personaRole, text: chatData.response, audioUrl: url || undefined }]);
       } else {
         setPhase("persona_speaking");
         const url = await speakText(chatData.response, () => setPhase("student_turn"));
-        setConversation((prev) => [...prev, { ...personaMsg, audioUrl: url || undefined }]);
+        setConversation((prev) => [...prev, { role: personaRole, text: chatData.response, audioUrl: url || undefined }]);
       }
     } catch {
-      setErrorMsg("Something went wrong. Please try again.");
+      setErrorMsg("Something went wrong. Try again.");
       setPhase("student_turn");
     }
   }
+
+  // Keep the ref always pointing to the current function
+  useEffect(() => {
+    handleRecordingCompleteRef.current = handleRecordingComplete;
+  });
 
   // --- replay audio ---
 
@@ -342,16 +370,14 @@ export default function HandoffPage() {
     setGradeResult(null);
     setPhase("idle");
     setErrorMsg("");
-    setCurrentAudioUrl(null);
   }
 
   const isLoading = phase === "loading_scenario";
   const isBusy = ["intro_loading", "intro_speaking", "transcribing", "thinking", "persona_speaking", "grading"].includes(phase);
+  const isSpeaking = phase === "intro_speaking" || phase === "persona_speaking";
   const personaName = mode === "isbar"
     ? (scenario?.doctorName as string) || "Dr."
-    : mode === "receive"
-    ? "Night Nurse"
-    : "Charge Nurse";
+    : mode === "receive" ? "Night Nurse" : "Charge Nurse";
 
   // --- render ---
 
@@ -393,10 +419,10 @@ export default function HandoffPage() {
 
           <p className="mb-3 text-xs text-slate-500">
             {mode === "give"
-              ? "Read the patient chart, then speak your SBAR handoff to your relief nurse. She may ask follow-up questions."
+              ? "Read the patient chart. When you start, the relief nurse greets you — then speak your full SBAR handoff."
               : mode === "receive"
-              ? "Listen to the night nurse's handoff. Ask any follow-up questions you have — then Lexi grades what you caught and what you missed."
-              : "Read the patient situation, then call the attending physician and deliver your ISBAR. The doctor will ask questions."}
+              ? "Hit start and listen to the night nurse speak report. No text — just audio. Ask follow-up questions, then get graded."
+              : "Read the situation. Call the attending and deliver your ISBAR. The doctor will ask you questions."}
           </p>
 
           <div className="mb-3 flex gap-2">
@@ -435,15 +461,10 @@ export default function HandoffPage() {
               <h2 className="text-sm font-bold text-blue-900">
                 {mode === "isbar" ? "Patient Situation" : "Patient Chart"}
               </h2>
-              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                {scenario.setting}
-              </span>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-                {scenario.context}
-              </span>
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">{scenario.setting}</span>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{scenario.context}</span>
             </div>
 
-            {/* Critical Alert — give mode */}
             {mode === "give" && scenario.criticalAlert && (
               <div className="mb-3 rounded-xl border border-red-200 bg-red-50 p-3">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-red-600">Critical Alert</p>
@@ -451,11 +472,10 @@ export default function HandoffPage() {
               </div>
             )}
 
-            {/* ISBAR situation */}
             {mode === "isbar" && (
               <>
                 <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">Situation — Why You&apos;re Calling</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">Why You&apos;re Calling</p>
                   <p className="mt-0.5 text-sm text-amber-900">{scenario.situation}</p>
                 </div>
                 <div className="mb-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
@@ -464,14 +484,13 @@ export default function HandoffPage() {
                 </div>
                 {scenario.nursingActionsTaken && (
                   <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50 p-3">
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-blue-600">Nursing Actions Already Taken</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-blue-600">Already Done</p>
                     <p className="mt-0.5 text-xs leading-5 text-blue-800">{scenario.nursingActionsTaken}</p>
                   </div>
                 )}
               </>
             )}
 
-            {/* Patient info grid */}
             <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
               <InfoCell label="Patient" value={scenario.patient?.name ?? "—"} />
               <InfoCell label="Age / Sex" value={`${scenario.patient?.age ?? "—"}y ${scenario.patient?.sex ?? ""}`} />
@@ -481,15 +500,10 @@ export default function HandoffPage() {
               <InfoCell
                 label="Allergies"
                 value={scenario.patient?.allergies ?? "—"}
-                highlight={
-                  scenario.patient?.allergies &&
-                  scenario.patient.allergies !== "None known" &&
-                  scenario.patient.allergies !== "NKDA"
-                }
+                highlight={!!scenario.patient?.allergies && scenario.patient.allergies !== "None known" && scenario.patient.allergies !== "NKDA"}
               />
             </div>
 
-            {/* Vitals */}
             {(scenario.vitals || scenario.currentVitals) && (
               <div className="mb-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">Vitals</p>
@@ -504,11 +518,10 @@ export default function HandoffPage() {
               </div>
             )}
 
-            {/* Meds */}
             {(scenario.currentMeds ?? scenario.relevantMeds)?.length > 0 && (
               <div className="mb-3">
                 <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                  {mode === "isbar" ? "Relevant Medications" : "Current Medications"}
+                  {mode === "isbar" ? "Relevant Meds" : "Current Meds"}
                 </p>
                 <ul className="space-y-0.5">
                   {(scenario.currentMeds ?? scenario.relevantMeds).map((m: string, i: number) => (
@@ -518,7 +531,6 @@ export default function HandoffPage() {
               </div>
             )}
 
-            {/* ISBAR labs */}
             {mode === "isbar" && scenario.recentLabs?.length > 0 && (
               <div className="mb-3">
                 <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Recent Labs</p>
@@ -530,7 +542,6 @@ export default function HandoffPage() {
               </div>
             )}
 
-            {/* Give mode extras */}
             {mode === "give" && (
               <>
                 {scenario.recentEvents && (
@@ -560,15 +571,15 @@ export default function HandoffPage() {
           </div>
         )}
 
-        {/* Receive mode: patient summary (chart hidden — student must listen) */}
-        {scenario && mode === "receive" && phase === "ready" && (
+        {/* Receive mode: just show patient summary — chart is hidden */}
+        {scenario && mode === "receive" && (phase === "ready" || phase === "intro_loading") && (
           <div className="mb-5 rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
             <p className="text-sm font-bold text-blue-900">Ready to receive report</p>
             <p className="mt-1 text-xs text-slate-500">
-              Hit Start below. The night nurse will speak her handoff report to you. Listen carefully — you won&apos;t see the report text. Take notes if you want, then ask any follow-up questions you have.
+              When you start, the night nurse will speak her handoff to you. No text — just audio. Take mental notes, then ask your follow-up questions verbally.
             </p>
             <div className="mt-3 rounded-xl bg-slate-50 p-3">
-              <p className="text-xs text-slate-500">{scenario.patientSummary}</p>
+              <p className="text-xs text-slate-600">{scenario.patientSummary}</p>
             </div>
           </div>
         )}
@@ -580,11 +591,7 @@ export default function HandoffPage() {
               onClick={startConversation}
               className="w-full rounded-xl bg-blue-900 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
             >
-              {mode === "give"
-                ? "Start — Your relief nurse is ready for report"
-                : mode === "receive"
-                ? "Start — Listen to the night nurse's report"
-                : "Start — Call the physician"}
+              {mode === "give" ? "Start — Your relief is ready" : mode === "receive" ? "Start — Listen to night nurse" : "Start — Call the physician"}
             </button>
           </div>
         )}
@@ -602,12 +609,27 @@ export default function HandoffPage() {
               />
             ))}
 
-            {/* Status indicators */}
+            {/* Speaking state — show pulsing indicator + skip button */}
+            {isSpeaking && (
+              <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+                  <span className="text-xs text-blue-700">
+                    {PERSONA_LABEL[mode]} is speaking...
+                  </span>
+                </div>
+                <button
+                  onClick={skipSpeaking}
+                  className="rounded-lg border border-blue-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                >
+                  Done listening →
+                </button>
+              </div>
+            )}
+
             {phase === "intro_loading" && <StatusPill text="Connecting..." />}
-            {phase === "intro_speaking" && <StatusPill text={`${PERSONA_LABEL[mode]} is speaking...`} pulse />}
             {phase === "transcribing" && <StatusPill text="Transcribing your voice..." />}
-            {phase === "thinking" && <StatusPill text={`${PERSONA_LABEL[mode]} is responding...`} />}
-            {phase === "persona_speaking" && <StatusPill text={`${PERSONA_LABEL[mode]} is speaking...`} pulse />}
+            {phase === "thinking" && <StatusPill text={`${PERSONA_LABEL[mode]} is thinking...`} />}
             {phase === "grading" && <StatusPill text="Lexi is grading your interaction..." />}
           </div>
         )}
@@ -617,10 +639,10 @@ export default function HandoffPage() {
           <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="mb-4 text-center text-sm font-semibold text-slate-700">
               {mode === "give"
-                ? phase === "recording" ? "Recording your report..." : "Speak your SBAR handoff report"
+                ? phase === "recording" ? "Recording your report..." : "Your turn — speak your SBAR"
                 : mode === "receive"
-                ? phase === "recording" ? "Recording your response..." : "Ask a follow-up question or give your assessment"
-                : phase === "recording" ? "Recording your ISBAR..." : "Deliver your ISBAR to the physician"}
+                ? phase === "recording" ? "Recording your response..." : "Ask a follow-up or give your assessment"
+                : phase === "recording" ? "Recording your ISBAR..." : "Your turn — deliver your ISBAR"}
             </p>
             <div className="flex justify-center">
               <button
@@ -632,28 +654,28 @@ export default function HandoffPage() {
                 }`}
               >
                 {phase === "recording" ? (
-                  <span className="text-2xl">⏹</span>
+                  <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
+                    <rect x="6" y="6" width="12" height="12" rx="1" />
+                  </svg>
                 ) : (
-                  <span className="text-2xl">🎙</span>
+                  <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 14a3 3 0 003-3V5a3 3 0 00-6 0v6a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 0014 0h-2zm-5 9v-2.07A7.001 7.001 0 0019 11h-2a5 5 0 01-10 0H5a7.001 7.001 0 006 6.93V20H8v2h8v-2h-4z"/>
+                  </svg>
                 )}
               </button>
             </div>
             {phase === "recording" && (
-              <p className="mt-3 text-center text-xs text-slate-500">
-                {recordingSeconds}s — tap to stop
-              </p>
+              <p className="mt-3 text-center text-xs text-slate-500">{recordingSeconds}s — tap ■ to stop</p>
             )}
             {phase === "student_turn" && (
-              <p className="mt-3 text-center text-xs text-slate-400">
-                Tap the mic to speak. Tap again to stop.
-              </p>
+              <p className="mt-3 text-center text-xs text-slate-400">Tap the mic to start speaking. Tap ■ when done.</p>
             )}
           </div>
         )}
 
-        {/* End & Grade button */}
+        {/* End & Grade */}
         {phase === "complete" && !gradeResult && (
-          <div className="mb-5 space-y-2">
+          <div className="mb-5">
             <button
               onClick={gradeConversation}
               className="w-full rounded-xl bg-blue-900 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
@@ -672,6 +694,7 @@ export default function HandoffPage() {
             showAnswerKey={showAnswerKey}
             setShowAnswerKey={setShowAnswerKey}
             onRetry={generateScenario}
+            onReplay={replayAudio}
           />
         )}
       </section>
@@ -694,30 +717,38 @@ function ConvBubble({
   return (
     <div className={`flex gap-3 ${isStudent ? "flex-row-reverse" : "flex-row"}`}>
       <div
-        className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
+        className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${
           isStudent ? "bg-orange-500" : msg.role === "doctor" ? "bg-slate-700" : "bg-blue-700"
         }`}
       >
         {isStudent ? "You" : msg.role === "doctor" ? "Dr" : "RN"}
       </div>
-      <div className={`max-w-[80%] space-y-1 ${isStudent ? "items-end" : "items-start"} flex flex-col`}>
+      <div className={`max-w-[80%] space-y-1 flex flex-col ${isStudent ? "items-end" : "items-start"}`}>
         <p className={`text-[10px] font-semibold text-slate-400 ${isStudent ? "text-right" : ""}`}>
           {isStudent ? "You" : personaName}
         </p>
-        <div
-          className={`rounded-2xl px-4 py-3 text-sm leading-6 ${
-            isStudent
-              ? "rounded-tr-sm bg-orange-50 text-slate-800"
-              : "rounded-tl-sm bg-blue-50 text-slate-800"
-          }`}
-        >
-          {msg.text}
-        </div>
-        {onReplay && (
-          <button
-            onClick={onReplay}
-            className="text-[10px] text-slate-400 hover:text-blue-600 transition"
-          >
+        {msg.hideText ? (
+          // Receive mode — show audio indicator instead of report text
+          <div className="rounded-2xl rounded-tl-sm border border-blue-100 bg-blue-50 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <span className="text-blue-500">🔊</span>
+              <span className="text-sm italic text-blue-700">Audio report playing...</span>
+            </div>
+            {onReplay && (
+              <button onClick={onReplay} className="mt-1 text-[10px] text-blue-400 hover:text-blue-600 transition">
+                ▶ Replay report
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className={`rounded-2xl px-4 py-3 text-sm leading-6 ${
+            isStudent ? "rounded-tr-sm bg-orange-50 text-slate-800" : "rounded-tl-sm bg-blue-50 text-slate-800"
+          }`}>
+            {msg.text}
+          </div>
+        )}
+        {!msg.hideText && onReplay && (
+          <button onClick={onReplay} className="text-[10px] text-slate-400 hover:text-blue-600 transition">
             ▶ replay
           </button>
         )}
@@ -726,9 +757,9 @@ function ConvBubble({
   );
 }
 
-function StatusPill({ text, pulse = false }: { text: string; pulse?: boolean }) {
+function StatusPill({ text }: { text: string }) {
   return (
-    <div className={`flex justify-center ${pulse ? "animate-pulse" : ""}`}>
+    <div className="flex justify-center">
       <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">{text}</span>
     </div>
   );
@@ -750,6 +781,7 @@ function GradePanel({
   showAnswerKey,
   setShowAnswerKey,
   onRetry,
+  onReplay,
 }: {
   result: GradeResult;
   mode: Mode;
@@ -758,10 +790,12 @@ function GradePanel({
   showAnswerKey: boolean;
   setShowAnswerKey: (v: boolean) => void;
   onRetry: () => void;
+  onReplay: (url: string) => void;
 }) {
+  void onReplay; // available for future use
+
   return (
     <div className="space-y-4">
-      {/* Score card */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-5">
           <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full border-4 border-slate-100 bg-slate-50">
@@ -777,37 +811,27 @@ function GradePanel({
                 : result.overallScore >= 80 ? "Strong — a few things to sharpen"
                 : result.overallScore >= 70 ? "Passing, but gaps to address"
                 : result.overallScore >= 60 ? "Needs improvement"
-                : "Major gaps — review critical misses"}
+                : "Major gaps — review critical misses below"}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Dimension bars */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="mb-4 text-sm font-bold">Score Breakdown</h2>
         <div className="space-y-5">
           {Object.entries(result.dimensions).map(([key, dim]) => (
-            <DimensionBar
-              key={key}
-              label={DIMENSION_LABELS[key] ?? key}
-              score={dim.score}
-              max={dim.max}
-              feedback={dim.feedback}
-            />
+            <DimensionBar key={key} label={DIMENSION_LABELS[key] ?? key} score={dim.score} max={dim.max} feedback={dim.feedback} />
           ))}
         </div>
       </div>
 
-      {/* Misses + Strengths */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {(result.criticalMisses ?? []).length > 0 && (
           <div className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm">
             <h2 className="mb-2 text-sm font-bold text-red-700">Critical Misses</h2>
             <ul className="space-y-1">
-              {result.criticalMisses!.map((m, i) => (
-                <li key={i} className="text-xs leading-5 text-slate-700">• {m}</li>
-              ))}
+              {result.criticalMisses!.map((m, i) => <li key={i} className="text-xs leading-5 text-slate-700">• {m}</li>)}
             </ul>
           </div>
         )}
@@ -825,7 +849,6 @@ function GradePanel({
         )}
       </div>
 
-      {/* Questions / follow-up */}
       {(result.questionsShouldHaveAsked ?? result.followUpQuestionsShouldHaveAsked ?? []).length > 0 && (
         <div className="rounded-2xl border border-amber-100 bg-white p-4 shadow-sm">
           <h2 className="mb-2 text-sm font-bold text-amber-700">Questions You Should Have Asked</h2>
@@ -837,37 +860,30 @@ function GradePanel({
         </div>
       )}
 
-      {/* Model priorities */}
       {(result.modelPriorities ?? []).length > 0 && (
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <h2 className="mb-2 text-sm font-bold">Shift Priorities</h2>
           <ol className="space-y-1">
-            {result.modelPriorities!.map((p, i) => (
-              <li key={i} className="text-xs leading-5 text-slate-700">{i + 1}. {p}</li>
-            ))}
+            {result.modelPriorities!.map((p, i) => <li key={i} className="text-xs leading-5 text-slate-700">{i + 1}. {p}</li>)}
           </ol>
         </div>
       )}
 
-      {/* Coaching + model snippet */}
       <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
         <h2 className="mb-2 text-sm font-bold text-blue-900">Lexi&apos;s Coaching</h2>
         <p className="mb-4 text-sm leading-6 text-slate-700">{result.coachingNote}</p>
-        {(result.modelSnippet || result.modelIsbarSnippet) && (
+        {(result.modelSnippet ?? result.modelIsbarSnippet) && (
           <>
             <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">
-              {result.modelIsbarSnippet ? "How your ISBAR should have sounded" : "How the critical section should have sounded"}
+              {result.modelIsbarSnippet ? "How your ISBAR should have sounded" : "How this section should have sounded"}
             </p>
             <div className="rounded-xl border border-blue-100 bg-blue-50 p-3">
-              <p className="text-sm italic leading-6 text-blue-800">
-                &ldquo;{result.modelSnippet ?? result.modelIsbarSnippet}&rdquo;
-              </p>
+              <p className="text-sm italic leading-6 text-blue-800">&ldquo;{result.modelSnippet ?? result.modelIsbarSnippet}&rdquo;</p>
             </div>
           </>
         )}
       </div>
 
-      {/* Receive mode answer key */}
       {mode === "receive" && scenario?.answerKey && (
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <button
