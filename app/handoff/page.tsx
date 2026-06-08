@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Navbar from "../../components/Navbar";
 
-type Mode = "give" | "receive" | "isbar";
+type Mode = "give" | "receive" | "isbar" | "build";
 type Difficulty = "beginner" | "intermediate" | "advanced";
 type Phase =
   | "idle"
@@ -42,6 +42,28 @@ type GradeResult = {
   modelSnippet?: string;
   modelIsbarSnippet?: string;
   modelPriorities?: string[];
+};
+
+type BuildForm = {
+  patientName: string; age: string; sex: string; room: string;
+  diagnosis: string; codeStatus: string; allergies: string;
+  bp: string; hr: string; rr: string; spo2: string; temp: string; pain: string;
+  physicalAssessment: string; currentMeds: string; shiftEvents: string;
+  pendingItems: string; safetyNotes: string;
+};
+
+type BuildResult = {
+  spokenReport: string;
+  structuredSbar: { situation: string; background: string; assessment: string; recommendation: string };
+  prioritizationNotes: string;
+  safetyHighlights: string[];
+};
+
+const EMPTY_BUILD_FORM: BuildForm = {
+  patientName: "", age: "", sex: "female", room: "",
+  diagnosis: "", codeStatus: "Full Code", allergies: "None known",
+  bp: "", hr: "", rr: "", spo2: "", temp: "", pain: "",
+  physicalAssessment: "", currentMeds: "", shiftEvents: "", pendingItems: "", safetyNotes: "",
 };
 
 function gradeColor(g: string) {
@@ -95,6 +117,7 @@ const PERSONA_LABEL: Record<Mode, string> = {
   give: "Nurse",
   receive: "Nurse",
   isbar: "Dr.",
+  build: "Lexi",
 };
 
 export default function HandoffPage() {
@@ -108,6 +131,12 @@ export default function HandoffPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [showAnswerKey, setShowAnswerKey] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
+
+  // Report Builder state
+  const [buildForm, setBuildForm] = useState<BuildForm>(EMPTY_BUILD_FORM);
+  const [buildResult, setBuildResult] = useState<BuildResult | null>(null);
+  const [buildLoading, setBuildLoading] = useState(false);
+  const [buildSpeaking, setBuildSpeaking] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const onEndRef = useRef<(() => void) | null>(null);
@@ -360,6 +389,51 @@ export default function HandoffPage() {
     }
   }
 
+  // --- report builder ---
+
+  async function buildReport() {
+    setBuildLoading(true);
+    setBuildResult(null);
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/handoff/build-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildForm),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErrorMsg(data.error || "Failed to generate report."); return; }
+      setBuildResult(data);
+    } catch {
+      setErrorMsg("Failed to connect to server.");
+    } finally {
+      setBuildLoading(false);
+    }
+  }
+
+  async function speakBuiltReport() {
+    if (!buildResult?.spokenReport) return;
+    unlockAudio();
+    setBuildSpeaking(true);
+    try {
+      const res = await fetch("/api/handoff/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: buildResult.spokenReport, persona: "nurse" }),
+      });
+      if (!res.ok) throw new Error("TTS failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => setBuildSpeaking(false);
+      audio.onerror = () => setBuildSpeaking(false);
+      audio.play().catch(() => setBuildSpeaking(false));
+    } catch {
+      setBuildSpeaking(false);
+    }
+  }
+
   // --- reset ---
 
   function resetMode(newMode: Mode) {
@@ -370,6 +444,8 @@ export default function HandoffPage() {
     setGradeResult(null);
     setPhase("idle");
     setErrorMsg("");
+    setBuildResult(null);
+    setBuildSpeaking(false);
   }
 
   const isLoading = phase === "loading_scenario";
@@ -400,19 +476,19 @@ export default function HandoffPage() {
 
         {/* Mode tabs */}
         <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 grid grid-cols-3 gap-2">
-            {(["give", "receive", "isbar"] as Mode[]).map((m) => (
+          <div className="mb-3 grid grid-cols-2 gap-2">
+            {(["give", "receive", "isbar", "build"] as Mode[]).map((m) => (
               <button
                 key={m}
                 onClick={() => resetMode(m)}
-                disabled={isBusy}
+                disabled={isBusy || buildLoading}
                 className={`rounded-xl py-2.5 text-xs font-bold transition ${
                   mode === m
-                    ? "bg-blue-900 text-white"
+                    ? m === "build" ? "bg-orange-500 text-white" : "bg-blue-900 text-white"
                     : "border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
                 }`}
               >
-                {m === "give" ? "Give Report" : m === "receive" ? "Receive Report" : "ISBAR to Doctor"}
+                {m === "give" ? "Give Report" : m === "receive" ? "Receive Report" : m === "isbar" ? "ISBAR to Doctor" : "Report Builder"}
               </button>
             ))}
           </div>
@@ -422,37 +498,58 @@ export default function HandoffPage() {
               ? "Read the patient chart. When you start, the relief nurse greets you — then speak your full SBAR handoff."
               : mode === "receive"
               ? "Hit start and listen to the night nurse speak report. No text — just audio. Ask follow-up questions, then get graded."
-              : "Read the situation. Call the attending and deliver your ISBAR. The doctor will ask you questions."}
+              : mode === "isbar"
+              ? "Read the situation. Call the attending and deliver your ISBAR. The doctor will ask you questions."
+              : "Enter your patient's vitals and physical assessment. Lexi writes a polished SBAR report and reads it back to you in Brianna's voice."}
           </p>
 
-          <div className="mb-3 flex gap-2">
-            {(["beginner", "intermediate", "advanced"] as Difficulty[]).map((d) => (
-              <button
-                key={d}
-                onClick={() => setDifficulty(d)}
-                disabled={isBusy || phase !== "idle"}
-                className={`flex-1 rounded-xl py-1.5 text-xs font-semibold capitalize transition ${
-                  difficulty === d
-                    ? d === "beginner" ? "bg-emerald-100 text-emerald-800"
-                    : d === "intermediate" ? "bg-amber-100 text-amber-800"
-                    : "bg-red-100 text-red-800"
-                    : "border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100"
-                }`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
+          {mode !== "build" && (
+            <div className="mb-3 flex gap-2">
+              {(["beginner", "intermediate", "advanced"] as Difficulty[]).map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setDifficulty(d)}
+                  disabled={isBusy || phase !== "idle"}
+                  className={`flex-1 rounded-xl py-1.5 text-xs font-semibold capitalize transition ${
+                    difficulty === d
+                      ? d === "beginner" ? "bg-emerald-100 text-emerald-800"
+                      : d === "intermediate" ? "bg-amber-100 text-amber-800"
+                      : "bg-red-100 text-red-800"
+                      : "border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100"
+                  }`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          )}
 
-          <button
-            onClick={generateScenario}
-            disabled={isLoading || isBusy}
-            className="w-full rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
-          >
-            {isLoading ? "Generating..." : scenario ? "Generate New Scenario" : "Generate Scenario"}
-          </button>
+          {mode !== "build" && (
+            <button
+              onClick={generateScenario}
+              disabled={isLoading || isBusy}
+              className="w-full rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
+            >
+              {isLoading ? "Generating..." : scenario ? "Generate New Scenario" : "Generate Scenario"}
+            </button>
+          )}
           {errorMsg && <p className="mt-2 text-xs text-red-600">{errorMsg}</p>}
         </div>
+
+        {/* Report Builder */}
+        {mode === "build" && (
+          <BuildReportSection
+            form={buildForm}
+            setForm={setBuildForm}
+            result={buildResult}
+            loading={buildLoading}
+            speaking={buildSpeaking}
+            onGenerate={buildReport}
+            onSpeak={speakBuiltReport}
+            onStopSpeak={() => { if (audioRef.current) { audioRef.current.pause(); setBuildSpeaking(false); } }}
+            onReset={() => { setBuildResult(null); setBuildForm(EMPTY_BUILD_FORM); }}
+          />
+        )}
 
         {/* Patient Chart — give / isbar */}
         {scenario && (mode === "give" || mode === "isbar") && phase !== "graded" && (
@@ -931,6 +1028,249 @@ function GradePanel({
       >
         Try Another Scenario
       </button>
+    </div>
+  );
+}
+
+// --- Report Builder Section ---
+
+function BuildFormField({
+  label, value, onChange, placeholder, type = "text",
+}: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
+  return (
+    <div>
+      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:bg-white"
+      />
+    </div>
+  );
+}
+
+function BuildFormTextarea({
+  label, value, onChange, placeholder, rows = 3,
+}: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; rows?: number }) {
+  return (
+    <div>
+      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-5 outline-none transition focus:border-blue-400 focus:bg-white"
+      />
+    </div>
+  );
+}
+
+function BuildReportSection({
+  form, setForm, result, loading, speaking, onGenerate, onSpeak, onStopSpeak, onReset,
+}: {
+  form: BuildForm;
+  setForm: (f: BuildForm) => void;
+  result: BuildResult | null;
+  loading: boolean;
+  speaking: boolean;
+  onGenerate: () => void;
+  onSpeak: () => void;
+  onStopSpeak: () => void;
+  onReset: () => void;
+}) {
+  function set(key: keyof BuildForm) {
+    return (v: string) => setForm({ ...form, [key]: v });
+  }
+
+  if (result) {
+    return (
+      <div className="space-y-4">
+        {/* Spoken report */}
+        <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-blue-900">Lexi&apos;s SBAR Report</h2>
+            <button
+              onClick={speaking ? onStopSpeak : onSpeak}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ${
+                speaking
+                  ? "bg-red-100 text-red-700 hover:bg-red-200"
+                  : "bg-blue-900 text-white hover:bg-blue-800"
+              }`}
+            >
+              {speaking ? (
+                <><span className="inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" /> Stop</>
+              ) : (
+                <><span>🔊</span> Hear it spoken</>
+              )}
+            </button>
+          </div>
+          <div className="rounded-xl border border-blue-50 bg-blue-50 p-4">
+            <p className="text-sm italic leading-6 text-blue-900">&ldquo;{result.spokenReport}&rdquo;</p>
+          </div>
+        </div>
+
+        {/* SBAR breakdown */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="mb-3 text-sm font-bold">SBAR Breakdown</h2>
+          <div className="space-y-3">
+            {[
+              { label: "S — Situation", value: result.structuredSbar.situation, color: "border-red-100 bg-red-50 text-red-800" },
+              { label: "B — Background", value: result.structuredSbar.background, color: "border-slate-100 bg-slate-50 text-slate-700" },
+              { label: "A — Assessment", value: result.structuredSbar.assessment, color: "border-amber-100 bg-amber-50 text-amber-800" },
+              { label: "R — Recommendation", value: result.structuredSbar.recommendation, color: "border-emerald-100 bg-emerald-50 text-emerald-800" },
+            ].map(({ label, value, color }) => (
+              <div key={label} className={`rounded-xl border p-3 ${color}`}>
+                <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wide opacity-70">{label}</p>
+                <p className="text-xs leading-5">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Safety highlights */}
+        {result.safetyHighlights.length > 0 && (
+          <div className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm">
+            <h2 className="mb-2 text-sm font-bold text-red-700">Safety Highlights</h2>
+            <p className="mb-2 text-xs text-slate-500">The incoming nurse absolutely cannot miss these:</p>
+            <ul className="space-y-1">
+              {result.safetyHighlights.map((h, i) => (
+                <li key={i} className="text-xs font-semibold leading-5 text-red-800">⚠ {h}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Prioritization note */}
+        <div className="rounded-2xl border border-amber-100 bg-white p-4 shadow-sm">
+          <h2 className="mb-1 text-sm font-bold text-amber-700">Why It Was Structured This Way</h2>
+          <p className="text-xs leading-5 text-slate-700">{result.prioritizationNotes}</p>
+        </div>
+
+        <button
+          onClick={onReset}
+          className="w-full rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+        >
+          Build Another Report
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Patient basics */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-3 text-sm font-bold">Patient Basics</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <BuildFormField label="Patient Name" value={form.patientName} onChange={set("patientName")} placeholder="e.g. Maria G." />
+          <BuildFormField label="Room" value={form.room} onChange={set("room")} placeholder="e.g. 412A" />
+          <BuildFormField label="Age" value={form.age} onChange={set("age")} placeholder="e.g. 68" type="number" />
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">Sex</label>
+            <select
+              value={form.sex}
+              onChange={(e) => setForm({ ...form, sex: e.target.value })}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:bg-white"
+            >
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+            </select>
+          </div>
+          <div className="col-span-2">
+            <BuildFormField label="Admitting Diagnosis" value={form.diagnosis} onChange={set("diagnosis")} placeholder="e.g. COPD exacerbation" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">Code Status</label>
+            <select
+              value={form.codeStatus}
+              onChange={(e) => setForm({ ...form, codeStatus: e.target.value })}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:bg-white"
+            >
+              <option>Full Code</option>
+              <option>DNR</option>
+              <option>DNR/DNI</option>
+              <option>Comfort Care</option>
+            </select>
+          </div>
+          <BuildFormField label="Allergies" value={form.allergies} onChange={set("allergies")} placeholder="e.g. Penicillin, Sulfa" />
+        </div>
+      </div>
+
+      {/* Vital signs */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-3 text-sm font-bold">Vital Signs</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <BuildFormField label="BP" value={form.bp} onChange={set("bp")} placeholder="e.g. 148/92" />
+          <BuildFormField label="HR" value={form.hr} onChange={set("hr")} placeholder="e.g. 98 bpm" />
+          <BuildFormField label="RR" value={form.rr} onChange={set("rr")} placeholder="e.g. 20/min" />
+          <BuildFormField label="SpO2" value={form.spo2} onChange={set("spo2")} placeholder="e.g. 94% on 2L NC" />
+          <BuildFormField label="Temp" value={form.temp} onChange={set("temp")} placeholder="e.g. 38.2°C" />
+          <BuildFormField label="Pain" value={form.pain} onChange={set("pain")} placeholder="e.g. 4/10 chest" />
+        </div>
+      </div>
+
+      {/* Assessment */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-3 text-sm font-bold">Physical Assessment</h2>
+        <div className="space-y-3">
+          <BuildFormTextarea
+            label="Assessment Findings"
+            value={form.physicalAssessment}
+            onChange={set("physicalAssessment")}
+            placeholder="e.g. Lung sounds: diminished at bases bilaterally with mild crackles R lower lobe. Heart sounds S1/S2, no murmur. Abdomen soft, non-tender. Pedal edema 2+ bilateral. Alert and oriented x3. Skin warm, dry..."
+            rows={5}
+          />
+          <BuildFormTextarea
+            label="Current Medications"
+            value={form.currentMeds}
+            onChange={set("currentMeds")}
+            placeholder="e.g. Albuterol neb q4h PRN, Prednisone 40mg PO daily, Lisinopril 10mg PO daily, Furosemide 40mg IV BID"
+            rows={3}
+          />
+        </div>
+      </div>
+
+      {/* Shift events */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-3 text-sm font-bold">Shift Events &amp; Safety</h2>
+        <div className="space-y-3">
+          <BuildFormTextarea
+            label="Events This Shift"
+            value={form.shiftEvents}
+            onChange={set("shiftEvents")}
+            placeholder="e.g. SpO2 dropped to 88% at 1500, repositioned and increased O2 to 3L, recovered to 94%. Albuterol neb given x2 with moderate relief."
+            rows={3}
+          />
+          <BuildFormTextarea
+            label="Pending Items"
+            value={form.pendingItems}
+            onChange={set("pendingItems")}
+            placeholder="e.g. Chest X-ray results pending (ordered at 1600), pulmonologist consult in AM, CBC drawn at 1800"
+            rows={2}
+          />
+          <BuildFormTextarea
+            label="Safety Notes"
+            value={form.safetyNotes}
+            onChange={set("safetyNotes")}
+            placeholder="e.g. Fall risk Morse score 55 — bed alarm on. IV access: 20g R forearm patent. Isolation: none."
+            rows={2}
+          />
+        </div>
+      </div>
+
+      <button
+        onClick={onGenerate}
+        disabled={loading || (!form.physicalAssessment.trim() && !form.diagnosis.trim())}
+        className="w-full rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
+      >
+        {loading ? "Lexi is writing your report..." : "Generate SBAR Report"}
+      </button>
+      {!form.physicalAssessment.trim() && !form.diagnosis.trim() && (
+        <p className="text-center text-xs text-slate-400">Add at least a diagnosis or physical assessment to generate.</p>
+      )}
     </div>
   );
 }
