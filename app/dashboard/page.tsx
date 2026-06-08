@@ -1069,6 +1069,11 @@ export default function DashboardPage() {
                     <a href="/history" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100">Quiz History</a>
                     <a href="/handoff" className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-center text-sm font-semibold text-blue-900 transition hover:bg-blue-100">Clinical Handoff Lab</a>
                     <a href="/abg" className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-center text-sm font-semibold text-orange-900 transition hover:bg-orange-100">ABG Hot Lab</a>
+                    <a href="/priority" className="rounded-xl border border-purple-200 bg-purple-50 px-4 py-2 text-center text-sm font-semibold text-purple-900 transition hover:bg-purple-100">Priority Judgment Trainer</a>
+                    <a href="/charting" className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2 text-center text-sm font-semibold text-teal-900 transition hover:bg-teal-100">Charting Coach</a>
+                    <a href="/clinical-questions" className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-center text-sm font-semibold text-violet-900 transition hover:bg-violet-100">Clinical Question Generator</a>
+                    <a href="/medpass" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-center text-sm font-semibold text-emerald-900 transition hover:bg-emerald-100">Med Pass Simulation</a>
+                    <a href="/shift" className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-center text-sm font-semibold text-red-900 transition hover:bg-red-100">Shift Survival Mode</a>
                   </div>
                 </div>
 
