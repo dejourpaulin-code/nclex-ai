@@ -1068,6 +1068,7 @@ export default function DashboardPage() {
                     <a href="/chat" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100">Talk to Lexi</a>
                     <a href="/history" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100">Quiz History</a>
                     <a href="/handoff" className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-center text-sm font-semibold text-blue-900 transition hover:bg-blue-100">Clinical Handoff Lab</a>
+                    <a href="/abg" className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-center text-sm font-semibold text-orange-900 transition hover:bg-orange-100">ABG Hot Lab</a>
                   </div>
                 </div>
 
